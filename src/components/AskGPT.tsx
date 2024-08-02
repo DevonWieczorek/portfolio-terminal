@@ -8,9 +8,16 @@ import s from "../styles/AskGPT.less";
 type FormattedResponseProps = {
   response: string;
   query?: string;
+  onShowResponse?: Function;
 }
 
-const FormattedResponse: React.FC<FormattedResponseProps> = ({ response, query }) => {
+const FormattedResponse: React.FC<FormattedResponseProps> = ({ response, query, onShowResponse }) => {
+  useEffect(() => {
+    if (onShowResponse && response) {
+      onShowResponse();
+    }
+  }, [response, onShowResponse]);
+
   if (response){
     return (
       <div className={s.askGpt}>
@@ -25,7 +32,7 @@ const FormattedResponse: React.FC<FormattedResponseProps> = ({ response, query }
 }
 
 
-const AskGPT: React.FC = () => {
+const AskGPT: React.FC <{ onShowResponse: Function }>= ({ onShowResponse }) => {
   const inputRef = useRef<HTMLInputElement>(null);
   const [query, setQuery] = useState<string>("");
   const [inputValue, setInputValue] = useState<string>("");
@@ -73,7 +80,7 @@ const AskGPT: React.FC = () => {
   });
 
   if (response){
-    return <FormattedResponse response={response} query={query} />;
+    return <FormattedResponse response={response} query={query} onShowResponse={onShowResponse} />;
   }
  
   return (

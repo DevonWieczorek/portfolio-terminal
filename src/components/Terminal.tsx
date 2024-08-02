@@ -37,7 +37,7 @@ const Terminal: React.FC<TerminalProps> = ({ onCommand }) => {
         break;
       case "ask":
         onCommand("ask");
-        handleSetOutput(<AskGPT />);
+        handleSetOutput(<AskGPT onShowResponse={focusInput}/>);
         break;
       case "help":
         onCommand("help");
@@ -59,7 +59,6 @@ const Terminal: React.FC<TerminalProps> = ({ onCommand }) => {
     }
   };
 
-  // TODO: delegate chatgpt call so duplicate inputs are not needed
   useEffect(() => {
     focusInput();
   }, [inputRef, focusInput]);
