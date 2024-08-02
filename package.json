@@ -4,6 +4,7 @@
 	"private": true,
 	"license": "MIT",
 	"dependencies": {
+		"@opendocsg/pdf2md": "^0.1.31",
 		"@testing-library/jest-dom": "^5.11.4",
 		"@testing-library/react": "^11.1.0",
 		"@testing-library/user-event": "^12.1.10",
@@ -29,7 +30,8 @@
 		"start": "react-app-rewired start",
 		"build": "react-app-rewired build",
 		"test": "react-app-rewired test",
-		"eject": "react-scripts eject"
+		"eject": "react-scripts eject",
+		"compile-resume": "node .bin/convert-resume-to-markdown.ts"
 	},
 	"eslintConfig": {
 		"extends": [
