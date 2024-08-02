@@ -1,11 +1,12 @@
 :global{
 	// CSS Reset in LESS
 
-// Box sizing reset
 html {
 	box-sizing: border-box;
 	font-size: 16px;
-  }
+  color: #0f0;
+  font-family: "Courier New", Courier, monospace;
+}
   
   *, *:before, *:after {
 	box-sizing: inherit;
@@ -27,5 +28,22 @@ html {
   img {
 	max-width: 100%;
 	height: auto;
+  }
+
+  input, 
+  button,
+  ::placeholder {
+    color: #0f0;
+		font-family: "Courier New", Courier, monospace;
+  }
+
+  a {
+    color: #0f0;
+		font-family: "Courier New", Courier, monospace;
+    text-decoration: underline;
+
+    &:hover {
+      text-decoration: none;
+    }
   }
 }
