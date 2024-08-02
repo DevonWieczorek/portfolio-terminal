@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect, useCallback } from "react";
+import React, { useState, useRef, useEffect } from "react";
 import Markdown from 'react-markdown'
 import { isEnterKeyPress } from "../utils/keyboard";
 import { removeCitations } from "../utils/formatting";
