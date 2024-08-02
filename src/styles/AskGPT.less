@@ -1,29 +1,30 @@
 .askGpt {
-	background-color: #222;
-	color: #0f0;
-	padding: 20px;
-	border-radius: 5px;
-	font-family: "Courier New", Courier, monospace;
-	text-align: center;
+	display: grid;
+	grid-gap: 8px;
+	padding: 16px 0px;
+
+	.inputArea {
+		display: flex;
+		flex-direction: row;
+		align-items: end;
+		justify-content: space-between;
+	}
   
 	.askGptInput {
 	  width: 80%;
-	  padding: 10px;
 	  margin-bottom: 10px;
 	  border: none;
 	  background: none;
-	  color: #0f0;
 	  font-size: 16px;
 	  outline: none;
 	}
   
 	.askGptButton {
-	  padding: 10px 20px;
-	  background-color: #333;
+	  background: transparent;
 	  border: none;
 	  color: #0f0;
 	  cursor: pointer;
-	  font-weight: bold;
+	  text-decoration: underline;
 	}
   
 	.askGptButton:hover {
@@ -33,5 +34,15 @@
 	.askGptResponse {
 	  margin-top: 20px;
 	  white-space: pre-wrap;
+	}
+	
+	div {
+		display: grid;
+		grid-gap: 8px;
+
+		ul, ol {
+			display: grid;
+			grid-gap: 8px;
+		}
 	}
   }
