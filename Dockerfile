@@ -1,15 +1,15 @@
 # Dockerfile
 
-FROM node:14
+FROM node:20
 
 WORKDIR /app
 
 COPY package*.json ./
 
-RUN npm install
+RUN yarn
 
 COPY . .
 
-RUN npm run build
+RUN yarn run build
 
-CMD ["npm", "start"]
+CMD ["yarn", "start"]
