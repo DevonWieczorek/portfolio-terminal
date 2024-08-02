@@ -1,4 +1,8 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef, useCallback } from "react";
+import AskGPT from "../components/AskGPT";
+import Contact from "../components/Contact";
+import HelpMenu from "../components/HelpMenu";
+import { isEnterKeyPress } from "../utils/keyboard";
 import s from "../styles/Terminal.less";
 
 interface TerminalProps {
@@ -6,21 +10,14 @@ interface TerminalProps {
 }
 
 const Terminal: React.FC<TerminalProps> = ({ onCommand }) => {
+  const inputRef = useRef<HTMLInputElement>(null);
   const [output, setOutput] = useState<any>([]);
 
-  const HelpMenu = () => {
-    return (
-      <div>
-        <p>commands:</p>
-        <ul>
-          <li>resume - todo: add resume</li>
-          <li>contact - find out where to reach Devon</li>
-          <li>ask - asks AI Devon a question</li>
-          <li>help - displays this menu</li>
-        </ul>
-      </div>
-    );
-  }
+  const focusInput = useCallback(() => {
+    if (inputRef?.current) {
+      inputRef.current.focus();
+    }
+  }, [inputRef]);
 
   const handleSetOutput = (newOutput: any) => {
     const _newOutput = (typeof newOutput === 'string') ? <div>{newOutput}</div> : newOutput;
@@ -28,7 +25,7 @@ const Terminal: React.FC<TerminalProps> = ({ onCommand }) => {
     setOutput(_output);
   }
 
-  const handleCommand = (command: string) => {
+  const handleCommand = (command: string): void => {
     switch (command.toLowerCase()) {
       case "resume":
         onCommand("resume");
@@ -36,41 +33,51 @@ const Terminal: React.FC<TerminalProps> = ({ onCommand }) => {
         break;
       case "contact":
         onCommand("contact");
-        handleSetOutput("Displaying Contact Information...");
+        handleSetOutput(<Contact />);
         break;
       case "ask":
         onCommand("ask");
-        handleSetOutput("Ask your query...");
+        handleSetOutput(<AskGPT />);
         break;
       case "help":
         onCommand("help");
-        handleSetOutput(HelpMenu);
+        handleSetOutput(<HelpMenu/>);
+        break;
+      case "clear":
+        setOutput([]);
         break;
       default:
         handleSetOutput(`Command not recognized: ${command}`);
     }
   };
 
-  const handleKeyPress = (event: React.KeyboardEvent<HTMLInputElement>) => {
-    if (event.key === "Enter") {
+  const handleKeyPress = (event: React.KeyboardEvent<HTMLInputElement>): void => {
+    if (isEnterKeyPress(event)) {
       const command = (event.target as HTMLInputElement).value;
       handleCommand(command);
       (event.target as HTMLInputElement).value = "";
     }
   };
 
+  // TODO: delegate chatgpt call so duplicate inputs are not needed
   useEffect(() => {
+    focusInput();
+  }, [inputRef, focusInput]);
+
+  useEffect(() => {
+    handleCommand("clear");
     handleCommand("help");
   }, []);
 
   return (
     <div className={s.terminal}>
       <div className={s.terminalHeader}>
-        <span>Devon's Terminal Portfolio</span>
+        <span>DevonGPT: Devon Wieczorek's Personal Assistant</span>
       </div>
       <div className={s.terminalBody}>
         <div className={s.terminalOutput}>{output}</div>
         <input
+          ref={inputRef}
           type="text"
           className={s.terminalInput}
           onKeyPress={handleKeyPress}
