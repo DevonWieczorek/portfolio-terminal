@@ -4,7 +4,14 @@ import s from "../styles/Contact.less";
 const Contact: React.FC = () => {
   return (
     <div className={s.contact}>
-      <a href="mailto:devon.wieczorek@icloud.com">Email Devon</a>
+      to contact devon, email him at&nbsp;
+      <a 
+        href="mailto:devon.wieczorek@icloud.com?subject=I%20Love%20Your%20Website!" 
+        target="_blank" 
+        rel="noreferrer"
+      >
+        devon.wieczorek@icloud.com
+      </a>
     </div>
   );
 };
