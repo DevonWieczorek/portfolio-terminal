@@ -10,6 +10,7 @@ interface TerminalProps {
 }
 
 const Terminal: React.FC<TerminalProps> = ({ onCommand }) => {
+  const bodyRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
   const [output, setOutput] = useState<any>([]);
 
@@ -29,7 +30,7 @@ const Terminal: React.FC<TerminalProps> = ({ onCommand }) => {
     switch (command.toLowerCase()) {
       case "resume":
         onCommand("resume");
-        handleSetOutput("Displaying Resume...");
+        handleSetOutput("TODO: add resume display logic");
         break;
       case "contact":
         onCommand("contact");
@@ -60,6 +61,13 @@ const Terminal: React.FC<TerminalProps> = ({ onCommand }) => {
   };
 
   useEffect(() => {
+    window.scrollTo({
+      top: document.body.scrollHeight,
+      behavior: 'smooth'
+    });
+  }, [bodyRef?.current?.getBoundingClientRect()?.height]);
+
+  useEffect(() => {
     focusInput();
   }, [inputRef, focusInput]);
 
@@ -73,8 +81,10 @@ const Terminal: React.FC<TerminalProps> = ({ onCommand }) => {
       <div className={s.terminalHeader}>
         <span>DevonGPT: Devon Wieczorek's Personal Assistant</span>
       </div>
-      <div className={s.terminalBody}>
-        <div className={s.terminalOutput}>{output}</div>
+      <div ref={bodyRef} className={s.terminalBody}>
+        <div className={s.terminalOutput}>
+            {output}
+        </div>
         <input
           ref={inputRef}
           type="text"
