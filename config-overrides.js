@@ -37,6 +37,10 @@ module.exports = override(
       },
     ],
   }),
+  addWebpackModuleRule({
+	test: /\.md$/,
+	use: 'raw-loader'
+  }),
   (config) => {
     // Ensure .mjs files are processed by Babel
     const babelLoader = config.module.rules.find(rule => rule.use && rule.use.loader === 'babel-loader');
