@@ -1,7 +1,9 @@
-import React, { useState, useEffect, useRef, useCallback } from "react";
+import { useState, useEffect, useRef, useCallback, type FC } from "react";
 import AskGPT from "../components/AskGPT";
 import Contact from "../components/Contact";
+import FunFact from "../components/FunFact";
 import HelpMenu from "../components/HelpMenu";
+import Resume from "../components/Resume";
 import { isEnterKeyPress } from "../utils/keyboard";
 import s from "../styles/Terminal.less";
 
@@ -9,7 +11,7 @@ interface TerminalProps {
   onCommand: (command: string) => void;
 }
 
-const Terminal: React.FC<TerminalProps> = ({ onCommand }) => {
+const Terminal: FC<TerminalProps> = ({ onCommand }) => {
   const bodyRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
   const [output, setOutput] = useState<any>([]);
@@ -24,13 +26,20 @@ const Terminal: React.FC<TerminalProps> = ({ onCommand }) => {
     const _newOutput = (typeof newOutput === 'string') ? <div>{newOutput}</div> : newOutput;
     const _output: any[] = [...output, _newOutput];
     setOutput(_output);
+
+    // TODO: replace with withScrollToTop once fixed
+    window.scrollTo({
+      top: document.body.scrollHeight,
+      behavior: 'smooth'
+    });
   }
 
   const handleCommand = (command: string): void => {
     switch (command.toLowerCase()) {
       case "resume":
         onCommand("resume");
-        handleSetOutput("TODO: add resume display logic");
+        setOutput([]);
+        handleSetOutput(<Resume />);
         break;
       case "contact":
         onCommand("contact");
@@ -39,6 +48,10 @@ const Terminal: React.FC<TerminalProps> = ({ onCommand }) => {
       case "ask":
         onCommand("ask");
         handleSetOutput(<AskGPT onShowResponse={focusInput}/>);
+        break;
+      case "fun-fact":
+        onCommand("fun-fact");
+        handleSetOutput(<FunFact/>);
         break;
       case "help":
         onCommand("help");
@@ -59,13 +72,6 @@ const Terminal: React.FC<TerminalProps> = ({ onCommand }) => {
       (event.target as HTMLInputElement).value = "";
     }
   };
-
-  useEffect(() => {
-    window.scrollTo({
-      top: document.body.scrollHeight,
-      behavior: 'smooth'
-    });
-  }, [bodyRef?.current?.getBoundingClientRect()?.height]);
 
   useEffect(() => {
     focusInput();
