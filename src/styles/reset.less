@@ -3,10 +3,12 @@
 
 html {
   --grid-gap: 8px;
+  --grid-gap-lg: calc(var(--grid-gap) * 2);
+  --terminal-green: #0f0;
 
 	box-sizing: border-box;
 	font-size: 16px;
-  color: #0f0;
+  color: var(--terminal-green);
   font-family: "Courier New", Courier, monospace;
 }
   
@@ -35,12 +37,12 @@ html {
   input, 
   button,
   ::placeholder {
-    color: #0f0;
+    color: var(--terminal-green);
 		font-family: "Courier New", Courier, monospace;
   }
 
   a {
-    color: #0f0;
+    color: var(--terminal-green);
 		font-family: "Courier New", Courier, monospace;
     text-decoration: underline;
 

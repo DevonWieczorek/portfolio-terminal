@@ -1,9 +1,29 @@
-// src/styles/Resume.less
-
 .resume {
-	padding: 20px;
-	border-radius: 5px;
-	overflow-y: auto;
-	max-height: 500px;
+	display: grid;
+	grid-gap: var(--grid-gap-lg);
+	width: 100%;
+	overflow-x: scroll;
+	padding: calc(var(--grid-gap)) 0px;
+
+	section,
+	div {
+		grid-gap: var(--grid-gap);
+
+		article {
+			padding: var(--grid-gap) 0px;
+		}
+	}
+
+	p, ul {
+		line-height: 26px;
+	}
+
+	pre, code {
+		width: 100%;
+	}
+
+	hr {
+		border-top: 1px dotted;
+	}
   }
   
