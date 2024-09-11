@@ -4,3 +4,7 @@ declare module "*.pdf" {
 }
 declare module 'pdf-parse';
 declare module '*.less';
+declare module "*.md" {
+	const content: string;
+	export default content;
+  }
