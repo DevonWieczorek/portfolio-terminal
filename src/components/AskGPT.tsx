@@ -31,7 +31,6 @@ const FormattedResponse: React.FC<FormattedResponseProps> = ({ response, query, 
   return null;
 }
 
-
 const AskGPT: React.FC <{ onShowResponse: Function }>= ({ onShowResponse }) => {
   const inputRef = useRef<HTMLInputElement>(null);
   const [query, setQuery] = useState<string>("");
@@ -85,7 +84,7 @@ const AskGPT: React.FC <{ onShowResponse: Function }>= ({ onShowResponse }) => {
  
   return (
     <div className={s.askGpt}>
-      {displayQuery ? <div>{displayQuery}</div> : <div>press ENTER to submit</div>}
+      {displayQuery ? <div>{displayQuery}</div> : <div>press ENTER to submit:</div>}
       <div className={s.inputArea}>
         <input
           ref={inputRef}
