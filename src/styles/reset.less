@@ -1,53 +1,53 @@
-:global{
+:global {
 	// CSS Reset in LESS
 
-html {
-  --grid-gap: 8px;
-  --grid-gap-lg: calc(var(--grid-gap) * 2);
-  --terminal-green: #0f0;
+	html {
+		--grid-gap: 8px;
+		--grid-gap-lg: calc(var(--grid-gap) * 2);
+		--terminal-green: #0f0;
 
-	box-sizing: border-box;
-	font-size: 16px;
-  color: var(--terminal-green);
-  font-family: "Courier New", Courier, monospace;
-}
-  
-  *, *:before, *:after {
-	box-sizing: inherit;
-  }
-  
-  // Reset margins, padding, and font weights
-  body, h1, h2, h3, h4, h5, h6, p, ol, ul {
-	margin: 0;
-	padding: 0;
-	font-weight: normal;
-  }
-  
-  // Reset list styles
-  ol, ul {
-	list-style: none;
-  }
-  
-  // Ensure images are responsive
-  img {
-	max-width: 100%;
-	height: auto;
-  }
-
-  input, 
-  button,
-  ::placeholder {
-    color: var(--terminal-green);
+		box-sizing: border-box;
+		font-size: 16px;
+		color: var(--terminal-green);
 		font-family: "Courier New", Courier, monospace;
-  }
+	}
+	
+	*, *:before, *:after {
+		box-sizing: inherit;
+	}
+	
+	// Reset margins, padding, and font weights
+	body, h1, h2, h3, h4, h5, h6, p, ol, ul {
+		margin: 0;
+		padding: 0;
+		font-weight: normal;
+	}
+	
+	// Reset list styles
+	ol, ul {
+		list-style: none;
+	}
+	
+	// Ensure images are responsive
+	img {
+		max-width: 100%;
+		height: auto;
+	}
 
-  a {
-    color: var(--terminal-green);
+	input, 
+	button,
+	::placeholder {
+		color: var(--terminal-green);
 		font-family: "Courier New", Courier, monospace;
-    text-decoration: underline;
+	}
 
-    &:hover {
-      text-decoration: none;
-    }
-  }
+	a {
+		color: var(--terminal-green);
+		font-family: "Courier New", Courier, monospace;
+		text-decoration: underline;
+
+		&:hover {
+			text-decoration: none;
+		}
+	}
 }
