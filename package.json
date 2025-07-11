@@ -29,6 +29,7 @@
 	},
 	"scripts": {
 		"start": "react-app-rewired start",
+		"start:debug": "react-app-rewired start --inspect",
 		"build": "react-app-rewired build",
 		"test": "react-app-rewired test",
 		"eject": "react-scripts eject",
