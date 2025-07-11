@@ -1,4 +1,4 @@
-import React from "react";
+import { useState, useEffect, useCallback, type FC } from "react";
 
 // TODO: get fun facts from GPT or have them both pull from a single source
 
@@ -9,23 +9,29 @@ const initialFunFacts = [
 	"Devon loves to travel! He enjoys seeing all the world has to offer and wants to see every country he possibly can.",
 ];
 
-const FunFact: React.FC = () => {
-	const [funFacts, setFunFacts] = React.useState(initialFunFacts);
+const FunFact: FC = () => {
+	const [currentFact, setCurrentFact] = useState<string | null>(null);
+	const [funFacts, setFunFacts] = useState(initialFunFacts);
 
-	const displayFunFact = () => {
+	const displayFunFact = useCallback(() => {
 		if (funFacts.length === 0) {
 			setFunFacts(initialFunFacts); // Repopulate the list if it's empty
+			return initialFunFacts[0]; // Return first fact from repopulated list
 		}
 		const randomIndex = Math.floor(Math.random() * funFacts.length);
 		const fact = funFacts[randomIndex];
 		setFunFacts(facts => facts.filter((_, index) => index !== randomIndex)); // Remove the displayed fact from the list
 		return fact;
-	};
+	}, [funFacts]);
+
+	useEffect(() => {
+		setCurrentFact(displayFunFact());
+	}, []); // Only run once on mount
 
 	return (
 		<div>
 			<div>Devon Fun Fact:</div>
-			<div>{displayFunFact()}</div>
+			<div>{currentFact}</div>
 		</div>
 	);
 };
