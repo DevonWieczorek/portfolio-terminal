@@ -12,7 +12,6 @@ interface TerminalProps {
 }
 
 const Terminal: FC<TerminalProps> = ({ onCommand }) => {
-	const bodyRef = useRef<HTMLDivElement>(null);
 	const inputRef = useRef<HTMLInputElement>(null);
 	const [output, setOutput] = useState<ReactNode[]>([]);
 
@@ -25,13 +24,15 @@ const Terminal: FC<TerminalProps> = ({ onCommand }) => {
 	const handleSetOutput = useCallback((newOutput: ReactNode | string) => {
 		const _newOutput = (typeof newOutput === 'string') ? <div>{newOutput}</div> : newOutput;
 		setOutput(prevOutput => [...prevOutput, _newOutput]);
+	}, []);
 
-		// TODO: replace with withScrollToTop once fixed
+	// Scroll to bottom whenever output changes
+	useEffect(() => {
 		window.scrollTo({
 			top: document.body.scrollHeight,
 			behavior: 'smooth'
 		});
-	}, []);
+	}, [output]);
 
 	const handleCommand = (command: string): void => {
 		switch (command.toLowerCase()) {
@@ -84,9 +85,9 @@ const Terminal: FC<TerminalProps> = ({ onCommand }) => {
 	return (
 		<div className={s.terminal}>
 			<div className={s.terminalHeader}>
-				<span>DevonGPT: Devon Wieczorek's Personal Assistant</span>
+				<span>DevonGPT: Devon Wieczorek&apos;s Personal Assistant</span>
 			</div>
-			<div ref={bodyRef} className={s.terminalBody}>
+			<div className={s.terminalBody}>
 				<div className={s.terminalOutput}>
 					{output}
 				</div>
