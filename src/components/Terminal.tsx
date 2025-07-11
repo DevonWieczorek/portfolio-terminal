@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef, useCallback, type FC } from "react";
+import { useState, useEffect, useRef, useCallback, type FC, type ReactNode, type KeyboardEvent } from "react";
 import AskGPT from "../components/AskGPT";
 import Contact from "../components/Contact";
 import FunFact from "../components/FunFact";
@@ -14,7 +14,7 @@ interface TerminalProps {
 const Terminal: FC<TerminalProps> = ({ onCommand }) => {
 	const bodyRef = useRef<HTMLDivElement>(null);
 	const inputRef = useRef<HTMLInputElement>(null);
-	const [output, setOutput] = useState<React.ReactNode[]>([]);
+	const [output, setOutput] = useState<ReactNode[]>([]);
 
 	const focusInput = useCallback(() => {
 		if (inputRef?.current) {
@@ -22,7 +22,7 @@ const Terminal: FC<TerminalProps> = ({ onCommand }) => {
 		}
 	}, []);
 
-	const handleSetOutput = useCallback((newOutput: React.ReactNode | string) => {
+	const handleSetOutput = useCallback((newOutput: ReactNode | string) => {
 		const _newOutput = (typeof newOutput === 'string') ? <div>{newOutput}</div> : newOutput;
 		setOutput(prevOutput => [...prevOutput, _newOutput]);
 
@@ -64,7 +64,7 @@ const Terminal: FC<TerminalProps> = ({ onCommand }) => {
 		}
 	};
 
-	const handleKeyPress = (event: React.KeyboardEvent<HTMLInputElement>): void => {
+	const handleKeyPress = (event: KeyboardEvent<HTMLInputElement>): void => {
 		if (isEnterKeyPress(event)) {
 			const command = (event.target as HTMLInputElement).value;
 			handleCommand(command);

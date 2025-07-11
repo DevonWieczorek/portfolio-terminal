@@ -1,15 +1,15 @@
 // src/index.tsx
 
-import React from "react";
+import { StrictMode } from "react";
 import ReactDOM from "react-dom";
 import Home from "./views/Home";
 import reportWebVitals from "./reportWebVitals";
 
 ReactDOM.render(
-  <React.StrictMode>
-    <Home />
-  </React.StrictMode>,
-  document.getElementById("root")
+	<StrictMode>
+		<Home />
+	</StrictMode>,
+	document.getElementById("root")
 );
 
 // If you want to start measuring performance in your app, pass a function

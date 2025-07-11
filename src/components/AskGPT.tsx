@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect } from "react";
+import { useState, useRef, useEffect, type FC, type ChangeEvent, type KeyboardEvent } from "react";
 import Markdown from 'react-markdown'
 import { isEnterKeyPress } from "../utils/keyboard";
 import { removeCitations } from "../utils/formatting";
@@ -11,7 +11,7 @@ type FormattedResponseProps = {
 	onShowResponse?: () => void;
 }
 
-const FormattedResponse: React.FC<FormattedResponseProps> = ({ response, query, onShowResponse }) => {
+const FormattedResponse: FC<FormattedResponseProps> = ({ response, query, onShowResponse }) => {
 	useEffect(() => {
 		if (onShowResponse && response) {
 			onShowResponse();
@@ -31,7 +31,7 @@ const FormattedResponse: React.FC<FormattedResponseProps> = ({ response, query, 
 	return null;
 }
 
-const AskGPT: React.FC<{ onShowResponse: () => void }> = ({ onShowResponse }) => {
+const AskGPT: FC<{ onShowResponse: () => void }> = ({ onShowResponse }) => {
 	const inputRef = useRef<HTMLInputElement>(null);
 	const [query, setQuery] = useState<string>("");
 	const [inputValue, setInputValue] = useState<string>("");
@@ -49,7 +49,7 @@ const AskGPT: React.FC<{ onShowResponse: () => void }> = ({ onShowResponse }) =>
 		}
 	};
 
-	const handleQueryChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+	const handleQueryChange = (event: ChangeEvent<HTMLInputElement>) => {
 		setInputValue(event.target.value);
 		setQuery(event.target.value);
 	};
@@ -66,7 +66,7 @@ const AskGPT: React.FC<{ onShowResponse: () => void }> = ({ onShowResponse }) =>
 		queryOpenAIAssistant(query);
 	};
 
-	const handleKeyPress = (event: React.KeyboardEvent<HTMLInputElement>): void => {
+	const handleKeyPress = (event: KeyboardEvent<HTMLInputElement>): void => {
 		if (isEnterKeyPress(event)) {
 			handleSubmit();
 		}

@@ -1,12 +1,12 @@
-import React, { useRef, useEffect, forwardRef, ReactElement } from 'react';
+import { useRef, useEffect, forwardRef, type ReactElement, type FC, type RefAttributes, type Ref } from 'react';
 
 // TODO: debug componentRef not being forwarded
 // Warning: Function components cannot be given refs. Attempts to access this ref will fail. Did you mean to use React.forwardRef()?
 const withScrollToTop = <P extends object>(
-	Component: React.FC<P & React.RefAttributes<unknown>>
+	Component: FC<P & RefAttributes<unknown>>
 ) => {
 	// Define the forwardRef wrapper
-	const WrappedComponent = forwardRef<ReactElement, P>((props): React.ReactElement | null => {
+	const WrappedComponent = forwardRef<ReactElement, P>((props): ReactElement | null => {
 		// Use a ref to the component
 		const componentRef = useRef<HTMLElement>(null);
 
@@ -18,7 +18,7 @@ const withScrollToTop = <P extends object>(
 		}, []);
 
 		// Render the wrapped component with forwarded ref
-		return <Component ref={componentRef as React.Ref<HTMLElement>} {...(props as P)} /> as React.ReactElement; // Cast to React.ReactElement
+		return <Component ref={componentRef as Ref<HTMLElement>} {...(props as P)} /> as ReactElement; // Cast to ReactElement
 	});
 
 	// Set the display name for better debugging
