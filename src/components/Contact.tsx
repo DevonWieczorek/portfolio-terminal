@@ -1,9 +1,11 @@
+"use client";
+
 import { type FC } from "react";
-import s from "../styles/Contact.less";
+import styles from "@/styles/Contact.module.css";
 
 const Contact: FC = () => {
 	return (
-		<div className={s.contact}>
+		<div className={styles.contact}>
 			<div>
 				To contact devon, email him at&nbsp;
 				<a
@@ -12,10 +14,11 @@ const Contact: FC = () => {
 					rel="noreferrer"
 				>
 					devon.wieczorek@icloud.com
-				</a>.
+				</a>
+				.
 			</div>
 			<div>
-				You can also view some of Devon's projects on his&nbsp;
+				You can also view some of Devon&apos;s projects on his&nbsp;
 				<a
 					href="https://github.com/DevonWieczorek"
 					target="_blank"

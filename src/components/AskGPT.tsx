@@ -1,17 +1,29 @@
-import { useState, useRef, useEffect, type FC, type ChangeEvent, type KeyboardEvent } from "react";
-import Markdown from 'react-markdown'
-import { isEnterKeyPress } from "../utils/keyboard";
-import { removeCitations } from "../utils/formatting";
-import { useOpenAIAssistant } from "../hooks/useGPT";
-import s from "../styles/AskGPT.less";
+"use client";
+
+import {
+	useState,
+	useRef,
+	useEffect,
+	type FC,
+	type ChangeEvent,
+	type KeyboardEvent,
+} from "react";
+import Markdown from "react-markdown";
+import { isEnterKeyPress } from "@/utils/keyboard";
+import { removeCitations } from "@/utils/formatting";
+import styles from "@/styles/AskGPT.module.css";
 
 type FormattedResponseProps = {
 	response: string;
 	query?: string;
 	onShowResponse?: () => void;
-}
+};
 
-const FormattedResponse: FC<FormattedResponseProps> = ({ response, query, onShowResponse }) => {
+const FormattedResponse: FC<FormattedResponseProps> = ({
+	response,
+	query,
+	onShowResponse,
+}) => {
 	useEffect(() => {
 		if (onShowResponse && response) {
 			onShowResponse();
@@ -20,7 +32,7 @@ const FormattedResponse: FC<FormattedResponseProps> = ({ response, query, onShow
 
 	if (response) {
 		return (
-			<div className={s.askGpt}>
+			<div className={styles.askGpt}>
 				{query && <div>{query}</div>}
 				<div>
 					<Markdown>{response}</Markdown>
@@ -29,7 +41,7 @@ const FormattedResponse: FC<FormattedResponseProps> = ({ response, query, onShow
 		);
 	}
 	return null;
-}
+};
 
 const AskGPT: FC<{ onShowResponse: () => void }> = ({ onShowResponse }) => {
 	const inputRef = useRef<HTMLInputElement>(null);
@@ -37,10 +49,38 @@ const AskGPT: FC<{ onShowResponse: () => void }> = ({ onShowResponse }) => {
 	const [inputValue, setInputValue] = useState<string>("");
 	const [displayQuery, setDisplayQuery] = useState<string>("");
 	const [response, setResponse] = useState<string>("");
-	const [, queryOpenAIAssistant] = useOpenAIAssistant({
-		onSuccess: (response: string) => setFormattedResponse(response),
-		onError: (error: string) => setFormattedResponse(error),
-	});
+	const [isLoading, setIsLoading] = useState<boolean>(false);
+
+	const queryOpenAIAssistant = async (query: string) => {
+		try {
+			setIsLoading(true);
+			const res = await fetch("/api/gpt", {
+				method: "POST",
+				headers: {
+					"Content-Type": "application/json",
+				},
+				body: JSON.stringify({ query }),
+			});
+
+			if (!res.ok) {
+				throw new Error("Failed to fetch response");
+			}
+
+			const data = await res.json();
+			if (data.error) {
+				setFormattedResponse(data.error);
+			} else {
+				setFormattedResponse(data.response);
+			}
+		} catch (error) {
+			console.error("Error:", error);
+			setFormattedResponse(
+				"An error occurred while processing your request."
+			);
+		} finally {
+			setIsLoading(false);
+		}
+	};
 
 	const setFormattedResponse = (response: string) => {
 		if (response) {
@@ -55,7 +95,7 @@ const AskGPT: FC<{ onShowResponse: () => void }> = ({ onShowResponse }) => {
 	};
 
 	const handleSubmit = async () => {
-		if (!query) return;
+		if (!query || isLoading) return;
 
 		if (inputRef?.current) {
 			setInputValue("asking devon-gpt, this may take a moment... ");
@@ -63,7 +103,7 @@ const AskGPT: FC<{ onShowResponse: () => void }> = ({ onShowResponse }) => {
 			inputRef.current.blur();
 		}
 
-		queryOpenAIAssistant(query);
+		await queryOpenAIAssistant(query);
 	};
 
 	const handleKeyPress = (event: KeyboardEvent<HTMLInputElement>): void => {
@@ -79,13 +119,23 @@ const AskGPT: FC<{ onShowResponse: () => void }> = ({ onShowResponse }) => {
 	}, []);
 
 	if (response) {
-		return <FormattedResponse response={response} query={query} onShowResponse={onShowResponse} />;
+		return (
+			<FormattedResponse
+				response={response}
+				query={query}
+				onShowResponse={onShowResponse}
+			/>
+		);
 	}
 
 	return (
-		<div className={s.askGpt}>
-			{displayQuery ? <div>{displayQuery}</div> : <div>press ENTER to submit:</div>}
-			<div className={s.inputArea}>
+		<div className={styles.askGpt}>
+			{displayQuery ? (
+				<div>{displayQuery}</div>
+			) : (
+				<div>press ENTER to submit:</div>
+			)}
+			<div className={styles.inputArea}>
 				<input
 					ref={inputRef}
 					type="text"
@@ -93,9 +143,14 @@ const AskGPT: FC<{ onShowResponse: () => void }> = ({ onShowResponse }) => {
 					onKeyPress={handleKeyPress}
 					onChange={handleQueryChange}
 					placeholder="ask a question to devon-gpt..."
-					className={s.askGptInput}
+					className={styles.askGptInput}
+					disabled={isLoading}
 				/>
-				<button onClick={handleSubmit} className={s.askGptButton}>
+				<button
+					onClick={handleSubmit}
+					className={styles.askGptButton}
+					disabled={isLoading}
+				>
 					submit
 				</button>
 			</div>

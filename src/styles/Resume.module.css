@@ -1,0 +1,31 @@
+.resume {
+	display: grid;
+	grid-gap: var(--grid-gap-lg);
+	width: 100%;
+	overflow-x: scroll;
+	padding: calc(var(--grid-gap)) 0px;
+}
+
+.resume section,
+.resume div {
+	grid-gap: var(--grid-gap);
+}
+
+.resume section article,
+.resume div article {
+	padding: var(--grid-gap) 0px;
+}
+
+.resume p,
+.resume ul {
+	line-height: 1.625em;
+}
+
+.resume pre,
+.resume code {
+	width: 100%;
+}
+
+.resume hr {
+	border-top: 1px dotted;
+}
