@@ -2,7 +2,7 @@ import React from "react";
 
 // TODO: get fun facts from GPT or have them both pull from a single source
 
-const funFacts = [
+const initialFunFacts = [
 	"In addition to his interest in coding, Devon is also a huge film buff! He attended the New York Film Academy for producing in 2012.",
 	"Devon once owned and ran his own skateboarding company, Brew Crew Skateboards, with his brother and cousin.",
 	"Devon is also a musician! He plays the bass and is a vocalist in the punk rock band, Friend Z.",
@@ -10,15 +10,22 @@ const funFacts = [
 ];
 
 const FunFact: React.FC = () => {
-	const randomIndex = Math.floor(Math.random() * funFacts.length);
+	const [funFacts, setFunFacts] = React.useState(initialFunFacts);
 
-	// TODO: remove fun fact from array after it's displayed
-	// After all fun facts are displayed, display his contact info and prompt to ask a question
+	const displayFunFact = () => {
+		if (funFacts.length === 0) {
+			setFunFacts(initialFunFacts); // Repopulate the list if it's empty
+		}
+		const randomIndex = Math.floor(Math.random() * funFacts.length);
+		const fact = funFacts[randomIndex];
+		setFunFacts(facts => facts.filter((_, index) => index !== randomIndex)); // Remove the displayed fact from the list
+		return fact;
+	};
 
 	return (
 		<div>
 			<div>Devon Fun Fact:</div>
-			<div>{funFacts[randomIndex]}</div>
+			<div>{displayFunFact()}</div>
 		</div>
 	);
 };
