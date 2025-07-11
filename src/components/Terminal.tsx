@@ -1,4 +1,12 @@
-import { useState, useEffect, useRef, useCallback, type FC, type ReactNode, type KeyboardEvent } from "react";
+import {
+	useState,
+	useEffect,
+	useRef,
+	useCallback,
+	type FC,
+	type ReactNode,
+	type KeyboardEvent,
+} from "react";
 import AskGPT from "../components/AskGPT";
 import Contact from "../components/Contact";
 import FunFact from "../components/FunFact";
@@ -22,7 +30,8 @@ const Terminal: FC<TerminalProps> = ({ onCommand }) => {
 	}, []);
 
 	const handleSetOutput = useCallback((newOutput: ReactNode | string) => {
-		const _newOutput = (typeof newOutput === 'string') ? <div>{newOutput}</div> : newOutput;
+		const _newOutput =
+			typeof newOutput === "string" ? <div>{newOutput}</div> : newOutput;
 		setOutput(prevOutput => [...prevOutput, _newOutput]);
 	}, []);
 
@@ -30,7 +39,7 @@ const Terminal: FC<TerminalProps> = ({ onCommand }) => {
 	useEffect(() => {
 		window.scrollTo({
 			top: document.body.scrollHeight,
-			behavior: 'smooth'
+			behavior: "smooth",
 		});
 	}, [output]);
 
@@ -88,9 +97,7 @@ const Terminal: FC<TerminalProps> = ({ onCommand }) => {
 				<span>DevonGPT: Devon Wieczorek&apos;s Personal Assistant</span>
 			</div>
 			<div className={s.terminalBody}>
-				<div className={s.terminalOutput}>
-					{output}
-				</div>
+				<div className={s.terminalOutput}>{output}</div>
 				<input
 					ref={inputRef}
 					type="text"
