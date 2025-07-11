@@ -5,7 +5,7 @@
 	padding: var(--input-height) 20px;
 	border-radius: 5px;
 	width: 100%;
-  
+
 	.terminalHeader {
 		position: fixed;
 		top: 0;
@@ -17,17 +17,17 @@
 		border-bottom: 1px solid #333;
 		box-shadow: 0 0 10px rgba(0, 0, 0, 0.5);
 	}
-  
+
 	.terminalBody {
 		padding: 20px 0px;
 		min-height: calc(100vh - calc(var(--input-height) * 2));
-  
+
 		.terminalOutput {
 			display: grid;
 			grid-gap: var(--grid-gap-lg);
 			margin-bottom: 10px;
 		}
-  
+
 		.terminalInput {
 			position: fixed;
 			bottom: 0;
@@ -44,15 +44,17 @@
 			border-top: 1px solid #333;
 		}
 	}
-  
-	@media (max-width: 768px) {  
+
+	@media (max-width: 768px) {
+		--input-height: 60px;
+
 		.terminalHeader {
 			font-size: 14px;
+			line-height: 18px;
 		}
-  
+
 		.terminalInput {
 			font-size: 14px;
 		}
 	}
 }
-  
