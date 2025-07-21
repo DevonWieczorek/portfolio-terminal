@@ -33,7 +33,11 @@ const Terminal: FC<TerminalProps> = ({ onCommand }) => {
 
 	const handleSetOutput = useCallback((newOutput: ReactNode | string) => {
 		const _newOutput =
-			typeof newOutput === "string" ? <div>{newOutput}</div> : newOutput;
+			typeof newOutput === "string" ? (
+				<div key={Math.random()}>{newOutput}</div>
+			) : (
+				newOutput
+			);
 		setOutput(prevOutput => [...prevOutput, _newOutput]);
 	}, []);
 
