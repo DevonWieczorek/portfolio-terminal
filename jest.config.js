@@ -12,9 +12,20 @@ module.exports = {
                "^@/(.*)$": "<rootDir>/src/$1",
        },
 
-	transform: {
-		"^.+\\.(js|jsx|ts|tsx)$": "babel-jest",
-	},
+        transform: {
+                "^.+\\.(js|jsx|ts|tsx)$": [
+                        "@swc/jest",
+                        {
+                                jsc: {
+                                        transform: {
+                                                react: {
+                                                        runtime: "automatic",
+                                                },
+                                        },
+                                },
+                        },
+                ],
+        },
 	testPathIgnorePatterns: ["/node_modules/", "/.next/"],
 	// transformIgnorePatterns: [
 	// 	"/node_modules/(?!react-markdown|remark-.*|unified|bail|trough|vfile|is-plain-obj|mdast-util-.*|micromark-.*|decode-named-character-reference|character-entities-.*)/",
