@@ -136,16 +136,16 @@ const AskGPT: FC<{ onShowResponse: () => void }> = ({ onShowResponse }) => {
 				<div>press ENTER to submit:</div>
 			)}
 			<div className={styles.inputArea}>
-				<input
-					ref={inputRef}
-					type="text"
-					value={inputValue}
-					onKeyPress={handleKeyPress}
-					onChange={handleQueryChange}
-					placeholder="ask a question to devon-gpt..."
-					className={styles.askGptInput}
-					disabled={isLoading}
-				/>
+                                <input
+                                        ref={inputRef}
+                                        type="text"
+                                        value={inputValue}
+                                        onKeyDown={handleKeyPress}
+                                        onChange={handleQueryChange}
+                                        placeholder="ask a question to devon-gpt..."
+                                        className={styles.askGptInput}
+                                        disabled={isLoading}
+                                />
 				<button
 					onClick={handleSubmit}
 					className={styles.askGptButton}

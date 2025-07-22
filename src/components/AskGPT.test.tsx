@@ -21,14 +21,14 @@ afterEach(() => {
 describe("AskGPT", () => {
 	it("renders input and submit button", () => {
 		render(<AskGPT onShowResponse={jest.fn()} />);
-		expect(screen.getByPlaceholderText(/ask devon/i)).toBeInTheDocument();
+    expect(screen.getByPlaceholderText(/ask a question to devon-gpt/i)).toBeInTheDocument();
 	});
 
 	it("submits a query and displays response", async () => {
 		render(<AskGPT onShowResponse={jest.fn()} />);
-		const input = screen.getByPlaceholderText(/ask devon/i);
+    const input = screen.getByPlaceholderText(/ask a question to devon-gpt/i);
 		fireEvent.change(input, { target: { value: "What is your name?" } });
-		fireEvent.keyDown(input, { key: "Enter", code: "Enter" });
+    fireEvent.keyDown(input, { key: "Enter", code: "Enter" });
 		await waitFor(() =>
 			expect(
 				screen.getByText(/test response from gpt/i)
@@ -45,9 +45,9 @@ describe("AskGPT", () => {
 				})
 		);
 		render(<AskGPT onShowResponse={jest.fn()} />);
-		const input = screen.getByPlaceholderText(/ask devon/i);
+    const input = screen.getByPlaceholderText(/ask a question to devon-gpt/i);
 		fireEvent.change(input, { target: { value: "Loading test" } });
-		fireEvent.keyDown(input, { key: "Enter", code: "Enter" });
+    fireEvent.keyDown(input, { key: "Enter", code: "Enter" });
 		expect(screen.getByText(/loading/i)).toBeInTheDocument();
 		resolveFetch({
 			ok: true,

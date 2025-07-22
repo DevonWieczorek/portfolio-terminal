@@ -23,7 +23,8 @@ interface TerminalProps {
 
 const Terminal: FC<TerminalProps> = ({ onCommand }) => {
 	const inputRef = useRef<HTMLInputElement>(null);
-	const [output, setOutput] = useState<ReactNode[]>([]);
+        const [output, setOutput] = useState<ReactNode[]>([]);
+        const keyRef = useRef(0);
 
 	const focusInput = useCallback(() => {
 		if (inputRef?.current) {
@@ -31,15 +32,16 @@ const Terminal: FC<TerminalProps> = ({ onCommand }) => {
 		}
 	}, []);
 
-	const handleSetOutput = useCallback((newOutput: ReactNode | string) => {
-		const _newOutput =
-			typeof newOutput === "string" ? (
-				<div key={Math.random()}>{newOutput}</div>
-			) : (
-				newOutput
-			);
-		setOutput(prevOutput => [...prevOutput, _newOutput]);
-	}, []);
+        const handleSetOutput = useCallback((newOutput: ReactNode | string) => {
+                const key = keyRef.current++;
+                const element =
+                        typeof newOutput === "string" ? (
+                                <div key={key}>{newOutput}</div>
+                        ) : (
+                                <div key={key}>{newOutput}</div>
+                        );
+                setOutput(prevOutput => [...prevOutput, element]);
+        }, []);
 
 	// Scroll to bottom whenever output changes
 	useEffect(() => {
@@ -104,13 +106,13 @@ const Terminal: FC<TerminalProps> = ({ onCommand }) => {
 			</div>
 			<div className={styles.terminalBody}>
 				<div className={styles.terminalOutput}>{output}</div>
-				<input
-					ref={inputRef}
-					type="text"
-					className={styles.terminalInput}
-					onKeyPress={handleKeyPress}
-					placeholder="Type a command..."
-				/>
+                                <input
+                                        ref={inputRef}
+                                        type="text"
+                                        className={styles.terminalInput}
+                                        onKeyDown={handleKeyPress}
+                                        placeholder="Type a command..."
+                                />
 			</div>
 		</div>
 	);

@@ -4,15 +4,13 @@ module.exports = {
 		"@testing-library/jest-dom",
 		"<rootDir>/jest.setup.js",
 	],
-	moduleNameMapper: {
-		"^@/(.*)$": "<rootDir>/src/$1",
-
-		// ✅ CSS Modules go through identity-obj-proxy
-		"\\.module\\.(css|less|scss|sass)$": "identity-obj-proxy",
-
-		// ✅ Global styles go to a mock (we’ll add this file next)
-		"\\.(css|less|scss|sass)$": "<rootDir>/__mocks__/styleMock.js",
-	},
+       moduleNameMapper: {
+               "^@/(.*)\\.module\\.(css|less|scss|sass)$": "identity-obj-proxy",
+               "^@/(.*)\\.(css|less|scss|sass)$": "<rootDir>/__mocks__/styleMock.js",
+               "\\.module\\.(css|less|scss|sass)$": "identity-obj-proxy",
+               "\\.(css|less|scss|sass)$": "<rootDir>/__mocks__/styleMock.js",
+               "^@/(.*)$": "<rootDir>/src/$1",
+       },
 
 	transform: {
 		"^.+\\.(js|jsx|ts|tsx)$": "babel-jest",

@@ -7,9 +7,9 @@ describe("Resume", () => {
 	it("renders name, title, and contact info", () => {
 		render(<Resume />);
 		expect(screen.getByText(/devon wieczorek/i)).toBeInTheDocument();
-		expect(
-			screen.getByText(/senior software engineer/i)
-		).toBeInTheDocument();
+    expect(
+        screen.getAllByText(/senior software engineer/i).length
+    ).toBeGreaterThan(0);
 		expect(
 			screen.getByText(/devon.wieczorek@icloud.com/i)
 		).toBeInTheDocument();
