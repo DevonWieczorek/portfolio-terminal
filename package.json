@@ -10,7 +10,8 @@
 		"lint": "next lint",
 		"compile-resume-markdown": "node .bin/convert-resume-to-markdown.ts",
 		"compile-resume-html": "node .bin/convert-resume-to-html.ts",
-		"deploy": "git push heroku main"
+		"deploy": "git push heroku main",
+		"test": "jest"
 	},
 	"dependencies": {
 		"@opendocsg/pdf2md": "^0.1.31",
@@ -27,8 +28,21 @@
 		"typescript": "^5.0.0"
 	},
 	"devDependencies": {
+		"@babel/core": "^7.28.0",
+		"@babel/plugin-proposal-private-property-in-object": "^7.21.11",
+		"@babel/plugin-transform-private-methods": "^7.27.1",
+		"@babel/preset-env": "^7.28.0",
+		"@babel/preset-typescript": "^7.27.1",
+		"@testing-library/dom": "^10.4.0",
+		"@testing-library/jest-dom": "^6.6.3",
+		"@testing-library/react": "^16.3.0",
+		"@testing-library/user-event": "^14.6.1",
+		"@types/jest": "^30.0.0",
 		"@types/puppeteer": "^7.0.0",
 		"eslint": "^8.0.0",
-		"eslint-config-next": "^14.0.0"
+		"eslint-config-next": "^14.0.0",
+		"identity-obj-proxy": "^3.0.0",
+		"jest": "^30.0.4",
+		"jest-environment-jsdom": "^30.0.4"
 	}
 }
