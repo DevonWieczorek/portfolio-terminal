@@ -41,3 +41,7 @@ next-env.d.ts
 .DS_Store
 Thumbs.db
 .env.local
+
+# Yarn
+.yarn/
+.yarnrc.yml

@@ -215,6 +215,17 @@ The project includes configuration for:
 NEXT_PUBLIC_OPENAI_API_KEY=your_production_api_key
 NEXT_PUBLIC_OPENAI_ASSISTANT_ID=your_production_assistant_id
 ```
+### Continuous Integration and Deployment
+
+This repository includes a GitHub Actions workflow at `.github/workflows/test-and-deploy.yml` that runs tests on every push to `main` and deploys to Heroku if they pass.
+
+Add the following secrets in your GitHub repository settings:
+- `HEROKU_API_KEY` – your Heroku API key
+- `HEROKU_APP_NAME` – your Heroku app name
+- `HEROKU_EMAIL` – the email associated with the Heroku account
+
+Also ensure `NEXT_PUBLIC_OPENAI_API_KEY` and `NEXT_PUBLIC_OPENAI_ASSISTANT_ID` are set in the Heroku environment.
+
 
 ## 🛠️ Technologies & Dependencies
 
