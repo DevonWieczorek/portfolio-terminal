@@ -1,74 +1,47 @@
 {
 	"name": "terminal-portfolio",
-	"version": "0.1.0",
+	"version": "0.2.0",
 	"private": true,
 	"license": "MIT",
+	"scripts": {
+		"dev": "next dev",
+		"build": "next build",
+		"start": "next start",
+		"lint": "next lint",
+		"compile-resume-markdown": "node .bin/convert-resume-to-markdown.ts",
+		"compile-resume-html": "node .bin/convert-resume-to-html.ts",
+		"deploy": "git push heroku main",
+		"test": "jest",
+		"sync-env-vars": "bash .bin/sync-env-vars.sh"
+	},
 	"dependencies": {
 		"@opendocsg/pdf2md": "^0.1.31",
-		"@babel/plugin-proposal-private-property-in-object": "^7.21.11",
-		"@testing-library/jest-dom": "^5.11.4",
-		"@testing-library/react": "^11.1.0",
-		"@testing-library/user-event": "^12.1.10",
-		"@types/jest": "^26.0.15",
-		"@types/node": "^12.0.0",
-		"@types/react": "^17.0.0",
-		"@types/react-dom": "^17.0.0",
-		"customize-cra": "^1.0.0",
-		"less": "^4.2.0",
-		"less-loader": "5.0.0",
+		"@types/node": "^20.0.0",
+		"@types/react": "^18.0.0",
+		"@types/react-dom": "^18.0.0",
+		"eslint-plugin-import": "^2.32.0",
+		"next": "^14.0.0",
 		"openai": "^4.54.0",
 		"pdf-parse": "^1.1.1",
 		"puppeteer": "^22.15.0",
 		"react": "^18.0.0",
-		"react-app-rewired": "^2.2.1",
-		"react-dom": "^17.0.2",
+		"react-dom": "^18.0.0",
 		"react-markdown": "^9.0.1",
-		"react-scripts": "^5.0.1",
-		"typescript": "^4.1.2",
-		"web-vitals": "^1.0.1"
-	},
-	"scripts": {
-		"start": "react-app-rewired start",
-		"start:debug": "react-app-rewired start --inspect",
-		"build": "react-app-rewired build",
-		"test": "react-app-rewired test",
-		"eject": "react-scripts eject",
-		"compile-resume-markdown": "node .bin/convert-resume-to-markdown.ts",
-		"compile-resume-html": "node .bin/convert-resume-to-html.ts",
-		"deploy": "git push heroku main"
-	},
-	"eslintConfig": {
-		"extends": [
-			"react-app",
-			"react-app/jest"
-		]
-	},
-	"browserslist": {
-		"production": [
-			">0.2%",
-			"not dead",
-			"not op_mini all"
-		],
-		"development": [
-			"last 1 chrome version",
-			"last 1 firefox version",
-			"last 1 safari version"
-		]
+		"typescript": "^5.0.0"
 	},
 	"devDependencies": {
-		"@babel/core": "^7.25.2",
-		"@babel/preset-env": "^7.25.3",
-		"@eslint/js": "^9.10.0",
-		"babel-loader": "^8.1.0",
-		"css-loader": "3.6.0",
-		"customize-cra-less-loader": "^2.0.0",
-		"eslint": "^9.10.0",
-		"eslint-config-react-app": "^7.0.1",
-		"eslint-plugin-react": "^7.35.2",
-		"eslint-plugin-react-hooks": "^4.6.2",
-		"globals": "^15.9.0",
-		"raw-loader": "^4.0.2",
-		"style-loader": "1.3.0",
-		"typescript-eslint": "^8.5.0"
+		"@swc/core": "^1.3.91",
+		"@swc/jest": "^0.2.29",
+		"@testing-library/dom": "^10.4.0",
+		"@testing-library/jest-dom": "^6.6.3",
+		"@testing-library/react": "^16.3.0",
+		"@testing-library/user-event": "^14.6.1",
+		"@types/jest": "^30.0.0",
+		"@types/puppeteer": "^7.0.0",
+		"eslint": "^9.31.0",
+		"eslint-config-next": "^15.4.3",
+		"identity-obj-proxy": "^3.0.0",
+		"jest": "^30.0.4",
+		"jest-environment-jsdom": "^30.0.4"
 	}
 }

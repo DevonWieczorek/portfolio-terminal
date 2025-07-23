@@ -1,3 +1,5 @@
+"use client";
+
 import { useState, useEffect, useCallback, type FC } from "react";
 
 // TODO: get fun facts from GPT or have them both pull from a single source

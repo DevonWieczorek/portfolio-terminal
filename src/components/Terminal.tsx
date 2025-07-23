@@ -1,3 +1,5 @@
+"use client";
+
 import {
 	useState,
 	useEffect,
@@ -7,13 +9,13 @@ import {
 	type ReactNode,
 	type KeyboardEvent,
 } from "react";
-import AskGPT from "../components/AskGPT";
-import Contact from "../components/Contact";
-import FunFact from "../components/FunFact";
-import HelpMenu from "../components/HelpMenu";
-import Resume from "../components/Resume";
-import { isEnterKeyPress } from "../utils/keyboard";
-import s from "../styles/Terminal.less";
+import AskGPT from "./AskGPT";
+import Contact from "./Contact";
+import FunFact from "./FunFact";
+import HelpMenu from "./HelpMenu";
+import Resume from "./Resume";
+import { isEnterKeyPress } from "@/utils/keyboard";
+import styles from "@/styles/Terminal.module.css";
 
 interface TerminalProps {
 	onCommand: (command: string) => void;
@@ -21,7 +23,8 @@ interface TerminalProps {
 
 const Terminal: FC<TerminalProps> = ({ onCommand }) => {
 	const inputRef = useRef<HTMLInputElement>(null);
-	const [output, setOutput] = useState<ReactNode[]>([]);
+        const [output, setOutput] = useState<ReactNode[]>([]);
+        const keyRef = useRef(0);
 
 	const focusInput = useCallback(() => {
 		if (inputRef?.current) {
@@ -29,11 +32,16 @@ const Terminal: FC<TerminalProps> = ({ onCommand }) => {
 		}
 	}, []);
 
-	const handleSetOutput = useCallback((newOutput: ReactNode | string) => {
-		const _newOutput =
-			typeof newOutput === "string" ? <div>{newOutput}</div> : newOutput;
-		setOutput(prevOutput => [...prevOutput, _newOutput]);
-	}, []);
+        const handleSetOutput = useCallback((newOutput: ReactNode | string) => {
+                const key = keyRef.current++;
+                const element =
+                        typeof newOutput === "string" ? (
+                                <div key={key}>{newOutput}</div>
+                        ) : (
+                                <div key={key}>{newOutput}</div>
+                        );
+                setOutput(prevOutput => [...prevOutput, element]);
+        }, []);
 
 	// Scroll to bottom whenever output changes
 	useEffect(() => {
@@ -92,19 +100,19 @@ const Terminal: FC<TerminalProps> = ({ onCommand }) => {
 	}, []);
 
 	return (
-		<div className={s.terminal}>
-			<div className={s.terminalHeader}>
+		<div className={styles.terminal}>
+			<div className={styles.terminalHeader}>
 				<span>DevonGPT: Devon Wieczorek&apos;s Personal Assistant</span>
 			</div>
-			<div className={s.terminalBody}>
-				<div className={s.terminalOutput}>{output}</div>
-				<input
-					ref={inputRef}
-					type="text"
-					className={s.terminalInput}
-					onKeyPress={handleKeyPress}
-					placeholder="Type a command..."
-				/>
+			<div className={styles.terminalBody}>
+				<div className={styles.terminalOutput}>{output}</div>
+                                <input
+                                        ref={inputRef}
+                                        type="text"
+                                        className={styles.terminalInput}
+                                        onKeyDown={handleKeyPress}
+                                        placeholder="Type a command..."
+                                />
 			</div>
 		</div>
 	);
