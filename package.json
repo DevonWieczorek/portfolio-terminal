@@ -11,7 +11,8 @@
 		"compile-resume-markdown": "node .bin/convert-resume-to-markdown.ts",
 		"compile-resume-html": "node .bin/convert-resume-to-html.ts",
 		"deploy": "git push heroku main",
-		"test": "jest"
+		"test": "jest",
+		"sync-env-vars": "bash .bin/sync-env-vars.sh"
 	},
 	"dependencies": {
 		"@opendocsg/pdf2md": "^0.1.31",
