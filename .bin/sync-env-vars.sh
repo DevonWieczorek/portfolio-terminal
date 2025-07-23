@@ -1,5 +1,8 @@
 #!/bin/bash
 
+# Export the GH_TOKEN from the .env file
+export $(cat .env | grep GH_TOKEN | xargs)
+
 # === SETTINGS ===
 # Resolve script directory (assumes .bin is inside project root)
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
