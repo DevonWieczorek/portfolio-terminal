@@ -1,4 +1,3 @@
-// Mock fetch globally
 beforeAll(() => {
 	global.fetch =
 		global.fetch ||
