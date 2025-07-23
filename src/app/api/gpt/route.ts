@@ -1,8 +1,13 @@
 import { NextRequest, NextResponse } from "next/server";
 import OpenAI from "openai";
 
+const apiKey = process.env.NEXT_PUBLIC_OPENAI_API_KEY;
+if (!apiKey) {
+  throw new Error('Missing NEXT_PUBLIC_OPENAI_API_KEY');
+}
+
 const openai = new OpenAI({
-	apiKey: process.env.NEXT_PUBLIC_OPENAI_API_KEY,
+	apiKey,
 });
 
 export async function POST(request: NextRequest) {
@@ -26,8 +31,12 @@ export async function POST(request: NextRequest) {
 		});
 
 		// Step 3: Run the assistant
+		const assistantId = process.env.NEXT_PUBLIC_OPENAI_ASSISTANT_ID;
+		if (!assistantId) {
+			throw new Error('Missing NEXT_PUBLIC_OPENAI_ASSISTANT_ID');
+		}
 		const run = await openai.beta.threads.runs.create(thread.id, {
-			assistant_id: process.env.NEXT_PUBLIC_OPENAI_ASSISTANT_ID,
+			assistant_id: assistantId,
 		});
 
 		// Step 4: Check the run status
