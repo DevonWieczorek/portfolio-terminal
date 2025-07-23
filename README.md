@@ -11,6 +11,7 @@ A terminal-style portfolio website built with Next.js 14, featuring an AI assist
 -   **Fun facts** about Devon with random selection
 -   **Help menu** with available commands and descriptions
 -   **Responsive design** that works across different screen sizes
+-   **Desktop 3D scene** built with React Three Fiber (mobile devices use the classic terminal)
 -   **TypeScript** for type safety and better developer experience
 
 ## 🏗️ Architecture Overview
@@ -23,6 +24,7 @@ A terminal-style portfolio website built with Next.js 14, featuring an AI assist
 -   **Developer-friendly**: Appeals to technical audiences and recruiters
 -   **Interactive**: Creates engagement through command discovery
 -   **Nostalgic**: Evokes classic computing experiences
+-   **Immersive showcase**: Desktop visitors explore a 3D room built with React Three Fiber
 
 **Why Next.js 14 with App Router?**
 
@@ -244,6 +246,7 @@ Also ensure `NEXT_PUBLIC_OPENAI_API_KEY` and `NEXT_PUBLIC_OPENAI_ASSISTANT_ID` a
 
 -   **CSS Modules**: Scoped component styling
 -   **React Markdown**: Markdown rendering for resume
+-   **React Three Fiber**: Desktop-only 3D scene rendering
 
 ### Development Tools
 
