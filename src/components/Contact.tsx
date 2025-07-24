@@ -1,7 +1,7 @@
 "use client";
 
 import { type FC } from "react";
-import styles from "@/styles/Contact.module.css";
+import styles from "@/styles/Contact.module.less";
 
 const Contact: FC = () => {
 	return (

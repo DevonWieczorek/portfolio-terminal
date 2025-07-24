@@ -11,7 +11,7 @@ import {
 import Markdown from "react-markdown";
 import { isEnterKeyPress } from "@/utils/keyboard";
 import { removeCitations } from "@/utils/formatting";
-import styles from "@/styles/AskGPT.module.css";
+import styles from "@/styles/AskGPT.module.less";
 
 type FormattedResponseProps = {
 	response: string;

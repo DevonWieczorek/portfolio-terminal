@@ -15,7 +15,7 @@ import FunFact from "./FunFact";
 import HelpMenu from "./HelpMenu";
 import Resume from "./Resume";
 import { isEnterKeyPress } from "@/utils/keyboard";
-import styles from "@/styles/Terminal.module.css";
+import styles from "@/styles/Terminal.module.less";
 
 interface TerminalProps {
 	onCommand: (command: string) => void;
