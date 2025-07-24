@@ -15,9 +15,12 @@
 		"sync-env-vars": "bash .bin/sync-env-vars.sh"
 	},
 	"dependencies": {
+		"@react-three/drei": "^9.122.0",
+		"@react-three/fiber": "^8.18.0",
+		"@react-three/postprocessing": "^2.19.1",
+		"r3f-perf": "^7.2.3",
+		"three": "^0.170.0",
 		"@opendocsg/pdf2md": "^0.1.31",
-		"@react-three/drei": "^10.6.0",
-		"@react-three/fiber": "^9.2.0",
 		"@types/node": "^20.0.0",
 		"@types/react": "^18.0.0",
 		"@types/react-dom": "^18.0.0",
@@ -29,7 +32,6 @@
 		"react": "^18.0.0",
 		"react-dom": "^18.0.0",
 		"react-markdown": "^9.0.1",
-		"three": "^0.178.0",
 		"typescript": "^5.0.0"
 	},
 	"devDependencies": {
