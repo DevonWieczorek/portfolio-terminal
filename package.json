@@ -15,6 +15,11 @@
 		"sync-env-vars": "bash .bin/sync-env-vars.sh"
 	},
 	"dependencies": {
+		"@react-three/drei": "^9.122.0",
+		"@react-three/fiber": "^8.18.0",
+		"@react-three/postprocessing": "^2.19.1",
+		"r3f-perf": "^7.2.3",
+		"three": "^0.170.0",
 		"@opendocsg/pdf2md": "^0.1.31",
 		"@types/node": "^20.0.0",
 		"@types/react": "^18.0.0",

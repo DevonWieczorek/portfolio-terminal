@@ -2,14 +2,21 @@
 
 import { useState } from "react";
 import Terminal from "@/components/Terminal";
+import R3FScene from "@/components/R3FScene";
 import styles from "@/styles/Home.module.css";
+import { useIsMobile } from "@/hooks/use-is-mobile";
 
 export default function Home() {
-	const [, setSelectedOption] = useState<string>("");
+        const isMobile = useIsMobile();
+        const [, setSelectedOption] = useState<string>("");
 
-	return (
-		<div className={styles.home}>
-			<Terminal onCommand={setSelectedOption} />
-		</div>
-	);
+        return (
+                <div className={styles.home}>
+                        {isMobile ? (
+                                <Terminal onCommand={setSelectedOption} />
+                        ) : (
+                                <R3FScene />
+                        )}
+                </div>
+        );
 }
