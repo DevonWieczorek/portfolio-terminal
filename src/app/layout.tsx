@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import "./globals.css";
-import "@/styles/reset.less";
+import "@/styles/reset.scss";
 
 export const metadata: Metadata = {
 	title: "DevonGPT - Terminal Portfolio",

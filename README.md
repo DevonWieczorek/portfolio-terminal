@@ -100,19 +100,19 @@ src/components/
 
 ```
 src/styles/
-├── reset.less          # LESS reset for consistent styling
-├── Home.module.less    # Home page styles
-├── Terminal.module.less # Terminal interface styles
-├── AskGPT.module.less  # AI interaction styles
-├── Resume.module.less  # Resume display styles
-└── Contact.module.less # Contact information styles
+├── reset.scss           # Global reset for consistent styling
+├── Home.module.scss     # Home page styles
+├── Terminal.module.scss # Terminal interface styles
+├── AskGPT.module.scss   # AI interaction styles
+├── Resume.module.scss   # Resume display styles
+└── Contact.module.scss  # Contact information styles
 ```
 
-**LESS Modules Approach:**
+**SCSS Modules Approach:**
 
--   **Scoped styles**: Each component has its own LESS module
+-   **Scoped styles**: Each component has its own SCSS module
 -   **No global conflicts**: Styles are automatically scoped to components
--   **TypeScript support**: LESS modules work well with TypeScript
+-   **TypeScript support**: SCSS modules work well with TypeScript
 -   **Maintainable**: Easy to find and modify component-specific styles
 
 ### Utility Functions

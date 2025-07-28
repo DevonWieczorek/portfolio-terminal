@@ -1,7 +1,7 @@
 "use client";
 
 import { type FC } from "react";
-import styles from "@/styles/Resume.module.less";
+import styles from "@/styles/Resume.module.scss";
 
 const Resume: FC = () => {
 	return (
