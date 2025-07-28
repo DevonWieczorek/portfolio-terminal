@@ -1,20 +1,10 @@
 ## Notes for Codex
-Help debug the below error so that yarn can run the dev server with no errors.
+Help migrate my project from less to scss modules. 
+Remove any unneeded dependencies and update the code to use SCSS syntax.
+Update any style imports to reflect the new scss module structure.
+
+Continuously iterate and debug until you are able to run the dev server without errors.
 
 Add any summaries of changes made or other relevant notes to the "Notes from Codex" section below.
-
-Avoid switching from less to scss unless absolutely necessary.
-
-
-## Error to Debug
-Import trace for requested module:
-./src/styles/AskGPT.module.less
-./src/components/AskGPT.tsx
-./src/components/Terminal.tsx
-./src/app/page.tsx
- ⨯ ./src/styles/AskGPT.module.less
-CSS Modules cannot be imported from within node_modules.
-Read more: https://nextjs.org/docs/messages/css-modules-npm
-Location: src/components/AskGPT.tsx
 
 ## Notes from Codex
