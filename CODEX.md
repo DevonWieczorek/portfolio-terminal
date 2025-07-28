@@ -3,6 +3,8 @@ Help debug the below error so that yarn can run the dev server with no errors.
 
 Add any summaries of changes made or other relevant notes to the "Notes from Codex" section below.
 
+Avoid switching from less to scss unless absolutely necessary.
+
 
 ## Error to Debug
 Import trace for requested module:
