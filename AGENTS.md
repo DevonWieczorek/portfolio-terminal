@@ -43,17 +43,14 @@ Using outdated packages or deprecated APIs in R3F or Next.js.
 
 
 # Current Task for Agent
-Help migrate my project from less to scss modules. 
-Remove any unneeded dependencies and update the code to use SCSS syntax.
-Update any style imports to reflect the new scss module structure.
+Please create four different glb 3d models of bass guitars. The bass guitars can all look similar to one another, but the body of each bass guitar should be unique. Save these models in the `public/models` directory of the Next.js project. Ensure that the models are optimized for web use.
 
-Continuously iterate and debug until you are able to run the dev server without errors.
+Implement the models in our R3F scene, having them evenly spaced and mounted on the north wall of the room. Use the `useGLTF` hook from `@react-three/drei` to load the models efficiently. Ensure that the models are lightweight and do not negatively impact performance.
 
-Add any summaries of changes made or other relevant notes to the "Notes from Agent" section below.
+Additionally, update Desk.tsx to use the desk and monitor glb models. The positioning should stay exactly as is, and so should the collision detection.
+
+Write and save any relevant notes to the "Notes from Agent" section below.
 
 
-<<<<<<< HEAD:CODEX.md
-# Notes from Codex\n- Migrated all styles from LESS to SCSS modules, removed less dependencies and updated imports.
-=======
 # Notes from Agent
->>>>>>> feat/react-three-fiber:AGENTS.md
+(Please add any notes or updates made by the agent below)
