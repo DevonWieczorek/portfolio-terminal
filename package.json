@@ -12,7 +12,10 @@
 		"compile-resume-html": "node .bin/convert-resume-to-html.ts",
 		"deploy": "git push heroku main",
 		"test": "jest",
-		"sync-env-vars": "bash .bin/sync-env-vars.sh"
+		"sync-env-vars": "bash .bin/sync-env-vars.sh",
+		"cache:yarn": "yarn cache clean",
+		"cache:next": "rm -rf .next",
+		"cache:all": "yarn cache clean && rm -rf .next"
 	},
 	"dependencies": {
 		"@opendocsg/pdf2md": "^0.1.31",
