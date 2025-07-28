@@ -1,6 +1,9 @@
 # Add a .codexignore to avoid patching risky files:
 /node_modules
+.cache
 /dist
 /build
+.build
 /out
+.out
 /src/generated
