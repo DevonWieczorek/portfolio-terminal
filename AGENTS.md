@@ -1,4 +1,4 @@
-# General Instructions for Codex Agent
+# General Instructions for Agent
 ## Project Context
 You are assisting with a modern Next.js project written in React with TypeScript. The project may use advanced 3D rendering powered by React Three Fiber (R3F), and you should be deeply familiar with the Three.js ecosystem, including performance optimizations, shaders, and geometry handling.
 
@@ -42,14 +42,14 @@ Assuming global styles — use CSS Modules, LESS, or styled-components if needed
 Using outdated packages or deprecated APIs in R3F or Next.js.
 
 
-# Current Task for Codex
+# Current Task for Agent
 Help migrate my project from less to scss modules. 
 Remove any unneeded dependencies and update the code to use SCSS syntax.
 Update any style imports to reflect the new scss module structure.
 
 Continuously iterate and debug until you are able to run the dev server without errors.
 
-Add any summaries of changes made or other relevant notes to the "Notes from Codex" section below.
+Add any summaries of changes made or other relevant notes to the "Notes from Agent" section below.
 
 
-# Notes from Codex
+# Notes from Agent
