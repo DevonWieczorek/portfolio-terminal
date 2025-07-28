@@ -52,4 +52,8 @@ Continuously iterate and debug until you are able to run the dev server without 
 Add any summaries of changes made or other relevant notes to the "Notes from Agent" section below.
 
 
+<<<<<<< HEAD:CODEX.md
+# Notes from Codex\n- Migrated all styles from LESS to SCSS modules, removed less dependencies and updated imports.
+=======
 # Notes from Agent
+>>>>>>> feat/react-three-fiber:AGENTS.md

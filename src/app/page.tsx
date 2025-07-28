@@ -3,7 +3,7 @@
 import { useState } from "react";
 import Terminal from "@/components/Terminal";
 import R3FScene from "@/components/R3FScene";
-import styles from "@/styles/Home.module.less";
+import styles from "@/styles/Home.module.scss";
 import { useIsMobile } from "@/hooks/use-is-mobile";
 
 export default function Home() {
