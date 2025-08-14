@@ -1,8 +1,58 @@
 import React, { createContext, useContext, ReactNode } from 'react';
 
+interface ObjectTraits {
+  width: number;
+  height: number;
+  thickness: number;
+  scale: number;
+  position: {
+    x: number;
+    y: number;
+    z: number;
+  };
+  rotation: {
+    x: number;
+    y: number;
+    z: number;
+  };
+};
+
+const ROOM_SIZE: number = 30;
+
+const defaultDeskTraits: DeepPartial<ObjectTraits> = {
+  height: 1.2,
+  thickness: 0.15,
+  scale: 2,
+  // scale: 1.5,
+  position: {
+    // x: -ROOM_SIZE / 2 + 0.1,
+    x: -12,
+    y: 0,
+    // z: -ROOM_SIZE / 2 + 0.1,
+    z: -18,
+  }
+};
+
+const defaultMonitorTraits: DeepPartial<ObjectTraits> = {
+  // position: {
+  //   x: defaultDeskTraits.position.x + 3,
+  //   y: defaultDeskTraits.height + defaultDeskTraits.thickness + 0.15,
+  //   z: defaultDeskTraits.position.z + 0.3
+  // },
+  position: {
+    x: defaultDeskTraits.position.x - 1,
+    y: 2.25,
+    z: -13
+  },
+  rotation: {
+    y: -1,
+  }
+};
+
 // Scene configuration interface
 interface SceneConfig {
   roomSize: number;
+  wallColor: string;
   wallHeight: number;
   wallThickness: number;
   characterBoundary: number;
@@ -19,27 +69,32 @@ interface SceneConfig {
     speed: number;
     default: number;
   };
+  desk: DeepPartial<ObjectTraits>;
+  monitor: DeepPartial<ObjectTraits>;
 }
 
 // Default scene configuration
 const defaultSceneConfig: SceneConfig = {
-  roomSize: 30, // Increased from 20 to 30 (1.5x)
-  wallHeight: 12, // Increased from 8 to 12 (1.5x)
+  roomSize: ROOM_SIZE,
+  wallColor: '#F5F5DC',
+  wallHeight: 12,
   wallThickness: 1,
-  characterBoundary: 27.75, // roomSize - 2.25 (proportionally adjusted)
+  characterBoundary: ROOM_SIZE - 2.25,
   cameraBuffer: 2,
   characterSpeed: 0.1,
   cameraOffset: {
     x: 0,
     y: 8,
-    z: 18 // Increased proportionally from 12 to 18
+    z: 18
   },
   zoomSettings: {
     min: 0.5,
     max: 2,
     speed: 0.1,
     default: 1
-  }
+  },
+  desk: defaultDeskTraits,
+  monitor: defaultMonitorTraits
 };
 
 // Context
@@ -53,7 +108,7 @@ interface SceneProviderProps {
 
 export function SceneProvider({ children, config = {} }: SceneProviderProps) {
   const sceneConfig = { ...defaultSceneConfig, ...config };
-  
+
   return (
     <SceneContext.Provider value={sceneConfig}>
       {children}
