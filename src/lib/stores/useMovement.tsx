@@ -1,4 +1,4 @@
-import { create } from "zustand";
+import create from "zustand";
 
 interface Position {
   x: number;
@@ -20,8 +20,8 @@ const initialPosition: Position = {
 
 export const useMovement = create<MovementState>((set) => ({
   position: initialPosition,
-  
+
   setPosition: (position) => set({ position }),
-  
+
   resetPosition: () => set({ position: initialPosition })
 }));
