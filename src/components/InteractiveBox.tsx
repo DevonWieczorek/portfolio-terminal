@@ -3,8 +3,14 @@ import { useFrame, useThree } from '@react-three/fiber';
 import { Text } from '@react-three/drei';
 import { Vector3 } from "three";
 
+interface TooltipTextProps {
+	position: [number, number, number];
+	visible: boolean;
+	content: ReactNode | string;
+};
+
 // Tooltip component that appears in 3D space
-function TooltipText({ position, visible, content }) {
+function TooltipText({ position, visible, content }: TooltipTextProps) {
 	return (
 		<Text
 			position={[position[0], position[1] + 1.5, position[2]]}
@@ -24,9 +30,8 @@ interface InteractiveBoxProps {
 	position: [number, number, number];
 	tooltipContent: string | ReactNode;
 	triggerDistance?: number;
-	proximityPosition?: Vector3; // <-- new prop
+	proximityPosition?: Vector3;
 }
-
 
 // Interactive object with proximity detection
 function InteractiveBox({
