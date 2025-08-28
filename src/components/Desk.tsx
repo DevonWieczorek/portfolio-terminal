@@ -67,8 +67,8 @@ export default function Desk() {
   });
 
   // L-shaped desk positioned snug in northwest corner
-  const cornerX = desk?.position?.x; // Very close to west wall
-  const cornerZ = desk?.position?.z; // Very close to north wall
+  const cornerX = deskX ?? desk?.position?.x; // Very close to west wall
+  const cornerZ = deskZ ?? desk?.position?.z; // Very close to north wall
   const deskHeight = desk?.height;
 
   return (
