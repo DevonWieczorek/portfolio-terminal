@@ -38,7 +38,7 @@ Handling camera transitions and animated scene state in R3F.
 
 ## Avoid
 Using any in TypeScript unless absolutely necessary (always try to infer or define appropriate types).
-Assuming global styles — use CSS Modules, LESS, or styled-components if needed.
+Assuming global styles — use CSS Modules, SCSS, or styled-components if needed.
 Using outdated packages or deprecated APIs in R3F or Next.js.
 
 
