@@ -1,9 +1,44 @@
-import { useGLTF } from "@react-three/drei";
+import { useGLTF, Html } from "@react-three/drei";
 import { useControls, folder } from 'leva';
-import { useScene } from "../lib/contexts/SceneContext";
+import * as THREE from "three";
+import { useScene } from "@/lib/contexts/SceneContext";
+import { useMovement } from "@/lib/stores/useMovement";
+import InteractiveBox from "@/components/InteractiveBox";
+
+const MonitorTooltipContent = () => (
+  <Html>
+    <div style={{ textAlign: 'center' }}>
+      <div>Press ENTER</div>
+      <div>to use computer.</div>
+    </div>
+  </Html>
+);
+
+const MonitorWithTooltip = ({
+  object,
+  position,
+  proximityPosition,
+  rotation,
+}) => {
+  return (
+    <group>
+      <primitive
+        object={object}
+        position={position}
+        rotation={rotation}
+      />
+      <InteractiveBox
+        position={position}
+        tooltipContent={<MonitorTooltipContent />}
+        proximityPosition={proximityPosition}
+      />
+    </group>
+  );
+};
 
 export default function Desk() {
   const { desk, monitor } = useScene();
+  const { position: characterPosition } = useMovement();
   const deskModel = useGLTF('/models/l_shaped_desk.glb');
   const monitorModel = useGLTF('/models/monitor.glb');
 
@@ -46,9 +81,10 @@ export default function Desk() {
       />
 
       {/* Monitor model */}
-      <primitive
+      <MonitorWithTooltip
         object={monitorModel.scene}
         position={[monitorX, monitorY, monitorZ]}
+        proximityPosition={new THREE.Vector3(...Object.values(characterPosition))}
         rotation={[0, monitorRotationY, 0]}
       />
 
