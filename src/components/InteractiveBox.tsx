@@ -6,7 +6,7 @@ import { Vector3 } from "three";
 interface TooltipTextProps {
 	position: [number, number, number];
 	visible: boolean;
-	content: ReactNode | string;
+	content: ReactNode;
 };
 
 // Tooltip component that appears in 3D space
@@ -28,7 +28,7 @@ function TooltipText({ position, visible, content }: TooltipTextProps) {
 
 interface InteractiveBoxProps {
 	position: [number, number, number];
-	tooltipContent: string | ReactNode;
+	tooltipContent: ReactNode;
 	triggerDistance?: number;
 	proximityPosition?: Vector3;
 }
