@@ -49,6 +49,15 @@ const defaultMonitorTraits: DeepPartial<ObjectTraits> = {
   }
 };
 
+const defaultBassTraits: DeepPartial<ObjectTraits> = {
+  position: {
+    x: -1,
+    y: 4,
+    z: -14
+  },
+  scale: 5,
+};
+
 // Scene configuration interface
 interface SceneConfig {
   roomSize: number;
@@ -58,6 +67,7 @@ interface SceneConfig {
   characterBoundary: number;
   cameraBuffer: number;
   characterSpeed: number;
+  characterScale: number;
   cameraOffset: {
     x: number;
     y: number;
@@ -71,7 +81,8 @@ interface SceneConfig {
   };
   desk: DeepPartial<ObjectTraits>;
   monitor: DeepPartial<ObjectTraits>;
-}
+  bass: DeepPartial<ObjectTraits>;
+};
 
 // Default scene configuration
 const defaultSceneConfig: SceneConfig = {
@@ -79,6 +90,7 @@ const defaultSceneConfig: SceneConfig = {
   wallColor: '#F5F5DC',
   wallHeight: 12,
   wallThickness: 1,
+  characterScale: 1.5,
   characterBoundary: ROOM_SIZE - 2.25,
   cameraBuffer: 2,
   characterSpeed: 0.1,
@@ -94,7 +106,8 @@ const defaultSceneConfig: SceneConfig = {
     default: 1
   },
   desk: defaultDeskTraits,
-  monitor: defaultMonitorTraits
+  monitor: defaultMonitorTraits,
+  bass: defaultBassTraits
 };
 
 // Context
