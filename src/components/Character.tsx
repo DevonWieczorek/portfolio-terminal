@@ -16,11 +16,11 @@ export default function Character() {
   const characterRef = useRef<THREE.Group>(null);
   const [subscribe, getKeys] = useKeyboardControls<Controls>();
   const { position, setPosition } = useMovement();
-  const { characterSpeed, characterBoundary, roomSize } = useScene();
+  const { characterSpeed, characterBoundary, characterScale, roomSize } = useScene();
 
   // Movement speed from context
   const speed = characterSpeed;
-  
+
   // Room boundaries from context
   const boundary = characterBoundary / 2;
 
@@ -47,27 +47,27 @@ export default function Character() {
     const cornerX = -roomSize / 2 + 0.1;
     const cornerZ = -roomSize / 2 + 0.1;
     const characterRadius = 0.5; // Character collision radius
-    
+
     // Check collision with horizontal part of L-desk
     const horizX1 = cornerX;
     const horizX2 = cornerX + 5;
     const horizZ1 = cornerZ;
     const horizZ2 = cornerZ + 2;
-    
+
     // Check collision with vertical part of L-desk
     const vertX1 = cornerX;
     const vertX2 = cornerX + 2;
     const vertZ1 = cornerZ + 2;
     const vertZ2 = cornerZ + 5;
-    
+
     // Check if character overlaps with horizontal desk section
     const horizCollision = (x + characterRadius > horizX1 && x - characterRadius < horizX2 &&
-                           z + characterRadius > horizZ1 && z - characterRadius < horizZ2);
-                           
+      z + characterRadius > horizZ1 && z - characterRadius < horizZ2);
+
     // Check if character overlaps with vertical desk section
     const vertCollision = (x + characterRadius > vertX1 && x - characterRadius < vertX2 &&
-                          z + characterRadius > vertZ1 && z - characterRadius < vertZ2);
-    
+      z + characterRadius > vertZ1 && z - characterRadius < vertZ2);
+
     return horizCollision || vertCollision;
   };
 
@@ -115,7 +115,7 @@ export default function Character() {
     // Collision detection - keep character within room boundaries
     newPosition.x = Math.max(-boundary, Math.min(boundary, newPosition.x));
     newPosition.z = Math.max(-boundary, Math.min(boundary, newPosition.z));
-    
+
     // Check desk collision and revert if colliding
     if (checkDeskCollision(newPosition.x, newPosition.z, roomSize)) {
       // If collision detected, don't move to new position
@@ -126,13 +126,13 @@ export default function Character() {
     // Smooth rotation interpolation
     if (isMoving) {
       const rotationDiff = targetRotation.current - currentRotation.current;
-      
+
       // Handle rotation wrapping (shortest path)
       let shortestDiff = rotationDiff;
       if (Math.abs(rotationDiff) > Math.PI) {
         shortestDiff = rotationDiff > 0 ? rotationDiff - 2 * Math.PI : rotationDiff + 2 * Math.PI;
       }
-      
+
       currentRotation.current += shortestDiff * 0.1; // Smooth rotation
       characterRef.current.rotation.y = currentRotation.current;
     }
@@ -143,7 +143,12 @@ export default function Character() {
   });
 
   return (
-    <group ref={characterRef} position={[position.x, position.y, position.z]} castShadow>
+    <group
+      ref={characterRef}
+      scale={[characterScale, characterScale, characterScale]}
+      position={[position.x, position.y, position.z]}
+      castShadow
+    >
       {/* Head */}
       <mesh position={[0, 2, 0]} castShadow>
         <boxGeometry args={[0.8, 0.8, 0.8]} />
