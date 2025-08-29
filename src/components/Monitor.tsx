@@ -1,9 +1,12 @@
+import { Vector3 } from "three";
 import { useGLTF, Html } from "@react-three/drei";
 import { useControls, folder } from 'leva';
 import { useScene } from "@/lib/contexts/SceneContext";
 import InteractiveBox from "@/components/InteractiveBox";
 
-const MonitorTooltipContent = () => (
+type MonitorTooltipContentType = () => JSX.Element;
+
+const MonitorTooltipContent: MonitorTooltipContentType = () => (
 	<Html>
 		<div style={{ textAlign: 'center' }}>
 			<div>Press ENTER</div>
@@ -12,26 +15,58 @@ const MonitorTooltipContent = () => (
 	</Html>
 );
 
-export default function Monitor({
-	proximityPosition,
-	collisionPosition,
-}) {
-	const { monitor } = useScene();
-	const monitorModel = useGLTF('/models/monitor.glb');
+interface MonitorProps {
+	proximityPosition: PositionArray;
+	collisionPosition: PositionArray;
+};
 
-	const {
-		monitorRotationY,
-		monitorX,
-		monitorY,
-		monitorZ,
-	} = useControls({
+type MonitorType = (props: MonitorProps) => JSX.Element;
+
+interface ControlValue {
+	[key: string]: number;
+}
+
+interface ControlValues {
+	[key: string]: ControlValue;
+};
+
+const Monitor: MonitorType = ({
+	proximityPosition,
+	collisionPosition
+}) => {
+	const { monitor } = useScene();
+	const monitorModel = useGLTF("/models/monitor.glb");
+
+	const controls: ControlValues = useControls({
 		Monitor: folder({
-			monitorRotationY: { value: monitor?.rotation?.y, min: -5, max: Math.PI * 2, step: 0.01 },
-			monitorX: { value: monitor?.position?.x, min: -20, max: 10, step: 0.01 },
-			monitorY: { value: monitor?.position?.y, min: -10, max: 10, step: 0.01 },
-			monitorZ: { value: monitor?.position?.z, min: -20, max: 10, step: 0.01 },
-		}),
+			monitorRotationY: {
+				value: monitor?.rotation?.y,
+				min: -5,
+				max: Math.PI * 2,
+				step: 0.01,
+			},
+			monitorX: {
+				value: monitor?.position?.x,
+				min: -20,
+				max: 10,
+				step: 0.01,
+			},
+			monitorY: {
+				value: monitor?.position?.y,
+				min: -10,
+				max: 10,
+				step: 0.01,
+			},
+			monitorZ: {
+				value: monitor?.position?.z,
+				min: -20,
+				max: 10,
+				step: 0.01,
+			},
+		} as any), // TODO: Fix type
 	});
+
+	const { monitorRotationY, monitorX, monitorY, monitorZ } = controls;
 
 	return (
 		<group>
@@ -43,7 +78,7 @@ export default function Monitor({
 			<InteractiveBox
 				position={[monitorX, monitorY, monitorZ]}
 				tooltipContent={<MonitorTooltipContent />}
-				proximityPosition={proximityPosition}
+				proximityPosition={proximityPosition as Vector3}
 			/>
 			{/* Collision for monitor */}
 			<mesh position={collisionPosition} visible={false}>
@@ -53,4 +88,5 @@ export default function Monitor({
 	);
 };
 
+export default Monitor;
 useGLTF.preload('/models/monitor.glb');
