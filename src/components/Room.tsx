@@ -2,7 +2,7 @@ import { useTexture } from "@react-three/drei";
 import * as THREE from "three";
 import { useScene } from "../lib/contexts/SceneContext";
 import Desk from "./Desk";
-import Bass from "./Bass";
+import BassGroup from "./BassGroup";
 
 export default function Room() {
   const { roomSize, wallColor, wallHeight, wallThickness } = useScene();
@@ -46,7 +46,7 @@ export default function Room() {
         <meshLambertMaterial color={wallColor} />
       </mesh>
 
-      <Bass />
+      <BassGroup />
 
       {/* Desk and Computer Setup */}
       <Desk />
