@@ -1,48 +1,94 @@
 import React, { createContext, useContext, ReactNode } from 'react';
 
+interface Coordinates {
+  x: number;
+  y: number;
+  z: number;
+};
+
 interface ObjectTraits {
   width: number;
   height: number;
   thickness: number;
   scale: number;
-  position: {
-    x: number;
-    y: number;
-    z: number;
-  };
-  rotation: {
-    x: number;
-    y: number;
-    z: number;
-  };
+  spacing: number;
+  color: string;
+  position: Coordinates;
+  rotation: Coordinates;
 };
 
+interface RoomDimensions {
+  width: number; // feet
+  depth: number; // feet
+  height: number; // feet
+  wallThickness: number;
+  interiorWidth: number;
+  interiorDepth: number;
+}
+
 const ROOM_SIZE: number = 30;
+const ROOM_WIDTH: number = ROOM_SIZE;
+const ROOM_DEPTH: number = ROOM_SIZE;
+const ROOM_HEIGHT: number = 12;
+const WALL_THICKNESS: number = 1;
+
+const roomDimensions: RoomDimensions = {
+  width: ROOM_WIDTH,
+  depth: ROOM_DEPTH,
+  height: ROOM_HEIGHT,
+  wallThickness: WALL_THICKNESS,
+  // Interior dimensions (usable space)
+  interiorWidth: ROOM_WIDTH - (WALL_THICKNESS * 2),
+  interiorDepth: ROOM_DEPTH - (WALL_THICKNESS * 2),
+};
+
+// Scale factor based on INTERIOR room size vs standard interior (28x28x12)
+const STANDARD_INTERIOR = 28; // 30 - (1 * 2) = 28 feet interior
+const scaleFactorXZ = Math.min(roomDimensions.interiorWidth, roomDimensions.interiorDepth) / STANDARD_INTERIOR;
+const scaleFactorY = ROOM_HEIGHT / 12;
+
+// Conversion functions that auto-scale with room size
+const scaledFeet = (feetValue: number) => feetValue * scaleFactorXZ;
+const scaledHeight = (feetValue: number) => feetValue * scaleFactorY;
+
+// Position helpers that work with interior space
+const feetFromCenter = (feetValue: number) => feetValue;
+const feetFromFloor = (feetValue: number) => feetValue;
+
+const feetFromWall = {
+  left: (feetValue: number) => -roomDimensions.interiorWidth / 2 + feetValue,
+  right: (feetValue: number) => roomDimensions.interiorWidth / 2 - feetValue,
+  back: (feetValue: number) => -roomDimensions.interiorDepth / 2 + feetValue,
+  front: (feetValue: number) => roomDimensions.interiorDepth / 2 - feetValue,
+};
+
+// Optional: Helpers for wall positioning
+const wallPositions = {
+  left: -ROOM_WIDTH / 2 + WALL_THICKNESS / 2,
+  right: ROOM_WIDTH / 2 - WALL_THICKNESS / 2,
+  back: -ROOM_DEPTH / 2 + WALL_THICKNESS / 2,
+  front: ROOM_DEPTH / 2 - WALL_THICKNESS / 2,
+  floor: -WALL_THICKNESS / 2,
+  ceiling: ROOM_HEIGHT + WALL_THICKNESS / 2,
+};
 
 const defaultDeskTraits: DeepPartial<ObjectTraits> = {
-  height: 1.2,
-  thickness: 0.15,
-  scale: 2,
-  // scale: 1.5,
+  height: scaledFeet(4),
+  thickness: scaledFeet(0.5),
+  scale: scaledFeet(2),
   position: {
-    // x: -ROOM_SIZE / 2 + 0.1,
-    x: -12,
-    y: 0,
-    // z: -ROOM_SIZE / 2 + 0.1,
-    z: -18,
+    x: feetFromWall.left(2),
+    y: feetFromFloor(0),
+    z: feetFromWall.back(-4), // Pivot point in desk model isn't top left corener
   }
 };
 
+// Monitor is Scaled/Positioned relative to the desk
 const defaultMonitorTraits: DeepPartial<ObjectTraits> = {
-  // position: {
-  //   x: defaultDeskTraits.position.x + 3,
-  //   y: defaultDeskTraits.height + defaultDeskTraits.thickness + 0.15,
-  //   z: defaultDeskTraits.position.z + 0.3
-  // },
   position: {
-    x: defaultDeskTraits.position.x - 1,
-    y: 2.25,
-    z: -13
+    x: scaledFeet(-0.5),
+    y: scaledFeet(1.5),
+    z: scaledFeet(2.6),
   },
   rotation: {
     y: -1,
@@ -51,11 +97,12 @@ const defaultMonitorTraits: DeepPartial<ObjectTraits> = {
 
 const defaultBassTraits: DeepPartial<ObjectTraits> = {
   position: {
-    x: -1,
-    y: 4,
-    z: -14
+    x: feetFromCenter(-1 * scaleFactorXZ),      // Scales with room
+    y: scaledHeight(6),                         // Scales with ceiling height
+    z: feetFromWall.back(1 * scaleFactorXZ),    // Scales with room depth
   },
-  scale: 5,
+  scale: scaledFeet(3.5),
+  spacing: scaledFeet(3),                    // Bass size scales with room
 };
 
 // Scene configuration interface
@@ -88,9 +135,9 @@ interface SceneConfig {
 const defaultSceneConfig: SceneConfig = {
   roomSize: ROOM_SIZE,
   wallColor: '#F5F5DC',
-  wallHeight: 12,
-  wallThickness: 1,
-  characterScale: 1.5,
+  wallHeight: ROOM_HEIGHT,
+  wallThickness: WALL_THICKNESS,
+  characterScale: 1.75,
   characterBoundary: ROOM_SIZE - 2.25,
   cameraBuffer: 2,
   characterSpeed: 0.1,
