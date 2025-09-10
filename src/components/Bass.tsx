@@ -1,34 +1,23 @@
+import { useMemo } from "react";
 import { useGLTF } from "@react-three/drei";
-import { useControls, folder } from 'leva';
-import { useScene } from "../lib/contexts/SceneContext";
 
-const Bass = () => {
-	const bassModel = useGLTF('/models/bass-1.glb');
-	const { bass } = useScene();
+interface BassProps {
+	position: [number, number, number];
+	scale?: [number, number, number];
+	modelPath?: string;
+}
 
-	const {
-		bassX,
-		bassY,
-		bassZ,
-		bassScale
-	} = useControls({
-		Bass: folder({
-			bassX: { value: bass?.position?.x, min: -20, max: 10, step: 0.01 }, // 0
-			bassY: { value: bass?.position?.y, min: -10, max: 10, step: 0.01 }, // wallHeight / 2
-			bassZ: { value: bass?.position?.z, min: -20, max: 10, step: 0.01 }, // -roomSize / 2
-			bassScale: { value: bass?.scale, min: 0.1, max: 10, step: 0.01 },
-		}),
-	});
+const DEFAULT_MODEL = "/models/bass-1.glb";
+
+const Bass = ({ position, scale = [1, 1, 1], modelPath = DEFAULT_MODEL }: BassProps) => {
+	const { scene } = useGLTF(modelPath);
+
+	// Clone the scene so multiple instances can exist in the scene graph
+	const clonedScene = useMemo(() => scene.clone(true), [scene]);
 
 	return (
-		<primitive
-			object={bassModel.scene}
-			position={[bassX, bassY, bassZ]}
-			scale={[bassScale, bassScale, bassScale]}
-		/>
+		<primitive object={clonedScene} position={position} scale={scale} />
 	);
 };
-
-useGLTF.preload('/models/monitor.glb');
 
 export default Bass;
