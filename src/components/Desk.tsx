@@ -30,18 +30,18 @@ export default function Desk() {
   const deskHeight = desk?.height;
 
   return (
-    <group>
+    <group
+      position={[deskX, deskY, deskZ]}
+      scale={[deskScale, deskScale, deskScale]}
+    >
       {/* Desk model */}
       <primitive
         object={deskModel.scene}
-        position={[deskX, deskY, deskZ]}
-        scale={[deskScale, deskScale, deskScale]}
       />
 
       {/* Monitor model */}
       <Monitor
         proximityPosition={new THREE.Vector3(...Object.values(characterPosition))}
-        collisionPosition={[cornerX + 3, deskHeight + 0.6, cornerZ + 0.3]}
       />
 
       {/* Invisible collision boxes */}

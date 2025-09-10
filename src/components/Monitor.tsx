@@ -1,4 +1,5 @@
-import { Vector3 } from "three";
+import { useEffect, useState } from 'react';
+import { Vector3, Box3 } from "three";
 import { useGLTF, Html } from "@react-three/drei";
 import { useControls, folder } from 'leva';
 import { useScene } from "@/lib/contexts/SceneContext";
@@ -17,7 +18,6 @@ const MonitorTooltipContent: MonitorTooltipContentType = () => (
 
 interface MonitorProps {
 	proximityPosition: PositionArray;
-	collisionPosition: PositionArray;
 };
 
 type MonitorType = (props: MonitorProps) => JSX.Element;
@@ -32,10 +32,10 @@ interface ControlValues {
 
 const Monitor: MonitorType = ({
 	proximityPosition,
-	collisionPosition
 }) => {
 	const { monitor } = useScene();
 	const monitorModel = useGLTF("/models/monitor.glb");
+	const [size, setSize] = useState<Vector3>(new Vector3());
 
 	const controls: ControlValues = useControls({
 		Monitor: folder({
@@ -49,40 +49,55 @@ const Monitor: MonitorType = ({
 				value: monitor?.position?.x,
 				min: -20,
 				max: 10,
-				step: 0.01,
+				step: 0.1,
 			},
 			monitorY: {
 				value: monitor?.position?.y,
 				min: -10,
 				max: 10,
-				step: 0.01,
+				step: 0.1,
 			},
 			monitorZ: {
 				value: monitor?.position?.z,
 				min: -20,
 				max: 10,
-				step: 0.01,
+				step: 0.1,
 			},
 		} as any), // TODO: Fix type
 	});
 
 	const { monitorRotationY, monitorX, monitorY, monitorZ } = controls;
 
+	useEffect(() => {
+		if (monitorModel?.scene) {
+			setSize(new Box3().setFromObject(monitorModel.scene).getSize(new Vector3()));
+		}
+		return;
+	}, [monitorModel?.scene]);
+
 	return (
-		<group>
+		<group
+			position={[monitorX, monitorY, monitorZ]}
+			rotation={[0, monitorRotationY, 0]}
+		>
 			<primitive
 				object={monitorModel.scene}
-				position={[monitorX, monitorY, monitorZ]}
-				rotation={[0, monitorRotationY, 0]}
+				position={[0, 0, 0]}
+				rotation={[0, 0, 0]}
 			/>
+			{/** 
+			 * TODO: fix proximityPosition 
+			 * May have to make InteractiveBox a parent that wraps the component it
+			 */}
 			<InteractiveBox
-				position={[monitorX, monitorY, monitorZ]}
+				position={[0, 0, 0]}
 				tooltipContent={<MonitorTooltipContent />}
-				proximityPosition={proximityPosition as Vector3}
+				// proximityPosition={proximityPosition}
+				proximityPosition={new Vector3(0, 0, 0)}
 			/>
 			{/* Collision for monitor */}
-			<mesh position={collisionPosition} visible={false}>
-				<boxGeometry args={[1.4, 1.2, 1]} />
+			<mesh visible={false}>
+				<boxGeometry args={[size.x, size.y, size.z]} />
 			</mesh>
 		</group>
 	);
