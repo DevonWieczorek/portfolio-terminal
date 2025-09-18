@@ -1,107 +1,83 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState } from "react";
 import { Vector3, Box3 } from "three";
-import { useGLTF, Html } from "@react-three/drei";
-import { useControls, folder } from 'leva';
+import { useGLTF } from "@react-three/drei";
+import { useControls, folder } from "leva";
 import { useScene } from "@/lib/contexts/SceneContext";
 import InteractiveBox from "@/components/InteractiveBox";
 
-type MonitorTooltipContentType = () => JSX.Element;
-
-const MonitorTooltipContent: MonitorTooltipContentType = () => (
-	<Html>
-		<div style={{ textAlign: 'center' }}>
-			<div>Press ENTER</div>
-			<div>to use computer.</div>
-		</div>
-	</Html>
-);
-
 interface MonitorProps {
-	proximityPosition: PositionArray;
-};
+        proximityPosition: PositionArray;
+}
 
 type MonitorType = (props: MonitorProps) => JSX.Element;
 
 interface ControlValue {
-	[key: string]: number;
+        [key: string]: number;
 }
 
 interface ControlValues {
-	[key: string]: ControlValue;
-};
+        [key: string]: ControlValue;
+}
 
-const Monitor: MonitorType = ({
-	proximityPosition,
-}) => {
-	const { monitor } = useScene();
-	const monitorModel = useGLTF("/models/monitor.glb");
-	const [size, setSize] = useState<Vector3>(new Vector3());
+const MONITOR_MESSAGE = "Press ENTER to use the computer.";
 
-	const controls: ControlValues = useControls({
-		Monitor: folder({
-			monitorRotationY: {
-				value: monitor?.rotation?.y,
-				min: -5,
-				max: Math.PI * 2,
-				step: 0.01,
-			},
-			monitorX: {
-				value: monitor?.position?.x,
-				min: -20,
-				max: 10,
-				step: 0.1,
-			},
-			monitorY: {
-				value: monitor?.position?.y,
-				min: -10,
-				max: 10,
-				step: 0.1,
-			},
-			monitorZ: {
-				value: monitor?.position?.z,
-				min: -20,
-				max: 10,
-				step: 0.1,
-			},
-		} as any), // TODO: Fix type
-	});
+const Monitor: MonitorType = ({ proximityPosition }) => {
+        const { monitor } = useScene();
+        const monitorModel = useGLTF("/models/monitor.glb");
+        const [size, setSize] = useState<Vector3>(new Vector3());
 
-	const { monitorRotationY, monitorX, monitorY, monitorZ } = controls;
+        const controls: ControlValues = useControls({
+                Monitor: folder({
+                        monitorRotationY: {
+                                value: monitor?.rotation?.y,
+                                min: -5,
+                                max: Math.PI * 2,
+                                step: 0.01,
+                        },
+                        monitorX: {
+                                value: monitor?.position?.x,
+                                min: -20,
+                                max: 10,
+                                step: 0.1,
+                        },
+                        monitorY: {
+                                value: monitor?.position?.y,
+                                min: -10,
+                                max: 10,
+                                step: 0.1,
+                        },
+                        monitorZ: {
+                                value: monitor?.position?.z,
+                                min: -20,
+                                max: 10,
+                                step: 0.1,
+                        },
+                } as any), // TODO: Fix type
+        });
 
-	useEffect(() => {
-		if (monitorModel?.scene) {
-			setSize(new Box3().setFromObject(monitorModel.scene).getSize(new Vector3()));
-		}
-		return;
-	}, [monitorModel?.scene]);
+        const { monitorRotationY, monitorX, monitorY, monitorZ } = controls;
 
-	return (
-		<group
-			position={[monitorX, monitorY, monitorZ]}
-			rotation={[0, monitorRotationY, 0]}
-		>
-			<primitive
-				object={monitorModel.scene}
-				position={[0, 0, 0]}
-				rotation={[0, 0, 0]}
-			/>
-			{/** 
-			 * TODO: fix proximityPosition 
-			 * May have to make InteractiveBox a parent that wraps the component it
-			 */}
-			<InteractiveBox
-				position={[0, 0, 0]}
-				tooltipContent={<MonitorTooltipContent />}
-				// proximityPosition={proximityPosition}
-				proximityPosition={new Vector3(0, 0, 0)}
-			/>
-			{/* Collision for monitor */}
-			<mesh visible={false}>
-				<boxGeometry args={[size.x, size.y, size.z]} />
-			</mesh>
-		</group>
-	);
+        useEffect(() => {
+                if (monitorModel?.scene) {
+                        setSize(new Box3().setFromObject(monitorModel.scene).getSize(new Vector3()));
+                }
+        }, [monitorModel?.scene]);
+
+        return (
+                <InteractiveBox
+                        message={MONITOR_MESSAGE}
+                        position={[monitorX, monitorY, monitorZ]}
+                        rotation={[0, monitorRotationY, 0]}
+                        proximityPosition={proximityPosition}
+                >
+                        <primitive object={monitorModel.scene} position={[0, 0, 0]} rotation={[0, 0, 0]} />
+                        {/* Collision for monitor */}
+                        <mesh visible={false}>
+                                <boxGeometry args={[size.x, size.y, size.z]} />
+                        </mesh>
+                </InteractiveBox>
+        );
 };
 
 export default Monitor;
-useGLTF.preload('/models/monitor.glb');
+useGLTF.preload("/models/monitor.glb");

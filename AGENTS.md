@@ -58,3 +58,5 @@ Ensure that all changes are well-typed with TypeScript and follow best practices
 
 # Notes from Agent
 (Please add any notes or updates made by the agent below)
+- Implemented Message context/provider and updated InteractiveBox to publish proximity prompts.
+- `yarn lint` currently fails due to legacy ESLint options in the project configuration.
