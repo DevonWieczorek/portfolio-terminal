@@ -1,75 +1,78 @@
-import React, { useRef, useState, type ReactNode } from 'react';
-import { useFrame, useThree } from '@react-three/fiber';
-import { Text } from '@react-three/drei';
-import { Vector3 } from "three";
-
-interface TooltipTextProps {
-	position: [number, number, number];
-	visible: boolean;
-	content: ReactNode;
-};
-
-// Tooltip component that appears in 3D space
-function TooltipText({ position, visible, content }: TooltipTextProps) {
-	return (
-		<Text
-			position={[position[0], position[1] + 1.5, position[2]]}
-			fontSize={0.3}
-			color="white"
-			anchorX="center"
-			anchorY="middle"
-			visible={visible}
-		>
-			{visible ? content : null}
-			<meshBasicMaterial transparent opacity={visible ? 1 : 0} />
-		</Text>
-	);
-}
+import { useEffect, useMemo, useRef, type ReactNode } from "react";
+import { useFrame, useThree } from "@react-three/fiber";
+import { Group, Vector3 } from "three";
+import { useMessage } from "@/lib/contexts/MessageContext";
 
 interface InteractiveBoxProps {
-	position: [number, number, number];
-	tooltipContent: ReactNode;
-	triggerDistance?: number;
-	proximityPosition?: Vector3;
+        children: ReactNode;
+        message: string;
+        triggerDistance?: number;
+        proximityPosition?: PositionArray;
+        position?: [number, number, number];
+        rotation?: [number, number, number];
+        scale?: [number, number, number];
 }
 
-// Interactive object with proximity detection
 function InteractiveBox({
-	position,
-	tooltipContent,
-	triggerDistance = 3,
-	proximityPosition,
+        children,
+        message,
+        triggerDistance = 3,
+        proximityPosition,
+        position = [0, 0, 0],
+        rotation = [0, 0, 0],
+        scale = [1, 1, 1],
 }: InteractiveBoxProps) {
-	const meshRef = useRef();
-	const [showTooltip, setShowTooltip] = useState(false);
-	const { camera } = useThree();
+        const groupRef = useRef<Group>(null);
+        const { camera } = useThree();
+        const { message: activeMessage, setMessage, clearMessage } = useMessage();
+        const worldPosition = useMemo(() => new Vector3(), []);
+        const proximityVector = useMemo(() => new Vector3(), []);
+        const hasActiveMessageRef = useRef(false);
 
-	useFrame(() => {
-		if (meshRef.current) {
-			// Use character position or default to camera position 
-			const targetPos = proximityPosition ?? camera.position;
+        useFrame(() => {
+                const group = groupRef.current;
 
-			// Calculate distance between character/camera and object
-			const distance = targetPos.distanceTo(meshRef.current.position);
+                if (!group) {
+                        return;
+                }
 
-			// // Show tooltip when close enough
-			setShowTooltip(distance < triggerDistance);
-		}
-	});
+                const targetPosition = proximityPosition
+                        ? proximityPosition instanceof Vector3
+                                ? proximityPosition
+                                : proximityVector.set(...proximityPosition)
+                        : camera.position;
 
-	return (
-		<>
-			<mesh ref={meshRef} position={position} visible={false}>
-				<boxGeometry args={[1, 1, 1]} />
-			</mesh>
+                group.getWorldPosition(worldPosition);
 
-			<TooltipText
-				position={position}
-				visible={showTooltip}
-				content={tooltipContent}
-			/>
-		</>
-	);
+                const distance = targetPosition.distanceTo(worldPosition);
+                const shouldShow = distance < triggerDistance;
+
+                if (shouldShow) {
+                        if (!hasActiveMessageRef.current || activeMessage !== message) {
+                                setMessage(message);
+                                hasActiveMessageRef.current = true;
+                        }
+                } else if (hasActiveMessageRef.current) {
+                        if (activeMessage === message) {
+                                clearMessage();
+                        }
+                        hasActiveMessageRef.current = false;
+                }
+        });
+
+        useEffect(() => {
+                return () => {
+                        if (hasActiveMessageRef.current && activeMessage === message) {
+                                clearMessage();
+                        }
+                };
+        }, [activeMessage, clearMessage, message]);
+
+        return (
+                <group ref={groupRef} position={position} rotation={rotation} scale={scale}>
+                        {children}
+                </group>
+        );
 }
 
 export default InteractiveBox;
