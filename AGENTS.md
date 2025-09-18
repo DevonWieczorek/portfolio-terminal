@@ -28,7 +28,7 @@ If there are multiple ways to approach a problem (e.g., Canvas layering, routing
 Always check for performance implications, especially when working with 3D or animation-heavy components.
 
 ## Examples of Tasks You May Be Asked To Help With
-Implementing a card carousel using SwiperJS inside a Next.js page.
+Implementing an interactive object in the R3F scene.
 Creating a 3D interactive object that responds to scroll or pointer input.
 Troubleshooting build errors related to ESM/CommonJS incompatibilities.
 Helping organize components, hooks, and utilities in a scalable way.
@@ -43,13 +43,17 @@ Using outdated packages or deprecated APIs in R3F or Next.js.
 
 
 # Current Task for Agent
-Please create four different glb 3d models of bass guitars. The bass guitars can all look similar to one another, but the body of each bass guitar should be unique. Save these models in the `public/models` directory of the Next.js project. Ensure that the models are optimized for web use.
+Create a new Message component that is full width and pinned to the bottom of the viewport. It should have a semi-transparent background and contain text that can be passed as a prop. The text should be centered both vertically and horizontally within the component. Ensure that the component is responsive and looks good on both desktop and mobile devices.
 
-Implement the models in our R3F scene, having them evenly spaced and mounted on the north wall of the room. Use the `useGLTF` hook from `@react-three/drei` to load the models efficiently. Ensure that the models are lightweight and do not negatively impact performance.
+The Message component should only be displayed if the text prop is not empty.
 
-Additionally, update Desk.tsx to use the desk and monitor glb models. The positioning should stay exactly as is, and so should the collision detection.
+Create a new Context for the newly-created Message component. Other components should have access to the methods for updating and clearing the message text.
 
-Write and save any relevant notes to the "Notes from Agent" section below.
+Update InteractiveBox to be able to wrap the components that need to trigger messages. InteractiveBox should occupy the same space and inherit the same positioning as the child components it wraps.
+
+Remove the current TooltipText implementation and replace it with the new Message component functionality. If the character enters the proximity radius of an InteractiveBox, it should use the Message context to display the appropriate message. Once the character leaves the proximity of the InteractiveBox, the message should be cleared.
+
+Ensure that all changes are well-typed with TypeScript and follow best practices for React and Next.js development.
 
 
 # Notes from Agent
