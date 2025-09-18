@@ -3,6 +3,7 @@ import * as THREE from "three";
 import { useScene } from "../lib/contexts/SceneContext";
 import Desk from "./Desk";
 import BassGroup from "./BassGroup";
+import SkateboardGroup from "./SkateboardGroup";
 
 export default function Room() {
   const { roomSize, wallColor, wallHeight, wallThickness } = useScene();
@@ -28,6 +29,11 @@ export default function Room() {
         <meshLambertMaterial color={wallColor} />
       </mesh>
 
+      <BassGroup />
+
+      {/* Desk and Computer Setup */}
+      <Desk />
+
       {/* South Wall */}
       <mesh position={[0, wallHeight / 2, roomSize / 2]} receiveShadow>
         <boxGeometry args={[roomSize, wallHeight, wallThickness]} />
@@ -40,16 +46,14 @@ export default function Room() {
         <meshLambertMaterial color={wallColor} />
       </mesh>
 
+      <SkateboardGroup />
+
       {/* West Wall */}
       <mesh position={[-roomSize / 2, wallHeight / 2, 0]} receiveShadow>
         <boxGeometry args={[wallThickness, wallHeight, roomSize]} />
         <meshLambertMaterial color={wallColor} />
       </mesh>
 
-      <BassGroup />
-
-      {/* Desk and Computer Setup */}
-      <Desk />
     </group>
   );
 }

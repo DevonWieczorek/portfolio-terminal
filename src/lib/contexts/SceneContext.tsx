@@ -26,6 +26,11 @@ interface RoomDimensions {
   interiorDepth: number;
 }
 
+interface Rotations {
+  clockwise: number;
+  counterclockwise: number;
+}
+
 const ROOM_SIZE: number = 30;
 const ROOM_WIDTH: number = ROOM_SIZE;
 const ROOM_DEPTH: number = ROOM_SIZE;
@@ -40,6 +45,11 @@ const roomDimensions: RoomDimensions = {
   // Interior dimensions (usable space)
   interiorWidth: ROOM_WIDTH - (WALL_THICKNESS * 2),
   interiorDepth: ROOM_DEPTH - (WALL_THICKNESS * 2),
+};
+
+const rotationY: Rotations = {
+  clockwise: -Math.PI / 2,
+  counterclockwise: Math.PI / 2,
 };
 
 // Scale factor based on INTERIOR room size vs standard interior (28x28x12)
@@ -105,8 +115,21 @@ const defaultBassTraits: DeepPartial<ObjectTraits> = {
   spacing: scaledFeet(3),                    // Bass size scales with room
 };
 
+// const NUM_DECKS: number = 4;
+const DECK_SCALE: number = scaledFeet(3);
+const defaultDeckTraits: DeepPartial<ObjectTraits> = {
+  position: {
+    x: feetFromCenter(-1 * scaleFactorXZ),
+    y: scaledHeight(((ROOM_HEIGHT - DECK_SCALE) / 2)),
+    z: feetFromWall.right(0) * -1,
+  },
+  scale: DECK_SCALE,
+  spacing: scaledFeet(2),
+};
+
 // Scene configuration interface
 interface SceneConfig {
+  rotations: Rotations;
   roomSize: number;
   wallColor: string;
   wallHeight: number;
@@ -129,10 +152,12 @@ interface SceneConfig {
   desk: DeepPartial<ObjectTraits>;
   monitor: DeepPartial<ObjectTraits>;
   bass: DeepPartial<ObjectTraits>;
+  deck: DeepPartial<ObjectTraits>;
 };
 
 // Default scene configuration
 const defaultSceneConfig: SceneConfig = {
+  rotations: rotationY,
   roomSize: ROOM_SIZE,
   wallColor: '#F5F5DC',
   wallHeight: ROOM_HEIGHT,
@@ -154,7 +179,8 @@ const defaultSceneConfig: SceneConfig = {
   },
   desk: defaultDeskTraits,
   monitor: defaultMonitorTraits,
-  bass: defaultBassTraits
+  bass: defaultBassTraits,
+  deck: defaultDeckTraits
 };
 
 // Context
