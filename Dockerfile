@@ -33,7 +33,7 @@
   COPY --from=deps /app/node_modules ./node_modules
   COPY . .
   
-  ENV NEXT_TELEMETRY_DISABLED 1
+  ENV NEXT_TELEMETRY_DISABLED=1
   
   RUN yarn build
   
@@ -44,7 +44,7 @@
   WORKDIR /app
   
   ENV NODE_ENV production
-  ENV NEXT_TELEMETRY_DISABLED 1
+  ENV NEXT_TELEMETRY_DISABLED=1
   ENV PORT 3000
   ENV HOSTNAME "0.0.0.0"
   
