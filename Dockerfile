@@ -8,8 +8,8 @@
   WORKDIR /app
   
   # Accept environment variables passed at build time
-  ARG NEXT_PUBLIC_OPENAI_API_KEY
-  ENV NEXT_PUBLIC_OPENAI_API_KEY=$NEXT_PUBLIC_OPENAI_API_KEY
+  ARG OPENAI_API_KEY
+  ENV OPENAI_API_KEY=$OPENAI_API_KEY
   
   # Install dependencies based on the preferred package manager
   COPY package.json yarn.lock* package-lock.json* pnpm-lock.yaml* ./
@@ -27,8 +27,8 @@
   WORKDIR /app
   
   # Accept and export the env var again in this stage
-  ARG NEXT_PUBLIC_OPENAI_API_KEY
-  ENV NEXT_PUBLIC_OPENAI_API_KEY=$NEXT_PUBLIC_OPENAI_API_KEY
+  ARG OPENAI_API_KEY
+  ENV OPENAI_API_KEY=$OPENAI_API_KEY
   
   COPY --from=deps /app/node_modules ./node_modules
   COPY . .
