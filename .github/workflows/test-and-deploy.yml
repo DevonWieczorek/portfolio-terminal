@@ -36,10 +36,10 @@ jobs:
 
       - name: Build Docker Image with Env Var
         env:
-          NEXT_PUBLIC_OPENAI_API_KEY: ${{ secrets.NEXT_PUBLIC_OPENAI_API_KEY }}
+          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
         run: |
           docker build \
-            --build-arg NEXT_PUBLIC_OPENAI_API_KEY=${NEXT_PUBLIC_OPENAI_API_KEY} \
+            --build-arg OPENAI_API_KEY=${OPENAI_API_KEY} \
             -t registry.heroku.com/${{ secrets.HEROKU_APP_NAME }}/web .
 
       - name: Push Docker Image to Heroku
