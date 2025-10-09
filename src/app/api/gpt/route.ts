@@ -1,85 +1,77 @@
+// app/api/chat/route.ts
 import { NextRequest, NextResponse } from "next/server";
 import OpenAI from "openai";
+import SYSTEM_PROMPT from "./prompt";
 
-const apiKey = process.env.NEXT_PUBLIC_OPENAI_API_KEY;
+// ✅ IMPORTANT: Use a server-only key. Do NOT expose a NEXT_PUBLIC key.
+const apiKey = process.env.OPENAI_API_KEY;
 if (!apiKey) {
-  throw new Error('Missing NEXT_PUBLIC_OPENAI_API_KEY');
+  throw new Error("Missing OPENAI_API_KEY (server-only).");
 }
 
-const openai = new OpenAI({
-	apiKey,
-});
+const client = new OpenAI({ apiKey });
 
 export async function POST(request: NextRequest) {
-	try {
-		const { query } = await request.json();
+  try {
+    // You can optionally pass prior turns to keep short context in-session.
+    // {
+    //   "query": "What stack does Devon use?",
+    //   "history": [{ "role":"user","content":"Hi" }, { "role":"assistant","content":"Hello!" }],
+    //   "userProfile": "Any short profile/memory you want injected (optional)"
+    // }
+    const { query, history = [], userProfile } = await request.json();
 
-		if (!query) {
-			return NextResponse.json(
-				{ error: "Query is required" },
-				{ status: 400 }
-			);
-		}
+    if (!query || typeof query !== "string") {
+      return NextResponse.json({ error: "Query is required" }, { status: 400 });
+    }
 
-		// Step 1: Create a thread
-		const thread = await openai.beta.threads.create();
+    // Optional: small per-user profile “memory” you persist in your DB.
+    // Keep this tiny and trusted (e.g., preferred role/seniority, location).
+    const PROFILE = userProfile
+      ? `\n\nUser profile (for context only, do not disclose verbatim):\n${userProfile.trim()}`
+      : "";
 
-		// Step 2: Add a message to the thread
-		await openai.beta.threads.messages.create(thread.id, {
-			role: "user",
-			content: query,
-		});
+    // Build the input sequence you send every call.
+    // Include: system guardrails, optional short profile, trimmed chat history, and the new user message.
+    const input: OpenAI.Input[] = [
+      { role: "system", content: SYSTEM_PROMPT + PROFILE },
+      // Keep the last few turns to stay stateless but coherent (tune the slice to your needs).
+      ...history.slice(-6),
+      { role: "user", content: query },
+    ];
 
-		// Step 3: Run the assistant
-		const assistantId = process.env.NEXT_PUBLIC_OPENAI_ASSISTANT_ID;
-		if (!assistantId) {
-			throw new Error('Missing NEXT_PUBLIC_OPENAI_ASSISTANT_ID');
-		}
-		const run = await openai.beta.threads.runs.create(thread.id, {
-			assistant_id: assistantId,
-		});
+    // If you created a vector store with your resume/portfolio, put its ID in env.
+    // The tool declaration is a no-op if no VECTOR_STORE_ID is set.
+    const tools: OpenAI.ResponseCreateParams["tools"] = process.env.VECTOR_STORE_ID
+      ? [{ type: "file_search", vector_store_ids: [process.env.VECTOR_STORE_ID!] }]
+      : [];
 
-		// Step 4: Check the run status
-		let runStatus = await openai.beta.threads.runs.retrieve(
-			thread.id,
-			run.id
-		);
+    const res = await client.responses.create({
+      model: "gpt-4o-mini",
+      tools,
+      input,
+    });
 
-		// Poll for status "completed"
-		while (runStatus.status !== "completed") {
-			await new Promise(resolve => setTimeout(resolve, 1000));
-			runStatus = await openai.beta.threads.runs.retrieve(
-				thread.id,
-				run.id
-			);
-		}
+    // Node SDK convenience: concatenates all text output segments.
+    const text = res.output_text ?? "";
 
-		// Step 5: Retrieve the assistant's response
-		const messages = await openai.beta.threads.messages.list(thread.id);
+    if (!text) {
+      return NextResponse.json(
+        { error: "Empty response from model" },
+        { status: 502 }
+      );
+    }
 
-		// Get the last assistant message
-		const assistantResponse = messages.data
-			.filter(message => message.role === "assistant")
-			.pop();
-
-		if (assistantResponse && "text" in assistantResponse.content[0]) {
-			const response = (
-				assistantResponse.content[0] as {
-					text: { value: string };
-				}
-			).text.value;
-			return NextResponse.json({ response });
-		} else {
-			return NextResponse.json(
-				{ error: "Unexpected response format" },
-				{ status: 500 }
-			);
-		}
-	} catch (error) {
-		console.error("OpenAI API error:", error);
-		return NextResponse.json(
-			{ error: "An error occurred while processing your request" },
-			{ status: 500 }
-		);
-	}
+    return NextResponse.json({
+      response: text,
+      // If you want, return some debugging metadata in non-production:
+      // _meta: { id: res.id, usage: res.usage, output: res.output }
+    });
+  } catch (err) {
+    console.error("OpenAI API error:", err);
+    return NextResponse.json(
+      { error: "An error occurred while processing your request" },
+      { status: 500 }
+    );
+  }
 }
