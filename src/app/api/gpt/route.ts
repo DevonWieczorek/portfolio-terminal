@@ -33,7 +33,7 @@ export async function POST(request: NextRequest) {
 
     // Build the input sequence you send every call.
     // Include: system guardrails, optional short profile, trimmed chat history, and the new user message.
-    const input: OpenAI.Input[] = [
+    const input: Array<any> = [
       { role: "system", content: SYSTEM_PROMPT + PROFILE },
       // Keep the last few turns to stay stateless but coherent (tune the slice to your needs).
       ...history.slice(-6),
@@ -42,7 +42,7 @@ export async function POST(request: NextRequest) {
 
     // If you created a vector store with your resume/portfolio, put its ID in env.
     // The tool declaration is a no-op if no VECTOR_STORE_ID is set.
-    const tools: OpenAI.ResponseCreateParams["tools"] = process.env.VECTOR_STORE_ID
+    const tools: Array<any> = process.env.VECTOR_STORE_ID
       ? [{ type: "file_search", vector_store_ids: [process.env.VECTOR_STORE_ID!] }]
       : [];
 
