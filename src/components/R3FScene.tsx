@@ -1,5 +1,5 @@
 import { Canvas } from "@react-three/fiber";
-import { Suspense, useEffect, useMemo, useRef, useState } from "react";
+import { Suspense, useEffect, useMemo, useState } from "react";
 import { KeyboardControls } from "@react-three/drei";
 import Room from "./Room";
 import Character from "./Character";
@@ -26,8 +26,6 @@ const controls = [
         { name: Controls.rightward, keys: ["KeyD", "ArrowRight"] },
 ];
 
-const TERMINAL_TRANSITION_DURATION = 600;
-
 function R3FSceneContent() {
         const [showCanvas, setShowCanvas] = useState(false);
         const { message, interaction, clearMessage } = useMessage();
@@ -38,73 +36,6 @@ function R3FSceneContent() {
                 exitTerminal: state.exitTerminal,
         }));
         const [, setSelectedOption] = useState<string>("");
-        const [isTerminalMounted, setIsTerminalMounted] = useState(false);
-        const [isTerminalVisible, setIsTerminalVisible] = useState(false);
-        const [isCanvasDimmed, setIsCanvasDimmed] = useState(false);
-        const unmountTimeoutRef = useRef<number | null>(null);
-
-        useEffect(() => {
-                if (isTransitioning && targetMode === "terminal") {
-                        if (unmountTimeoutRef.current) {
-                                window.clearTimeout(unmountTimeoutRef.current);
-                                unmountTimeoutRef.current = null;
-                        }
-
-                        setIsTerminalMounted(true);
-                        setIsTerminalVisible(false);
-                        setIsCanvasDimmed(false);
-                }
-        }, [isTransitioning, targetMode]);
-
-        useEffect(() => {
-                if (mode === "terminal" && !isTransitioning) {
-                        setIsCanvasDimmed(true);
-                        const frame = window.requestAnimationFrame(() => {
-                                setIsTerminalVisible(true);
-                        });
-
-                        return () => {
-                                window.cancelAnimationFrame(frame);
-                        };
-                }
-        }, [isTransitioning, mode]);
-
-        useEffect(() => {
-                if (isTransitioning && targetMode === "scene") {
-                        setIsTerminalVisible(false);
-                        setIsCanvasDimmed(false);
-                }
-        }, [isTransitioning, targetMode]);
-
-        useEffect(() => {
-                if (!isTransitioning && mode === "scene") {
-                        if (unmountTimeoutRef.current) {
-                                window.clearTimeout(unmountTimeoutRef.current);
-                        }
-
-                        unmountTimeoutRef.current = window.setTimeout(() => {
-                                setIsTerminalMounted(false);
-                        }, TERMINAL_TRANSITION_DURATION);
-
-                        return () => {
-                                if (unmountTimeoutRef.current) {
-                                        window.clearTimeout(unmountTimeoutRef.current);
-                                }
-                        };
-                }
-        }, [isTransitioning, mode]);
-
-        useEffect(() => {
-                if (mode === "terminal" && !isTransitioning) {
-                        clearMessage();
-                }
-        }, [clearMessage, isTransitioning, mode]);
-
-        useEffect(() => () => {
-                if (unmountTimeoutRef.current) {
-                        window.clearTimeout(unmountTimeoutRef.current);
-                }
-        }, []);
 
         useEffect(() => {
                 setShowCanvas(true);
@@ -133,17 +64,20 @@ function R3FSceneContent() {
 
         const canvasClassName = useMemo(() => {
                 const classes = [styles.canvasLayer];
-                if (isCanvasDimmed) {
+                const isEnteringTerminal = isTransitioning && targetMode === "terminal";
+                const isTerminalWithoutExit = mode === "terminal" && !(isTransitioning && targetMode === "scene");
+
+                if (isEnteringTerminal || isTerminalWithoutExit) {
                         classes.push(styles.canvasInactive);
                 }
 
                 return classes.join(" ");
-        }, [isCanvasDimmed]);
+        }, [isTransitioning, mode, targetMode]);
 
         const terminalClasses = useMemo(() => {
                 const classes = [styles.terminalLayer];
 
-                if (isTerminalVisible) {
+                if (mode === "terminal" || (isTransitioning && targetMode === "terminal")) {
                         classes.push(styles.terminalVisible);
                 }
 
@@ -152,9 +86,9 @@ function R3FSceneContent() {
                 }
 
                 return classes.join(" ");
-        }, [isTransitioning, isTerminalVisible, mode]);
+        }, [isTransitioning, mode, targetMode]);
 
-        const shouldRenderTerminal = isTerminalMounted;
+        const shouldRenderTerminal = mode === "terminal" || (isTransitioning && targetMode === "terminal");
 
         return (
                 <div className={styles.sceneContainer}>
