@@ -59,3 +59,4 @@ Performance considerations should be taken into account to ensure a smooth user 
 
 # Notes from Agent
 (Please add any notes or updates made by the agent below)
+* Implemented experience switching with smooth camera transitions and desktop terminal overlay triggered by monitor proximity (Enter) and escapable via ESC.
