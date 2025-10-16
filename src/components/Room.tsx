@@ -1,11 +1,15 @@
+import { useEffect, useState } from 'react';
 import { useTexture } from "@react-three/drei";
 import * as THREE from "three";
-import { useScene } from "../lib/contexts/SceneContext";
-import Desk from "./Desk";
-import BassGroup from "./BassGroup";
-import SkateboardGroup from "./SkateboardGroup";
+import { useMovement } from "@/lib/stores/useMovement";
+import { useScene } from "@/lib/contexts/SceneContext";
+import Desk from "@/components/Desk";
+import BassGroup from "@/components/BassGroup";
+import SkateboardGroup from "@/components/SkateboardGroup";
 
 export default function Room() {
+  const [proxyPosition, setProxyPosition] = useState<THREE.Vector3>(new THREE.Vector3(0, 0, 0));
+  const { position: characterPosition } = useMovement();
   const { roomSize, wallColor, wallHeight, wallThickness } = useScene();
 
   // Load wood texture for floor
@@ -14,6 +18,10 @@ export default function Room() {
   // Configure texture repeat for wooden floor
   floorTexture.wrapS = floorTexture.wrapT = THREE.RepeatWrapping;
   floorTexture.repeat.set(8, 8); // Wood plank pattern repeat
+
+  useEffect(() => {
+    setProxyPosition(new THREE.Vector3(...Object.values(characterPosition)));
+  }, [characterPosition]);
 
   return (
     <group>
@@ -29,7 +37,7 @@ export default function Room() {
         <meshLambertMaterial color={wallColor} />
       </mesh>
 
-      <BassGroup />
+      <BassGroup proximityPosition={proxyPosition} />
 
       {/* Desk and Computer Setup */}
       <Desk />
@@ -46,7 +54,7 @@ export default function Room() {
         <meshLambertMaterial color={wallColor} />
       </mesh>
 
-      <SkateboardGroup />
+      <SkateboardGroup proximityPosition={proxyPosition} />
 
       {/* West Wall */}
       <mesh position={[-roomSize / 2, wallHeight / 2, 0]} receiveShadow>
