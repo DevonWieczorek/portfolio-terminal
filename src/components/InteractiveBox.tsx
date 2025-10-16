@@ -11,9 +11,6 @@ interface InteractiveBoxProps {
         position?: [number, number, number];
         rotation?: [number, number, number];
         scale?: [number, number, number];
-        onInteract?: () => void;
-        interactKey?: string;
-        onFrame?: (group: Group, distance: number) => void;
 }
 
 function InteractiveBox({
@@ -24,9 +21,6 @@ function InteractiveBox({
         position = [0, 0, 0],
         rotation = [0, 0, 0],
         scale = [1, 1, 1],
-        onInteract,
-        interactKey = "Enter",
-        onFrame,
 }: InteractiveBoxProps) {
         const groupRef = useRef<Group>(null);
         const { camera } = useThree();
@@ -64,10 +58,6 @@ function InteractiveBox({
                         }
                         hasActiveMessageRef.current = false;
                 }
-
-                if (onFrame && group) {
-                        onFrame(group, distance);
-                }
         });
 
         useEffect(() => {
@@ -77,34 +67,6 @@ function InteractiveBox({
                         }
                 };
         }, [activeMessage, clearMessage, message]);
-
-        useEffect(() => {
-                if (!onInteract) {
-                        return;
-                }
-
-                const handleKeyDown = (event: KeyboardEvent) => {
-                        if (event.key !== interactKey) {
-                                return;
-                        }
-
-                        if (!hasActiveMessageRef.current) {
-                                return;
-                        }
-
-                        if (activeMessage === message) {
-                                clearMessage();
-                        }
-
-                        onInteract();
-                };
-
-                window.addEventListener("keydown", handleKeyDown);
-
-                return () => {
-                        window.removeEventListener("keydown", handleKeyDown);
-                };
-        }, [activeMessage, clearMessage, interactKey, message, onInteract]);
 
         return (
                 <group ref={groupRef} position={position} rotation={rotation} scale={scale}>
