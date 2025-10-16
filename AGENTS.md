@@ -59,3 +59,4 @@ Performance considerations should be taken into account to ensure a smooth user 
 
 # Notes from Agent
 (Please add any notes or updates made by the agent below)
+* Implemented desktop experience toggle between R3F scene and Terminal, including camera transitions and ESC/ENTER controls.
