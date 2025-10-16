@@ -16,21 +16,23 @@ import HelpMenu from "./HelpMenu";
 import Resume from "./Resume";
 import { isEnterKeyPress } from "@/utils/keyboard";
 import styles from "@/styles/Terminal.module.scss";
+import { useExperience } from "@/lib/stores/useExperience";
 
 interface TerminalProps {
 	onCommand: (command: string) => void;
 }
 
 const Terminal: FC<TerminalProps> = ({ onCommand }) => {
-	const inputRef = useRef<HTMLInputElement>(null);
+        const inputRef = useRef<HTMLInputElement>(null);
         const [output, setOutput] = useState<ReactNode[]>([]);
         const keyRef = useRef(0);
+        const mode = useExperience(state => state.mode);
 
-	const focusInput = useCallback(() => {
-		if (inputRef?.current) {
-			inputRef.current.focus();
-		}
-	}, []);
+        const focusInput = useCallback(() => {
+                if (inputRef?.current) {
+                        inputRef.current.focus();
+                }
+        }, []);
 
         const handleSetOutput = useCallback((newOutput: ReactNode | string) => {
                 const key = keyRef.current++;
@@ -90,9 +92,15 @@ const Terminal: FC<TerminalProps> = ({ onCommand }) => {
 		}
 	};
 
-	useEffect(() => {
-		focusInput();
-	}, [focusInput]);
+        useEffect(() => {
+                focusInput();
+        }, [focusInput]);
+
+        useEffect(() => {
+                if (mode === "terminal") {
+                        focusInput();
+                }
+        }, [focusInput, mode]);
 
 	useEffect(() => {
 		handleCommand("clear");

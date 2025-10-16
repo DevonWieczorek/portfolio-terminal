@@ -58,3 +58,5 @@ Once entering the Terminal experience, clear all messages from the message conte
 # Notes from Agent
 (Please add any notes or updates made by the agent below)
 
+- Added staged terminal entry transition (camera zoom followed by crossfade), automatic terminal focus, and message clearing when entering the terminal experience.
+
