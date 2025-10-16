@@ -8,6 +8,7 @@ import Camera from "./Camera";
 import { SceneProvider } from "../lib/contexts/SceneContext";
 import { MessageProvider, useMessage } from "@/lib/contexts/MessageContext";
 import Message from "@/components/Message";
+import { useExperience } from "@/lib/stores/useExperience";
 
 enum Controls {
         forward = "forward",
@@ -26,6 +27,8 @@ const controls = [
 function R3FSceneContent() {
         const [showCanvas, setShowCanvas] = useState(false);
         const { message } = useMessage();
+        const experience = useExperience(state => state.experience);
+        const target = useExperience(state => state.target);
 
         useEffect(() => {
                 setShowCanvas(true);
@@ -37,6 +40,7 @@ function R3FSceneContent() {
                                 <KeyboardControls map={controls}>
                                         <Canvas
                                                 shadows
+                                                frameloop={experience === "terminal" && target === "terminal" ? "demand" : "always"}
                                                 camera={{
                                                         position: [0, 5, 10],
                                                         fov: 45,
