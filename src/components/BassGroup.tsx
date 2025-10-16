@@ -2,13 +2,15 @@ import { useGLTF } from "@react-three/drei";
 import { useControls, folder } from 'leva';
 import { useScene } from "@/lib/contexts/SceneContext";
 import Bass from "@/components/Bass";
+import InteractiveBox from "@/components/InteractiveBox";
 
 const NUM_BASSES = 4;
 const BASS_MODEL_PATH = "/models/bass-1.glb";
 // Subtracting 1.5 from i ensures the group of 4 basses is centered on bassX, not offset to one side.
 const GROUP_CENTER_OFFSET = (NUM_BASSES - 1) / 2;
+const BASS_MESSAGE = "Devon is the bassist and co-vocalist of an alternative Punk Rock band called Friend Z.";
 
-const BassGroup = () => {
+const BassGroup = ({ proximityPosition }: { proximityPosition: PositionArray }) => {
 	const { bass } = useScene();
 
 	const {
@@ -28,20 +30,26 @@ const BassGroup = () => {
 	});
 
 	return (
-		<group>
-			{Array.from({ length: NUM_BASSES }).map((_, i) => (
-				<Bass
-					key={i}
-					position={[
-						bassX + (i - GROUP_CENTER_OFFSET) * bassSpacing,
-						bassY,
-						bassZ,
-					]}
-					scale={[bassScale, bassScale, bassScale]}
-					modelPath={BASS_MODEL_PATH}
-				/>
-			))}
-		</group>
+		<InteractiveBox
+			message={BASS_MESSAGE}
+			position={[bassX, 0, bassZ]}
+			proximityPosition={proximityPosition}
+		>
+			<group>
+				{Array.from({ length: NUM_BASSES }).map((_, i) => (
+					<Bass
+						key={i}
+						position={[
+							(i - GROUP_CENTER_OFFSET) * bassSpacing,
+							bassY,
+							0,
+						]}
+						scale={[bassScale, bassScale, bassScale]}
+						modelPath={BASS_MODEL_PATH}
+					/>
+				))}
+			</group>
+		</InteractiveBox>
 	);
 };
 
