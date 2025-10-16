@@ -41,22 +41,21 @@ Using any in TypeScript unless absolutely necessary (always try to infer or defi
 Assuming global styles — use CSS Modules, SCSS, or styled-components if needed.
 Using outdated packages or deprecated APIs in R3F or Next.js.
 
+## Make sure to
+Use functional components whenever possible.
+Use the project's existing coding style and conventions.
+Use existing ESLint and Prettier rules when making updates.
+
 
 # Current Task for Agent
-Create a new Message component that is full width and pinned to the bottom of the viewport. It should have a semi-transparent background and contain text that can be passed as a prop. The text should be centered both vertically and horizontally within the component. Ensure that the component is responsive and looks good on both desktop and mobile devices.
+On desktop, when the character approaches the monitor in the 3D scene, a "Press ENTER to use the compuer" message is displayed on screen. If the user then presses the Enter key, the camera should zoom into the computer monitor and there should be a smooth transition that switches the R3FScene to the Terminal experience that is used on mobile.
 
-The Message component should only be displayed if the text prop is not empty.
+Once the Terminal view is initialized, all events should be delegated to that component. 
 
-Create a new Context for the newly-created Message component. Other components should have access to the methods for updating and clearing the message text.
+Pressing the ESC key while in the Terminal view should exit the Terminal and smoothly transition the camera back to the original position in the 3D scene.
 
-Update InteractiveBox to be able to wrap the components that need to trigger messages. InteractiveBox should occupy the same space and inherit the same positioning as the child components it wraps.
-
-Remove the current TooltipText implementation and replace it with the new Message component functionality. If the character enters the proximity radius of an InteractiveBox, it should use the Message context to display the appropriate message. Once the character leaves the proximity of the InteractiveBox, the message should be cleared.
-
-Ensure that all changes are well-typed with TypeScript and follow best practices for React and Next.js development.
+Performance considerations should be taken into account to ensure a smooth user experience during these transitions.
 
 
 # Notes from Agent
 (Please add any notes or updates made by the agent below)
-- Implemented Message context/provider and updated InteractiveBox to publish proximity prompts.
-- `yarn lint` currently fails due to legacy ESLint options in the project configuration.
