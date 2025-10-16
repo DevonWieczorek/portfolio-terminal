@@ -1,13 +1,21 @@
-import { useRef, useEffect, useState } from "react";
+import { useRef, useEffect, useState, useMemo } from "react";
 import { useFrame, useThree } from "@react-three/fiber";
 import { useMovement } from "../lib/stores/useMovement";
 import { useScene } from "../lib/contexts/SceneContext";
 import * as THREE from "three";
+import { useExperience } from "@/lib/stores/useExperience";
 
 export default function Camera() {
   const { camera } = useThree();
   const { position } = useMovement();
   const { roomSize, wallThickness, cameraBuffer, cameraOffset, zoomSettings } = useScene();
+  const { mode, targetMode, isTransitioning, cameraOverride, completeTransition } = useExperience(state => ({
+    mode: state.mode,
+    targetMode: state.targetMode,
+    isTransitioning: state.isTransitioning,
+    cameraOverride: state.cameraOverride,
+    completeTransition: state.completeTransition,
+  }));
 
   // Camera zoom settings from context
   const [zoom, setZoom] = useState(zoomSettings.default);
@@ -22,16 +30,34 @@ export default function Camera() {
   // Smooth camera movement
   const targetPosition = useRef(new THREE.Vector3());
   const targetLookAt = useRef(new THREE.Vector3());
+  const overridePosition = useMemo(() => new THREE.Vector3(), []);
+  const overrideLookAt = useMemo(() => new THREE.Vector3(), []);
+  const smoothLookAt = useRef(new THREE.Vector3());
+  const desiredPosition = useMemo(() => new THREE.Vector3(), []);
+  const desiredLookAt = useMemo(() => new THREE.Vector3(), []);
+  const modeRef = useRef(mode);
+
+  useEffect(() => {
+    modeRef.current = mode;
+  }, [mode]);
 
   // Mouse wheel zoom controls
   useEffect(() => {
     const handleWheel = (event: WheelEvent) => {
+      if (modeRef.current !== "scene") {
+        return;
+      }
+
       event.preventDefault();
       const delta = event.deltaY * -0.001;
       setZoom(prevZoom => Math.max(minZoom, Math.min(maxZoom, prevZoom + delta * zoomSpeed)));
     };
 
     const handleKeyDown = (event: KeyboardEvent) => {
+      if (modeRef.current !== "scene") {
+        return;
+      }
+
       if (event.key === 'i' || event.key === 'I') {
         setZoom(prevZoom => Math.max(minZoom, prevZoom - zoomSpeed));
       } else if (event.key === 'o' || event.key === 'O') {
@@ -104,9 +130,37 @@ export default function Camera() {
     targetPosition.current.y = Math.max(3, targetPosition.current.y);
 
     // Smooth camera movement with slightly faster response for boundary situations
-    const lerpSpeed = (adjustedCameraX !== idealCameraX || adjustedCameraZ !== idealCameraZ) ? 0.08 : 0.05;
-    camera.position.lerp(targetPosition.current, lerpSpeed);
-    camera.lookAt(targetLookAt.current);
+    const baseLerpSpeed = (adjustedCameraX !== idealCameraX || adjustedCameraZ !== idealCameraZ) ? 0.08 : 0.05;
+    const shouldUseOverride = Boolean(cameraOverride) && (mode === "terminal" || (isTransitioning && targetMode === "terminal"));
+
+    if (cameraOverride) {
+      overridePosition.set(...cameraOverride.position);
+      overrideLookAt.set(...cameraOverride.lookAt);
+    }
+
+    desiredPosition.copy(shouldUseOverride ? overridePosition : targetPosition.current);
+    desiredLookAt.copy(shouldUseOverride ? overrideLookAt : targetLookAt.current);
+
+    const lerpSpeed = shouldUseOverride ? 0.12 : baseLerpSpeed;
+
+    camera.position.lerp(desiredPosition, lerpSpeed);
+
+    if (smoothLookAt.current.lengthSq() === 0) {
+      smoothLookAt.current.copy(desiredLookAt);
+    }
+
+    const lookAtLerp = shouldUseOverride ? 0.18 : 0.1;
+    smoothLookAt.current.lerp(desiredLookAt, lookAtLerp);
+    camera.lookAt(smoothLookAt.current);
+
+    if (isTransitioning) {
+      const distanceToTarget = camera.position.distanceTo(desiredPosition);
+      const threshold = shouldUseOverride ? 0.08 : 0.6;
+
+      if (distanceToTarget < threshold) {
+        completeTransition();
+      }
+    }
   });
 
   return null;

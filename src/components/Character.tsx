@@ -4,6 +4,7 @@ import { useKeyboardControls } from "@react-three/drei";
 import * as THREE from "three";
 import { useMovement } from "../lib/stores/useMovement";
 import { useScene } from "../lib/contexts/SceneContext";
+import { useExperience } from "@/lib/stores/useExperience";
 
 enum Controls {
   forward = 'forward',
@@ -17,6 +18,12 @@ export default function Character() {
   const [subscribe, getKeys] = useKeyboardControls<Controls>();
   const { position, setPosition } = useMovement();
   const { characterSpeed, characterBoundary, characterScale, roomSize } = useScene();
+  const { mode, isTransitioning } = useExperience(state => ({
+    mode: state.mode,
+    isTransitioning: state.isTransitioning,
+  }));
+
+  const allowMovement = mode === 'scene' && !isTransitioning;
 
   // Movement speed from context
   const speed = characterSpeed;
@@ -73,7 +80,7 @@ export default function Character() {
 
   // Movement and collision detection
   useFrame(() => {
-    if (!characterRef.current) return;
+    if (!characterRef.current || !allowMovement) return;
 
     const keys = getKeys();
     const newPosition = { ...position };
