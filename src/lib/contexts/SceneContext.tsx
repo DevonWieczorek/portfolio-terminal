@@ -105,26 +105,27 @@ const defaultMonitorTraits: DeepPartial<ObjectTraits> = {
   }
 };
 
+const BASS_SCALE: number = scaledFeet(3.5);
 const defaultBassTraits: DeepPartial<ObjectTraits> = {
   position: {
-    x: feetFromCenter(-1 * scaleFactorXZ),      // Scales with room
-    y: scaledHeight(6),                         // Scales with ceiling height
-    z: feetFromWall.back(1 * scaleFactorXZ),    // Scales with room depth
+    x: feetFromCenter(-1 * scaleFactorXZ),
+    y: scaledHeight((ROOM_HEIGHT - BASS_SCALE) / 2),
+    z: feetFromWall.back(1 * scaleFactorXZ),
   },
-  scale: scaledFeet(3.5),
-  spacing: scaledFeet(3),                    // Bass size scales with room
+  scale: BASS_SCALE,
+  spacing: scaledFeet(3),
 };
 
 // const NUM_DECKS: number = 4;
 const DECK_SCALE: number = scaledFeet(3);
 const defaultDeckTraits: DeepPartial<ObjectTraits> = {
   position: {
-    x: feetFromCenter(-1 * scaleFactorXZ),
+    x: feetFromWall.right(0),
     y: scaledHeight(((ROOM_HEIGHT - DECK_SCALE) / 2)),
-    z: feetFromWall.right(0) * -1,
+    z: feetFromCenter(-1 * scaleFactorXZ),
   },
   scale: DECK_SCALE,
-  spacing: scaledFeet(2),
+  spacing: scaledFeet(3),
 };
 
 // Scene configuration interface
