@@ -48,15 +48,13 @@ Use existing ESLint and Prettier rules when making updates.
 
 
 # Current Task for Agent
-On desktop, when the character approaches the monitor in the 3D scene, a "Press ENTER to use the compuer" message is displayed on screen. If the user then presses the Enter key, the camera should zoom into the computer monitor and there should be a smooth transition that switches the R3FScene to the Terminal experience that is used on mobile.
+When approaching the monitor and pressing ENTER, the experience switches to the Terminal. This is desired, however the transition is almost immediate, rather than the camera zooming into the monitor and there being a crossfade between the two experiences. Please implement a smooth camera zoom into the monitor and a crossfade transition between the two experiences.
 
-Once the Terminal view is initialized, all events should be delegated to that component. 
+Exiting the Terminal experience zooms out correctly, so implement the inverse of that for entering the Terminal experience.
 
-Pressing the ESC key while in the Terminal view should exit the Terminal and smoothly transition the camera back to the original position in the 3D scene.
-
-Performance considerations should be taken into account to ensure a smooth user experience during these transitions.
+Once entering the Terminal experience, clear all messages from the message context. Additionally, trigger focus on the terminal input.
 
 
 # Notes from Agent
 (Please add any notes or updates made by the agent below)
-* Implemented experience switching with smooth camera transitions and desktop terminal overlay triggered by monitor proximity (Enter) and escapable via ESC.
+
