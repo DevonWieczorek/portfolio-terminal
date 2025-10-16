@@ -8,6 +8,7 @@
 		"build": "next build",
 		"start": "next start",
 		"lint": "next lint",
+		"format": "prettier --write . && eslint --fix .",
 		"compile-resume-markdown": "node .bin/convert-resume-to-markdown.ts",
 		"compile-resume-html": "node .bin/convert-resume-to-html.ts",
 		"deploy": "git push heroku main",
@@ -15,7 +16,17 @@
 		"sync-env-vars": "bash .bin/sync-env-vars.sh",
 		"cache:yarn": "yarn cache clean",
 		"cache:next": "rm -rf .next",
-		"cache:all": "yarn cache clean && rm -rf .next"
+		"cache:all": "yarn cache clean && rm -rf .next",
+		"postinstall": "husky install"
+	},
+	"lint-staged": {
+		"*.{js,jsx,ts,tsx}": [
+			"eslint --fix",
+			"prettier --write"
+		],
+		"*.{css,scss,md}": [
+			"prettier --write"
+		]
 	},
 	"dependencies": {
 		"@opendocsg/pdf2md": "^0.1.31",
@@ -49,9 +60,12 @@
 		"@types/puppeteer": "^7.0.0",
 		"eslint": "^9.31.0",
 		"eslint-config-next": "^15.4.3",
+		"husky": "^9.1.7",
 		"identity-obj-proxy": "^3.0.0",
 		"jest": "^30.0.4",
 		"jest-environment-jsdom": "^30.0.4",
-		"leva": "^0.10.0"
+		"leva": "^0.10.0",
+		"lint-staged": "^16.2.4",
+		"prettier": "^3.6.2"
 	}
 }
