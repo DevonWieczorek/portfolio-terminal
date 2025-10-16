@@ -26,7 +26,7 @@ const BassGroup = ({ proximityPosition }: { proximityPosition: PositionArray }) 
 			bassZ: { value: bass?.position?.z, min: -20, max: 10, step: 0.01 },
 			bassScale: { value: bass?.scale, min: 0.1, max: 10, step: 0.1 },
 			bassSpacing: { value: bass?.spacing, min: 0.5, max: 5, step: 0.1 },
-		}),
+		}, { collapsed: true }),
 	});
 
 	return (

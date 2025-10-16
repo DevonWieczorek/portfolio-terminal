@@ -26,7 +26,7 @@ const SkateboardGroup = ({ proximityPosition }: { proximityPosition: PositionArr
 			deckZ: { value: deck?.position?.z, min: -20, max: 20, step: 0.01 },
 			deckScale: { value: deck?.scale, min: 0.1, max: 10, step: 0.1 },
 			deckSpacing: { value: deck?.spacing, min: 0.5, max: 5, step: 0.1 },
-		}),
+		}, { collapsed: true }),
 	});
 
 	return (

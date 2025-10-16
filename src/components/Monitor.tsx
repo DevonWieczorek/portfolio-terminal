@@ -55,7 +55,7 @@ const Monitor: MonitorType = ({ proximityPosition }) => {
                                 max: 10,
                                 step: 0.1,
                         },
-                } as any), // TODO: Fix type
+                } as any, { collapsed: true }), // TODO: Fix type
         });
 
         const { monitorRotationY, monitorX, monitorY, monitorZ } = controls;

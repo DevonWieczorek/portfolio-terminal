@@ -21,7 +21,7 @@ export default function Desk() {
       deskY: { value: desk?.position?.y, min: -10, max: 10, step: 0.01 },
       deskZ: { value: desk?.position?.z, min: -20, max: 10, step: 0.01 },
       deskScale: { value: desk?.scale, min: 0.1, max: 10, step: 0.01 },
-    })
+    }, { collapsed: true })
   });
 
   // L-shaped desk positioned snug in northwest corner
