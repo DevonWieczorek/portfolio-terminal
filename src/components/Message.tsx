@@ -1,3 +1,4 @@
+import { useExperience } from "@/lib/stores/useExperience";
 import styles from "@/styles/Message.module.scss";
 
 interface MessageProps {
@@ -7,8 +8,10 @@ interface MessageProps {
 
 function Message({ text = "", className }: MessageProps) {
         const trimmedText = text.trim();
+        const { mode } = useExperience();
 
-        if (!trimmedText) {
+        // Hide messages when swapping experiences
+        if (!trimmedText || mode === 'terminal') {
                 return null;
         }
 
