@@ -52,6 +52,8 @@ When approaching the monitor and pressing ENTER, the experience switches to the 
 
 Exiting the Terminal experience zooms out correctly, so implement the inverse of that for entering the Terminal experience.
 
+When the camera is zoomed all the way in on the monitor screen, the screen should be fully black for a short moment. That is when you can swap out one experience for the other so that the user does not see any jarring changes.
+
 Once entering the Terminal experience, clear all messages from the message context. Additionally, trigger focus on the terminal input.
 
 
