@@ -60,3 +60,5 @@ Once entering the Terminal experience, clear all messages from the message conte
 # Notes from Agent
 (Please add any notes or updates made by the agent below)
 
+- Added a camera blackout phase and UI crossfade to smooth the transition into the Terminal, including automatic message clearing and focus handling.
+

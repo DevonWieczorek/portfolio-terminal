@@ -13,7 +13,7 @@ export default function Home() {
         return (
                 <div className={styles.home}>
                         {isMobile ? (
-                                <Terminal onCommand={setSelectedOption} />
+                                <Terminal onCommand={setSelectedOption} isActive />
                         ) : (
                                 <R3FScene />
                         )}
