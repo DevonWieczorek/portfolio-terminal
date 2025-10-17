@@ -9,11 +9,13 @@ export default function Camera() {
   const { camera } = useThree();
   const { position } = useMovement();
   const { roomSize, wallThickness, cameraBuffer, cameraOffset, zoomSettings } = useScene();
-  const { mode, targetMode, isTransitioning, cameraOverride, completeTransition } = useExperience(state => ({
+  const { mode, targetMode, isTransitioning, cameraOverride, isBlackout, startBlackout, completeTransition } = useExperience(state => ({
     mode: state.mode,
     targetMode: state.targetMode,
     isTransitioning: state.isTransitioning,
     cameraOverride: state.cameraOverride,
+    isBlackout: state.isBlackout,
+    startBlackout: state.startBlackout,
     completeTransition: state.completeTransition,
   }));
 
@@ -153,12 +155,16 @@ export default function Camera() {
     smoothLookAt.current.lerp(desiredLookAt, lookAtLerp);
     camera.lookAt(smoothLookAt.current);
 
-    if (isTransitioning) {
+    if (isTransitioning && !isBlackout) {
       const distanceToTarget = camera.position.distanceTo(desiredPosition);
       const threshold = shouldUseOverride ? 0.08 : 0.6;
 
       if (distanceToTarget < threshold) {
-        completeTransition();
+        if (targetMode === "terminal") {
+          startBlackout();
+        } else {
+          completeTransition();
+        }
       }
     }
   });

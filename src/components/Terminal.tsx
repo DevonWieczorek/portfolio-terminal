@@ -18,11 +18,12 @@ import { isEnterKeyPress } from "@/utils/keyboard";
 import styles from "@/styles/Terminal.module.scss";
 
 interface TerminalProps {
-	onCommand: (command: string) => void;
+        onCommand: (command: string) => void;
+        isActive?: boolean;
 }
 
-const Terminal: FC<TerminalProps> = ({ onCommand }) => {
-	const inputRef = useRef<HTMLInputElement>(null);
+const Terminal: FC<TerminalProps> = ({ onCommand, isActive = false }) => {
+        const inputRef = useRef<HTMLInputElement>(null);
         const [output, setOutput] = useState<ReactNode[]>([]);
         const keyRef = useRef(0);
 
@@ -90,9 +91,15 @@ const Terminal: FC<TerminalProps> = ({ onCommand }) => {
 		}
 	};
 
-	useEffect(() => {
-		focusInput();
-	}, [focusInput]);
+        useEffect(() => {
+                focusInput();
+        }, [focusInput]);
+
+        useEffect(() => {
+                if (isActive) {
+                        focusInput();
+                }
+        }, [focusInput, isActive]);
 
 	useEffect(() => {
 		handleCommand("clear");

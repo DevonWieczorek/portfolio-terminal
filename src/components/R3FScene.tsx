@@ -29,10 +29,11 @@ const controls = [
 function R3FSceneContent() {
         const [showCanvas, setShowCanvas] = useState(false);
         const { message, interaction, clearMessage } = useMessage();
-        const { mode, isTransitioning, targetMode, exitTerminal } = useExperience(state => ({
+        const { mode, isTransitioning, targetMode, isBlackout, exitTerminal } = useExperience(state => ({
                 mode: state.mode,
                 isTransitioning: state.isTransitioning,
                 targetMode: state.targetMode,
+                isBlackout: state.isBlackout,
                 exitTerminal: state.exitTerminal,
         }));
         const [, setSelectedOption] = useState<string>("");
@@ -64,20 +65,20 @@ function R3FSceneContent() {
 
         const canvasClassName = useMemo(() => {
                 const classes = [styles.canvasLayer];
-                const isEnteringTerminal = isTransitioning && targetMode === "terminal";
-                const isTerminalWithoutExit = mode === "terminal" && !(isTransitioning && targetMode === "scene");
+                const isTerminalActive = mode === "terminal" && !isTransitioning;
+                const isEnteringBlackout = isBlackout && targetMode === "terminal";
 
-                if (isEnteringTerminal || isTerminalWithoutExit) {
+                if (isTerminalActive || isEnteringBlackout) {
                         classes.push(styles.canvasInactive);
                 }
 
                 return classes.join(" ");
-        }, [isTransitioning, mode, targetMode]);
+        }, [isBlackout, isTransitioning, mode, targetMode]);
 
         const terminalClasses = useMemo(() => {
                 const classes = [styles.terminalLayer];
 
-                if (mode === "terminal" || (isTransitioning && targetMode === "terminal")) {
+                if (mode === "terminal" || (isTransitioning && targetMode === "terminal" && isBlackout)) {
                         classes.push(styles.terminalVisible);
                 }
 
@@ -86,9 +87,16 @@ function R3FSceneContent() {
                 }
 
                 return classes.join(" ");
-        }, [isTransitioning, mode, targetMode]);
+        }, [isBlackout, isTransitioning, mode, targetMode]);
 
         const shouldRenderTerminal = mode === "terminal" || (isTransitioning && targetMode === "terminal");
+        const isTerminalActive = mode === "terminal" && !isTransitioning;
+
+        useEffect(() => {
+                if (isTransitioning && targetMode === "terminal") {
+                        clearMessage();
+                }
+        }, [clearMessage, isTransitioning, targetMode]);
 
         return (
                 <div className={styles.sceneContainer}>
@@ -130,10 +138,16 @@ function R3FSceneContent() {
                         {shouldRenderTerminal && (
                                 <div className={terminalClasses}>
                                         <div className={styles.terminalWrapper}>
-                                                <Terminal onCommand={setSelectedOption} />
+                                                <Terminal onCommand={setSelectedOption} isActive={isTerminalActive} />
                                         </div>
                                 </div>
                         )}
+                        <div
+                                className={[
+                                        styles.blackoutOverlay,
+                                        isBlackout ? styles.blackoutVisible : "",
+                                ].join(" ")}
+                        />
                         <Message text={message} />
                 </div>
         );
