@@ -2,8 +2,8 @@ import { useRef, useEffect } from "react";
 import { useFrame } from "@react-three/fiber";
 import { useKeyboardControls } from "@react-three/drei";
 import * as THREE from "three";
-import { useMovement } from "../lib/stores/useMovement";
-import { useScene } from "../lib/contexts/SceneContext";
+import { useMovement } from "@/lib/stores/useMovement";
+import { useScene } from "@/lib/contexts/SceneContext";
 import { useExperience } from "@/lib/stores/useExperience";
 
 enum Controls {

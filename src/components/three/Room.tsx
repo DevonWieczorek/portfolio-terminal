@@ -3,9 +3,9 @@ import { useTexture } from "@react-three/drei";
 import * as THREE from "three";
 import { useMovement } from "@/lib/stores/useMovement";
 import { useScene } from "@/lib/contexts/SceneContext";
-import Desk from "@/components/Desk";
-import BassGroup from "@/components/BassGroup";
-import SkateboardGroup from "@/components/SkateboardGroup";
+import Desk from "@/components/three/Desk";
+import BassGroup from "@/components/three/BassGroup";
+import SkateboardGroup from "@/components/three/SkateboardGroup";
 
 export default function Room() {
   const [proxyPosition, setProxyPosition] = useState<THREE.Vector3>(new THREE.Vector3(0, 0, 0));

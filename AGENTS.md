@@ -80,4 +80,5 @@ Three components that import each other should use the aliased, absolute paths w
 
 # Notes from Agent
 
-(Please add any notes or updates made by the agent below)
+- Moved 3D scene-related components without dedicated tests into `src/components/three` and updated imports to use aliased paths.
+- Attempted to run `yarn lint`, but it failed because the package isn't registered in the lockfile for this environment.

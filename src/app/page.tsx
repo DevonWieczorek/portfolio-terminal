@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import Terminal from "@/components/Terminal";
-import R3FScene from "@/components/R3FScene";
+import R3FScene from "@/components/three/R3FScene";
 import styles from "@/styles/Home.module.scss";
 import { useIsMobile } from "@/hooks/use-is-mobile";
 

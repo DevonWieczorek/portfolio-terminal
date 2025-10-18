@@ -1,7 +1,7 @@
 import { useRef, useEffect, useState, useMemo } from "react";
 import { useFrame, useThree } from "@react-three/fiber";
-import { useMovement } from "../lib/stores/useMovement";
-import { useScene } from "../lib/contexts/SceneContext";
+import { useMovement } from "@/lib/stores/useMovement";
+import { useScene } from "@/lib/contexts/SceneContext";
 import * as THREE from "three";
 import { useExperience } from "@/lib/stores/useExperience";
 
