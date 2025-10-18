@@ -1,8 +1,8 @@
 import { useGLTF } from "@react-three/drei";
 import { useControls, folder } from 'leva';
 import { useScene } from "@/lib/contexts/SceneContext";
-import Skateboard from "@/components/Skateboard";
-import InteractiveBox from "@/components/InteractiveBox";
+import Skateboard from "@/components/three/Skateboard";
+import InteractiveBox from "@/components/three/InteractiveBox";
 
 const NUM_DECKS = 4;
 const DECK_MODEL_PATH = "/models/skateboard_deck_2.glb";

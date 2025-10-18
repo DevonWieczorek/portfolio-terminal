@@ -1,8 +1,8 @@
 import { useGLTF } from "@react-three/drei";
 import { useControls, folder } from 'leva';
 import { useScene } from "@/lib/contexts/SceneContext";
-import Bass from "@/components/Bass";
-import InteractiveBox from "@/components/InteractiveBox";
+import Bass from "@/components/three/Bass";
+import InteractiveBox from "@/components/three/InteractiveBox";
 
 const NUM_BASSES = 4;
 const BASS_MODEL_PATH = "/models/bass-1.glb";

@@ -3,7 +3,7 @@ import { Vector3, Box3, type Quaternion } from "three";
 import { useGLTF } from "@react-three/drei";
 import { useControls, folder } from "leva";
 import { useScene } from "@/lib/contexts/SceneContext";
-import InteractiveBox from "@/components/InteractiveBox";
+import InteractiveBox from "@/components/three/InteractiveBox";
 import { useExperience } from "@/lib/stores/useExperience";
 import type { CameraTarget } from "@/lib/stores/useExperience";
 

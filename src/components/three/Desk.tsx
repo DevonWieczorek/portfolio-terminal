@@ -3,7 +3,7 @@ import { useControls, folder } from 'leva';
 import * as THREE from "three";
 import { useScene } from "@/lib/contexts/SceneContext";
 import { useMovement } from "@/lib/stores/useMovement";
-import Monitor from "@/components/Monitor";
+import Monitor from "@/components/three/Monitor";
 
 export default function Desk() {
   const { desk } = useScene();
