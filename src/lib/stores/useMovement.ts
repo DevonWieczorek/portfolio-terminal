@@ -8,7 +8,6 @@ interface Position {
 
 interface MovementState {
     position: Position;
-
     setPosition: (position: Position) => void;
     resetPosition: () => void;
 }
