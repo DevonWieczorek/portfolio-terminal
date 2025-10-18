@@ -17,7 +17,7 @@
 		"cache:yarn": "yarn cache clean",
 		"cache:next": "rm -rf .next",
 		"cache:all": "yarn cache clean && rm -rf .next",
-		"postinstall": "husky install"
+		"prepare": "husky"
 	},
 	"lint-staged": {
 		"*.{js,jsx,ts,tsx}": [
