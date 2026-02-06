@@ -49,4 +49,11 @@ export default defineConfig([
             "plugin:prettier/recommended"
         ),
     },
+    {
+        files: ["src/components/three/**/*.tsx", "src/components/three/**/*.ts"],
+        rules: {
+            // Disable unknown property check for R3F primitives which use non-standard props
+            "react/no-unknown-property": "off",
+        },
+    },
 ]);
