@@ -1,4 +1,4 @@
-import React, { useRef, useEffect } from "react";
+import { memo, useRef, useEffect } from "react";
 import { useFrame } from "@react-three/fiber";
 import { useKeyboardControls } from "@react-three/drei";
 import * as THREE from "three";
@@ -13,7 +13,7 @@ enum Controls {
     rightward = "rightward",
 }
 
-const Character = React.memo(() => {
+const Character = memo(() => {
     const characterRef = useRef<THREE.Group>(null);
     const [subscribe, getKeys] = useKeyboardControls<Controls>();
     const { position, setPosition } = useMovement();

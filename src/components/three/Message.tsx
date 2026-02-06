@@ -1,4 +1,4 @@
-import React from "react";
+import { memo } from "react";
 import { useExperience } from "@/lib/stores/useExperience";
 import styles from "@/styles/Message.module.scss";
 
@@ -7,7 +7,7 @@ interface MessageProps {
     className?: string;
 }
 
-const Message = React.memo(({ text = "", className }: MessageProps) => {
+const Message = memo(({ text = "", className }: MessageProps) => {
     const trimmedText = text.trim();
     // Select only what's needed to prevent unnecessary rerenders
     const mode = useExperience(state => state.mode);

@@ -1,4 +1,4 @@
-import React, { useMemo } from "react";
+import { memo, useMemo } from "react";
 import { useGLTF } from "@react-three/drei";
 
 interface SkateboardProps {
@@ -9,7 +9,7 @@ interface SkateboardProps {
 
 const DEFAULT_MODEL = "/models/skateboard_deck_2.glb";
 
-const Skateboard = React.memo(
+const Skateboard = memo(
     ({
         position,
         scale = [1, 1, 1],

@@ -1,4 +1,4 @@
-import React, { useRef, useEffect, useState, ReactNode } from "react";
+import { memo, useRef, useEffect, useState, ReactNode } from "react";
 import * as THREE from "three";
 
 interface BoundingBoxProps {
@@ -10,7 +10,7 @@ interface BoundingBoxProps {
     wireframe?: boolean;
 }
 
-const BoundingBox = React.memo(
+const BoundingBox = memo(
     ({
         children,
         color = "#3b82f6",

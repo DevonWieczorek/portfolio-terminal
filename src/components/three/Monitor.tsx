@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useState, useMemo } from "react";
+import { memo, useCallback, useEffect, useState, useMemo } from "react";
 import { Vector3, Box3, type Quaternion } from "three";
 import { useGLTF } from "@react-three/drei";
 import { useControls, folder } from "leva";
@@ -21,7 +21,7 @@ interface ControlValues {
 
 const MONITOR_MESSAGE = "Press ENTER to use the computer.";
 
-const Monitor = React.memo(({ proximityPosition }: MonitorProps) => {
+const Monitor = memo(({ proximityPosition }: MonitorProps) => {
     const { monitor } = useScene();
     const monitorModel = useGLTF("/models/monitor.glb");
     const [size, setSize] = useState<Vector3>(new Vector3());

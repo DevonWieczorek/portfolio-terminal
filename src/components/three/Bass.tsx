@@ -1,4 +1,4 @@
-import React, { useMemo } from "react";
+import { memo, useMemo } from "react";
 import { useGLTF } from "@react-three/drei";
 import { getModelDimensions } from "@/utils/three";
 
@@ -10,7 +10,7 @@ interface BassProps {
 
 const DEFAULT_MODEL = "/models/bass-1.glb";
 
-const Bass = React.memo(
+const Bass = memo(
     ({ position, scale = [1, 1, 1], modelPath = DEFAULT_MODEL }: BassProps) => {
         if (process.env.NEXT_PUBLIC_DEBUG) {
             getModelDimensions(modelPath);

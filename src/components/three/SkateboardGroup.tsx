@@ -1,4 +1,4 @@
-import React, { useMemo } from "react";
+import { memo, useMemo } from "react";
 import { useGLTF } from "@react-three/drei";
 import { useControls, folder } from "leva";
 import { useScene } from "@/lib/contexts/SceneContext";
@@ -12,7 +12,7 @@ const GROUP_CENTER_OFFSET = (NUM_DECKS - 1) / 2;
 const SKATEBOARD_MESSAGE =
     "In 2018, Devon and his brother started a skateboard company called Brew Crew Skateboards.";
 
-const SkateboardGroup = React.memo(
+const SkateboardGroup = memo(
     ({ proximityPosition }: { proximityPosition: PositionArray }) => {
         const { deck, rotations } = useScene();
 

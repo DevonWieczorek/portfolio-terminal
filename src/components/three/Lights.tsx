@@ -1,6 +1,6 @@
-import React from "react";
+import { memo } from "react";
 
-const Lights = React.memo(() => {
+const Lights = memo(() => {
     return (
         <>
             {/* Ambient light for overall illumination */}

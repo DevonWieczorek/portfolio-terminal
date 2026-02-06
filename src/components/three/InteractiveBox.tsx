@@ -1,4 +1,5 @@
-import React, {
+import {
+    memo,
     useCallback,
     useEffect,
     useMemo,
@@ -30,7 +31,7 @@ interface ComputeCameraTargetParams {
     worldQuaternion: Quaternion;
 }
 
-const InteractiveBox = React.memo(function InteractiveBox({
+const InteractiveBox = memo(function InteractiveBox({
     children,
     message,
     triggerDistance = 3,

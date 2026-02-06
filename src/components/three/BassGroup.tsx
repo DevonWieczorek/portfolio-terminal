@@ -1,4 +1,4 @@
-import React, { useMemo } from "react";
+import { memo, useMemo } from "react";
 import { useGLTF } from "@react-three/drei";
 import { useControls, folder } from "leva";
 import { useScene } from "@/lib/contexts/SceneContext";
@@ -20,7 +20,7 @@ const BASS_CONFIGS = [
     { src: "/models/bass-1.glb" },
 ];
 
-const BassGroup = React.memo(
+const BassGroup = memo(
     ({ proximityPosition }: { proximityPosition: PositionArray }) => {
         const { bass } = useScene();
 

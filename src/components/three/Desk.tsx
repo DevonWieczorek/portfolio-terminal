@@ -1,4 +1,4 @@
-import React, { useMemo } from "react";
+import { memo, useMemo } from "react";
 import { useGLTF } from "@react-three/drei";
 import { useControls, folder } from "leva";
 import * as THREE from "three";
@@ -6,7 +6,7 @@ import { useScene } from "@/lib/contexts/SceneContext";
 import { useMovement } from "@/lib/stores/useMovement";
 import Monitor from "@/components/three/Monitor";
 
-const Desk = React.memo(() => {
+const Desk = memo(() => {
     const { desk } = useScene();
     const characterPosition = useMovement(state => state.position);
     const deskModel = useGLTF("/models/l_shaped_desk.glb");

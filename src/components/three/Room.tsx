@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo } from "react";
+import { memo, useEffect, useMemo } from "react";
 import { useTexture } from "@react-three/drei";
 import * as THREE from "three";
 import { useMovement } from "@/lib/stores/useMovement";
@@ -7,7 +7,7 @@ import Desk from "@/components/three/Desk";
 import BassGroup from "@/components/three/BassGroup";
 import SkateboardGroup from "@/components/three/SkateboardGroup";
 
-const Room = React.memo(() => {
+const Room = memo(() => {
     const characterPosition = useMovement(state => state.position);
     const { roomSize, wallColor, wallHeight, wallThickness } = useScene();
 
