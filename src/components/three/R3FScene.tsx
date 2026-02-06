@@ -1,6 +1,9 @@
 import { Canvas } from "@react-three/fiber";
 import { Suspense, useEffect, useMemo, useState } from "react";
-import { KeyboardControls } from "@react-three/drei";
+import {
+    KeyboardControls,
+    // Environment
+} from "@react-three/drei";
 import Room from "@/components/three/Room";
 import Character from "@/components/three/Character";
 import Lights from "@/components/three/Lights";
@@ -13,154 +16,175 @@ import { useExperience } from "@/lib/stores/useExperience";
 import styles from "@/styles/R3FScene.module.scss";
 
 enum Controls {
-        forward = "forward",
-        backward = "backward",
-        leftward = "leftward",
-        rightward = "rightward",
+    forward = "forward",
+    backward = "backward",
+    leftward = "leftward",
+    rightward = "rightward",
 }
 
 const controls = [
-        { name: Controls.forward, keys: ["KeyW", "ArrowUp"] },
-        { name: Controls.backward, keys: ["KeyS", "ArrowDown"] },
-        { name: Controls.leftward, keys: ["KeyA", "ArrowLeft"] },
-        { name: Controls.rightward, keys: ["KeyD", "ArrowRight"] },
+    { name: Controls.forward, keys: ["KeyW", "ArrowUp"] },
+    { name: Controls.backward, keys: ["KeyS", "ArrowDown"] },
+    { name: Controls.leftward, keys: ["KeyA", "ArrowLeft"] },
+    { name: Controls.rightward, keys: ["KeyD", "ArrowRight"] },
 ];
 
 function R3FSceneContent() {
-        const [showCanvas, setShowCanvas] = useState(false);
-        const { message, interaction, clearMessage } = useMessage();
-        const { mode, isTransitioning, targetMode, isBlackout, exitTerminal } = useExperience(state => ({
-                mode: state.mode,
-                isTransitioning: state.isTransitioning,
-                targetMode: state.targetMode,
-                isBlackout: state.isBlackout,
-                exitTerminal: state.exitTerminal,
+    const [showCanvas, setShowCanvas] = useState(false);
+    const { message, interaction, clearMessage } = useMessage();
+    const { mode, isTransitioning, targetMode, isBlackout, exitTerminal } =
+        useExperience(state => ({
+            mode: state.mode,
+            isTransitioning: state.isTransitioning,
+            targetMode: state.targetMode,
+            isBlackout: state.isBlackout,
+            exitTerminal: state.exitTerminal,
         }));
-        const [, setSelectedOption] = useState<string>("");
+    const [, setSelectedOption] = useState<string>("");
 
-        useEffect(() => {
-                setShowCanvas(true);
-        }, []);
+    useEffect(() => {
+        setShowCanvas(true);
+    }, []);
 
-        useEffect(() => {
-                const handleKeyDown = (event: KeyboardEvent) => {
-                        if (event.key === "Enter" && interaction?.onEnter && mode === "scene" && !isTransitioning) {
-                                event.preventDefault();
-                                clearMessage();
-                                interaction.onEnter();
-                        }
+    useEffect(() => {
+        const handleKeyDown = (event: KeyboardEvent) => {
+            if (
+                event.key === "Enter" &&
+                interaction?.onEnter &&
+                mode === "scene" &&
+                !isTransitioning
+            ) {
+                event.preventDefault();
+                clearMessage();
+                interaction.onEnter();
+            }
 
-                        if (event.key === "Escape" && mode === "terminal" && !isTransitioning) {
-                                event.preventDefault();
-                                exitTerminal();
-                        }
-                };
+            if (
+                event.key === "Escape" &&
+                mode === "terminal" &&
+                !isTransitioning
+            ) {
+                event.preventDefault();
+                exitTerminal();
+            }
+        };
 
-                window.addEventListener("keydown", handleKeyDown);
+        window.addEventListener("keydown", handleKeyDown);
 
-                return () => {
-                        window.removeEventListener("keydown", handleKeyDown);
-                };
-        }, [interaction, mode, isTransitioning, clearMessage, exitTerminal]);
+        return () => {
+            window.removeEventListener("keydown", handleKeyDown);
+        };
+    }, [interaction, mode, isTransitioning, clearMessage, exitTerminal]);
 
-        const canvasClassName = useMemo(() => {
-                const classes = [styles.canvasLayer];
-                const isTerminalActive = mode === "terminal" && !isTransitioning;
-                const isEnteringBlackout = isBlackout && targetMode === "terminal";
-
-                if (isTerminalActive || isEnteringBlackout) {
-                        classes.push(styles.canvasInactive);
-                }
-
-                return classes.join(" ");
-        }, [isBlackout, isTransitioning, mode, targetMode]);
-
-        const terminalClasses = useMemo(() => {
-                const classes = [styles.terminalLayer];
-
-                if (mode === "terminal" || (isTransitioning && targetMode === "terminal" && isBlackout)) {
-                        classes.push(styles.terminalVisible);
-                }
-
-                if (mode === "terminal" && !isTransitioning) {
-                        classes.push(styles.terminalInteractive);
-                }
-
-                return classes.join(" ");
-        }, [isBlackout, isTransitioning, mode, targetMode]);
-
-        const shouldRenderTerminal = mode === "terminal" || (isTransitioning && targetMode === "terminal");
+    const canvasClassName = useMemo(() => {
+        const classes = [styles.canvasLayer];
         const isTerminalActive = mode === "terminal" && !isTransitioning;
+        const isEnteringBlackout = isBlackout && targetMode === "terminal";
 
-        useEffect(() => {
-                if (isTransitioning && targetMode === "terminal") {
-                        clearMessage();
-                }
-        }, [clearMessage, isTransitioning, targetMode]);
+        if (isTerminalActive || isEnteringBlackout) {
+            classes.push(styles.canvasInactive);
+        }
 
-        return (
-                <div className={styles.sceneContainer}>
-                        <div className={canvasClassName}>
-                                {showCanvas && (
-                                        <KeyboardControls map={controls}>
-                                                <Canvas
-                                                        shadows
-                                                        camera={{
-                                                                position: [0, 5, 10],
-                                                                fov: 45,
-                                                                near: 0.1,
-                                                                far: 1000,
-                                                        }}
-                                                        gl={{
-                                                                antialias: true,
-                                                                powerPreference: "default",
-                                                        }}
-                                                >
-                                                        <color attach="background" args={["#87CEEB"]} />
+        return classes.join(" ");
+    }, [isBlackout, isTransitioning, mode, targetMode]);
 
-                                                        {/* Lighting */}
-                                                        <Lights />
+    const terminalClasses = useMemo(() => {
+        const classes = [styles.terminalLayer];
 
-                                                        <Suspense fallback={null}>
-                                                                {/* Room environment */}
-                                                                <Room />
+        if (
+            mode === "terminal" ||
+            (isTransitioning && targetMode === "terminal" && isBlackout)
+        ) {
+            classes.push(styles.terminalVisible);
+        }
 
-                                                                {/* Character */}
-                                                                <Character />
+        if (mode === "terminal" && !isTransitioning) {
+            classes.push(styles.terminalInteractive);
+        }
 
-                                                                {/* Camera controller */}
-                                                                <Camera />
-                                                        </Suspense>
-                                                </Canvas>
-                                        </KeyboardControls>
-                                )}
-                        </div>
-                        {shouldRenderTerminal && (
-                                <div className={terminalClasses}>
-                                        <div className={styles.terminalWrapper}>
-                                                <Terminal onCommand={setSelectedOption} isActive={isTerminalActive} />
-                                        </div>
-                                </div>
-                        )}
-                        <div
-                                className={[
-                                        styles.blackoutOverlay,
-                                        isBlackout ? styles.blackoutVisible : "",
-                                ].join(" ")}
+        return classes.join(" ");
+    }, [isBlackout, isTransitioning, mode, targetMode]);
+
+    const shouldRenderTerminal =
+        mode === "terminal" || (isTransitioning && targetMode === "terminal");
+    const isTerminalActive = mode === "terminal" && !isTransitioning;
+
+    useEffect(() => {
+        if (isTransitioning && targetMode === "terminal") {
+            clearMessage();
+        }
+    }, [clearMessage, isTransitioning, targetMode]);
+
+    return (
+        <div className={styles.sceneContainer}>
+            <div className={canvasClassName}>
+                {showCanvas && (
+                    <KeyboardControls map={controls}>
+                        <Canvas
+                            shadows
+                            camera={{
+                                position: [0, 5, 10],
+                                fov: 45,
+                                near: 0.1,
+                                far: 1000,
+                            }}
+                            gl={{
+                                antialias: true,
+                                powerPreference: "default",
+                            }}
+                        >
+                            {/* Environment = the “Material Preview” look */}
+                            {/* <Environment preset="studio" intensity={1} /> */}
+
+                            {/* eslint-disable-next-line react/no-unknown-property */}
+                            <color attach="background" args={["#87CEEB"]} />
+
+                            {/* Lighting */}
+                            <Lights />
+
+                            <Suspense fallback={null}>
+                                {/* Room environment */}
+                                <Room />
+
+                                {/* Character */}
+                                <Character />
+
+                                {/* Camera controller */}
+                                <Camera />
+                            </Suspense>
+                        </Canvas>
+                    </KeyboardControls>
+                )}
+            </div>
+            {shouldRenderTerminal && (
+                <div className={terminalClasses}>
+                    <div className={styles.terminalWrapper}>
+                        <Terminal
+                            onCommand={setSelectedOption}
+                            isActive={isTerminalActive}
                         />
-                        <Message text={message} />
+                    </div>
                 </div>
-        );
+            )}
+            <div
+                className={[
+                    styles.blackoutOverlay,
+                    isBlackout ? styles.blackoutVisible : "",
+                ].join(" ")}
+            />
+            <Message text={message} />
+        </div>
+    );
 }
 
 function R3FScene() {
-        return (
-                <MessageProvider>
-                        <SceneProvider>
-                                <R3FSceneContent />
-                        </SceneProvider>
-                </MessageProvider>
-        );
+    return (
+        <MessageProvider>
+            <SceneProvider>
+                <R3FSceneContent />
+            </SceneProvider>
+        </MessageProvider>
+    );
 }
 
 export default R3FScene;
