@@ -5,6 +5,7 @@
 	"license": "MIT",
 	"scripts": {
 		"dev": "next dev",
+		"debug": "cross-env NEXT_PUBLIC_DEBUG=true next dev",
 		"build": "next build",
 		"start": "next start",
 		"lint": "next lint",
@@ -60,6 +61,7 @@
 		"@types/puppeteer": "^7.0.0",
 		"@typescript-eslint/eslint-plugin": "^8.46.1",
 		"@typescript-eslint/parser": "^8.46.1",
+		"cross-env": "^10.1.0",
 		"eslint": "^9.31.0",
 		"eslint-config-next": "^15.4.3",
 		"eslint-config-prettier": "^10.1.8",
