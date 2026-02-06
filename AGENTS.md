@@ -57,28 +57,14 @@ Use existing ESLint and Prettier rules when making updates.
 
 # Current Task for Agent
 
-Move all components that don't have a test file to a new subfolder of components called "three". Update imports for all of those components accordingly.
+When our R3F scene first loads, display the following message via the `useMessage` hook:
 
-Components to move include the following:
+"Welcome to Devon's office! This is a 3D interactive resume built with Next.js, React, and React Three Fiber. Use your arrow keys to move around the scene. Approach objects to learn more about my skills and experience. If you have any questions or want to connect, don't hesitate to reach out!"
 
-- Bass.tsx
-- BassGroup.tsx
-- BoundingBox.tsx
-- Camera.tsx
-- Character.tsx
-- Desk.tsx
-- InteractiveBox.tsx
-- Lights.tsx
-- Message.tsx
-- Monitor.tsx
-- R3FScene.tsx
-- Room.tsx
-- Skateboard.tsx
-- SkateboardGroup.tsx
+As soon as the character is moved by the user, clear the above message.
 
-Three components that import each other should use the aliased, absolute paths when importing another component (i.e. @/components/three/ComponentName).
+Additionally, have the character model facing the camera by default, rather than away.
 
 # Notes from Agent
 
-- Moved 3D scene-related components without dedicated tests into `src/components/three` and updated imports to use aliased paths.
-- Attempted to run `yarn lint`, but it failed because the package isn't registered in the lockfile for this environment.
+[Replace this with any relevant notes on work done by the agent]
