@@ -17,8 +17,13 @@ const Room = memo(() => {
     // Configure texture repeat for wooden floor - moved to useEffect to prevent reconfiguration on every render
     useEffect(() => {
         floorTexture.wrapS = floorTexture.wrapT = THREE.RepeatWrapping;
-        floorTexture.repeat.set(8, 8); // Wood plank pattern repeat
-    }, [floorTexture]);
+
+        const plankSize = 1; // World units per plank
+        const repeatsX = Math.ceil(roomSize / plankSize);
+
+        floorTexture.repeat.set(repeatsX, 8);
+        floorTexture.needsUpdate = true; // Critical to apply changes
+    }, [floorTexture, roomSize]);
 
     // Memoize Vector3 creation to prevent recreation on every render
     const proxyPosition = useMemo(
