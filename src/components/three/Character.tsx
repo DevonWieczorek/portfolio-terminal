@@ -37,7 +37,7 @@ const Character = React.memo(() => {
 
     // Subscribe to keyboard events for logging (only in development)
     useEffect(() => {
-        if (process.env.NODE_ENV === "development") {
+        if (process.env.NEXT_PUBLIC_DEBUG) {
             const unsubscribe = subscribe(
                 state => [
                     state.forward,
