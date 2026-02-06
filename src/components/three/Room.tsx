@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import React, { useEffect, useMemo } from "react";
 import { useTexture } from "@react-three/drei";
 import * as THREE from "three";
 import { useMovement } from "@/lib/stores/useMovement";
@@ -7,61 +7,71 @@ import Desk from "@/components/three/Desk";
 import BassGroup from "@/components/three/BassGroup";
 import SkateboardGroup from "@/components/three/SkateboardGroup";
 
-export default function Room() {
-  const [proxyPosition, setProxyPosition] = useState<THREE.Vector3>(new THREE.Vector3(0, 0, 0));
-  const { position: characterPosition } = useMovement();
-  const { roomSize, wallColor, wallHeight, wallThickness } = useScene();
+const Room = React.memo(() => {
+    const characterPosition = useMovement(state => state.position);
+    const { roomSize, wallColor, wallHeight, wallThickness } = useScene();
 
-  // Load wood texture for floor
-  const floorTexture = useTexture("/textures/wood.jpg");
+    // Load wood texture for floor
+    const floorTexture = useTexture("/textures/wood.jpg");
 
-  // Configure texture repeat for wooden floor
-  floorTexture.wrapS = floorTexture.wrapT = THREE.RepeatWrapping;
-  floorTexture.repeat.set(8, 8); // Wood plank pattern repeat
+    // Configure texture repeat for wooden floor - moved to useEffect to prevent reconfiguration on every render
+    useEffect(() => {
+        floorTexture.wrapS = floorTexture.wrapT = THREE.RepeatWrapping;
+        floorTexture.repeat.set(8, 8); // Wood plank pattern repeat
+    }, [floorTexture]);
 
-  useEffect(() => {
-    setProxyPosition(new THREE.Vector3(...Object.values(characterPosition)));
-  }, [characterPosition]);
+    // Memoize Vector3 creation to prevent recreation on every render
+    const proxyPosition = useMemo(
+        () =>
+            new THREE.Vector3(
+                characterPosition.x,
+                characterPosition.y,
+                characterPosition.z
+            ),
+        [characterPosition.x, characterPosition.y, characterPosition.z]
+    );
 
-  return (
-    <group>
-      {/* Floor */}
-      <mesh position={[0, -0.5, 0]} receiveShadow>
-        <boxGeometry args={[roomSize, 1, roomSize]} />
-        <meshLambertMaterial map={floorTexture} />
-      </mesh>
+    return (
+        <group>
+            {/* Floor */}
+            <mesh position={[0, -0.5, 0]} receiveShadow>
+                <boxGeometry args={[roomSize, 1, roomSize]} />
+                <meshLambertMaterial map={floorTexture} />
+            </mesh>
 
-      {/* North Wall */}
-      <mesh position={[0, wallHeight / 2, -roomSize / 2]} receiveShadow>
-        <boxGeometry args={[roomSize, wallHeight, wallThickness]} />
-        <meshLambertMaterial color={wallColor} />
-      </mesh>
+            {/* North Wall */}
+            <mesh position={[0, wallHeight / 2, -roomSize / 2]} receiveShadow>
+                <boxGeometry args={[roomSize, wallHeight, wallThickness]} />
+                <meshLambertMaterial color={wallColor} />
+            </mesh>
 
-      <BassGroup proximityPosition={proxyPosition} />
+            <BassGroup proximityPosition={proxyPosition} />
 
-      {/* Desk and Computer Setup */}
-      <Desk />
+            {/* Desk and Computer Setup */}
+            <Desk />
 
-      {/* South Wall */}
-      <mesh position={[0, wallHeight / 2, roomSize / 2]} receiveShadow>
-        <boxGeometry args={[roomSize, wallHeight, wallThickness]} />
-        <meshLambertMaterial color={wallColor} />
-      </mesh>
+            {/* South Wall */}
+            <mesh position={[0, wallHeight / 2, roomSize / 2]} receiveShadow>
+                <boxGeometry args={[roomSize, wallHeight, wallThickness]} />
+                <meshLambertMaterial color={wallColor} />
+            </mesh>
 
-      {/* East Wall */}
-      <mesh position={[roomSize / 2, wallHeight / 2, 0]} receiveShadow>
-        <boxGeometry args={[wallThickness, wallHeight, roomSize]} />
-        <meshLambertMaterial color={wallColor} />
-      </mesh>
+            {/* East Wall */}
+            <mesh position={[roomSize / 2, wallHeight / 2, 0]} receiveShadow>
+                <boxGeometry args={[wallThickness, wallHeight, roomSize]} />
+                <meshLambertMaterial color={wallColor} />
+            </mesh>
 
-      <SkateboardGroup proximityPosition={proxyPosition} />
+            <SkateboardGroup proximityPosition={proxyPosition} />
 
-      {/* West Wall */}
-      <mesh position={[-roomSize / 2, wallHeight / 2, 0]} receiveShadow>
-        <boxGeometry args={[wallThickness, wallHeight, roomSize]} />
-        <meshLambertMaterial color={wallColor} />
-      </mesh>
+            {/* West Wall */}
+            <mesh position={[-roomSize / 2, wallHeight / 2, 0]} receiveShadow>
+                <boxGeometry args={[wallThickness, wallHeight, roomSize]} />
+                <meshLambertMaterial color={wallColor} />
+            </mesh>
+        </group>
+    );
+});
+Room.displayName = "Room";
 
-    </group>
-  );
-}
+export default Room;

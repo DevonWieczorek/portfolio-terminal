@@ -1,4 +1,5 @@
-import { Canvas } from "@react-three/fiber";
+import { memo } from "react";
+import React, { Canvas } from "@react-three/fiber";
 import { Suspense, useEffect, useMemo, useState } from "react";
 import {
     KeyboardControls,
@@ -22,24 +23,22 @@ enum Controls {
     rightward = "rightward",
 }
 
-const controls = [
+const CONTROLS = [
     { name: Controls.forward, keys: ["KeyW", "ArrowUp"] },
     { name: Controls.backward, keys: ["KeyS", "ArrowDown"] },
     { name: Controls.leftward, keys: ["KeyA", "ArrowLeft"] },
     { name: Controls.rightward, keys: ["KeyD", "ArrowRight"] },
 ];
 
-function R3FSceneContent() {
+const R3FSceneContent = memo(() => {
     const [showCanvas, setShowCanvas] = useState(false);
     const { message, interaction, clearMessage } = useMessage();
-    const { mode, isTransitioning, targetMode, isBlackout, exitTerminal } =
-        useExperience(state => ({
-            mode: state.mode,
-            isTransitioning: state.isTransitioning,
-            targetMode: state.targetMode,
-            isBlackout: state.isBlackout,
-            exitTerminal: state.exitTerminal,
-        }));
+    // Use individual selectors to prevent unnecessary rerenders
+    const mode = useExperience(state => state.mode);
+    const isTransitioning = useExperience(state => state.isTransitioning);
+    const targetMode = useExperience(state => state.targetMode);
+    const isBlackout = useExperience(state => state.isBlackout);
+    const exitTerminal = useExperience(state => state.exitTerminal);
     const [, setSelectedOption] = useState<string>("");
 
     useEffect(() => {
@@ -119,7 +118,7 @@ function R3FSceneContent() {
         <div className={styles.sceneContainer}>
             <div className={canvasClassName}>
                 {showCanvas && (
-                    <KeyboardControls map={controls}>
+                    <KeyboardControls map={CONTROLS}>
                         <Canvas
                             shadows
                             camera={{
@@ -136,7 +135,6 @@ function R3FSceneContent() {
                             {/* Environment = the “Material Preview” look */}
                             {/* <Environment preset="studio" intensity={1} /> */}
 
-                            {/* eslint-disable-next-line react/no-unknown-property */}
                             <color attach="background" args={["#87CEEB"]} />
 
                             {/* Lighting */}
@@ -175,7 +173,8 @@ function R3FSceneContent() {
             <Message text={message} />
         </div>
     );
-}
+});
+R3FSceneContent.displayName = "R3FSceneContent";
 
 function R3FScene() {
     return (

@@ -1,4 +1,4 @@
-import { useMemo } from "react";
+import React, { useMemo } from "react";
 import { useGLTF } from "@react-three/drei";
 import { useControls, folder } from "leva";
 import { useScene } from "@/lib/contexts/SceneContext";
@@ -11,95 +11,102 @@ const GROUP_CENTER_OFFSET = (NUM_BASSES - 1) / 2;
 const BASS_MESSAGE =
     "Devon is the bassist and co-vocalist of an alternative Punk Rock band called Friend Z.";
 
-const BassGroup = ({
-    proximityPosition,
-}: {
-    proximityPosition: PositionArray;
-}) => {
-    const { bass } = useScene();
+// Static bass configurations - moved outside component to prevent recreation
+const BASS_CONFIGS = [
+    { src: "/models/bass-1.glb" },
+    { src: "/models/bass-2.glb", scale: 1.28 },
+    { src: "/models/bass-3.glb", scale: 27.22 },
+    // { src: "/models/bass-4.glb", scale: 0.094 },
+    { src: "/models/bass-1.glb" },
+];
 
-    const { bassX, bassY, bassZ, bassScale, bassSpacing } = useControls({
-        Bass: folder(
-            {
-                bassX: {
-                    value: bass?.position?.x,
-                    min: -20,
-                    max: 10,
-                    step: 0.01,
+const BassGroup = React.memo(
+    ({ proximityPosition }: { proximityPosition: PositionArray }) => {
+        const { bass } = useScene();
+
+        const { bassX, bassY, bassZ, bassScale, bassSpacing } = useControls({
+            Bass: folder(
+                {
+                    bassX: {
+                        value: bass?.position?.x,
+                        min: -20,
+                        max: 10,
+                        step: 0.01,
+                    },
+                    bassY: {
+                        value: bass?.position?.y,
+                        min: -10,
+                        max: 10,
+                        step: 0.01,
+                    },
+                    bassZ: {
+                        value: bass?.position?.z,
+                        min: -20,
+                        max: 10,
+                        step: 0.01,
+                    },
+                    bassScale: {
+                        value: bass?.scale,
+                        min: 0.1,
+                        max: 10,
+                        step: 0.1,
+                    },
+                    bassSpacing: {
+                        value: bass?.spacing,
+                        min: 0.5,
+                        max: 5,
+                        step: 0.1,
+                    },
                 },
-                bassY: {
-                    value: bass?.position?.y,
-                    min: -10,
-                    max: 10,
-                    step: 0.01,
-                },
-                bassZ: {
-                    value: bass?.position?.z,
-                    min: -20,
-                    max: 10,
-                    step: 0.01,
-                },
-                bassScale: { value: bass?.scale, min: 0.1, max: 10, step: 0.1 },
-                bassSpacing: {
-                    value: bass?.spacing,
-                    min: 0.5,
-                    max: 5,
-                    step: 0.1,
-                },
-            },
-            { collapsed: true }
-        ),
-    });
+                { collapsed: true }
+            ),
+        });
 
-    const bass1 = {
-        scale: [bassScale, bassScale, bassScale],
-        src: "/models/bass-1.glb",
-    };
+        const BassElements = useMemo(
+            () =>
+                Array.from({ length: NUM_BASSES }).map((_, i) => {
+                    const config = BASS_CONFIGS[i];
+                    const scale =
+                        config.scale !== undefined
+                            ? ([config.scale, config.scale, config.scale] as [
+                                  number,
+                                  number,
+                                  number,
+                              ])
+                            : ([bassScale, bassScale, bassScale] as [
+                                  number,
+                                  number,
+                                  number,
+                              ]);
 
-    const bass2 = {
-        scale: [1.28, 1.28, 1.28],
-        src: "/models/bass-2.glb",
-    };
+                    return (
+                        <Bass
+                            key={i}
+                            position={[
+                                (i - GROUP_CENTER_OFFSET) * bassSpacing,
+                                bassY,
+                                0,
+                            ]}
+                            scale={scale}
+                            modelPath={config.src}
+                        />
+                    );
+                }),
+            [bassSpacing, bassY, bassScale]
+        );
 
-    const bass3 = {
-        scale: [27.22, 27.22, 27.22],
-        src: "/models/bass-3.glb",
-    };
-
-    const bass4 = {
-        scale: [0.094, 0.094, 0.094],
-        src: "/models/bass-4.glb",
-    };
-
-    const basses = [bass1, bass2, bass3, bass1];
-
-    const BassElements = useMemo(
-        () =>
-            Array.from({ length: NUM_BASSES }).map((_, i) => (
-                <Bass
-                    key={i}
-                    position={[
-                        (i - GROUP_CENTER_OFFSET) * bassSpacing,
-                        bassY,
-                        0,
-                    ]}
-                    scale={basses[i].scale}
-                    modelPath={basses[i].src}
-                />
-            )),
-        [NUM_BASSES, GROUP_CENTER_OFFSET, bassSpacing, bassY, basses] // Stable deps only
-    );
-
-    return (
-        <InteractiveBox
-            message={BASS_MESSAGE}
-            position={[bassX, 0, bassZ]}
-            proximityPosition={proximityPosition}
-        >
-            <group>{BassElements}</group>
-        </InteractiveBox>
-    );
-};
+        return (
+            <InteractiveBox
+                message={BASS_MESSAGE}
+                position={[bassX, 0, bassZ]}
+                proximityPosition={proximityPosition}
+            >
+                <group>{BassElements}</group>
+            </InteractiveBox>
+        );
+    }
+);
+BassGroup.displayName = "BassGroup";
 
 useGLTF.preload("/models/bass-1.glb");
 useGLTF.preload("/models/bass-2.glb");
