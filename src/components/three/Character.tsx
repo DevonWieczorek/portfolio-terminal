@@ -5,6 +5,8 @@ import * as THREE from "three";
 import { useMovement } from "@/lib/stores/useMovement";
 import { useScene } from "@/lib/contexts/SceneContext";
 import { useExperience } from "@/lib/stores/useExperience";
+import { useMessage } from "@/lib/contexts/MessageContext";
+import { INTRO_MESSAGE } from "@/lib/constants/sceneMessages";
 
 enum Controls {
     forward = "forward",
@@ -19,6 +21,7 @@ const Character = memo(() => {
     const { position, setPosition } = useMovement();
     const { characterSpeed, characterBoundary, characterScale, roomSize } =
         useScene();
+    const { message, clearMessage } = useMessage();
     // Use individual selectors to prevent unnecessary rerenders
     const mode = useExperience(state => state.mode);
     const isTransitioning = useExperience(state => state.isTransitioning);
@@ -34,6 +37,17 @@ const Character = memo(() => {
     // Current rotation target
     const targetRotation = useRef(0);
     const currentRotation = useRef(0);
+    const hasClearedIntro = useRef(false);
+
+    useEffect(() => {
+        const initialRotation = Math.PI;
+        currentRotation.current = initialRotation;
+        targetRotation.current = initialRotation;
+
+        if (characterRef.current) {
+            characterRef.current.rotation.y = initialRotation;
+        }
+    }, []);
 
     // Subscribe to keyboard events for logging (only in development)
     useEffect(() => {
@@ -151,6 +165,11 @@ const Character = memo(() => {
 
         // Smooth rotation interpolation
         if (isMoving) {
+            if (!hasClearedIntro.current && message === INTRO_MESSAGE) {
+                clearMessage();
+                hasClearedIntro.current = true;
+            }
+
             const rotationDiff =
                 targetRotation.current - currentRotation.current;
 

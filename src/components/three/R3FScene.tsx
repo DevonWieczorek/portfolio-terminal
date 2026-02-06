@@ -12,6 +12,7 @@ import Message from "@/components/three/Message";
 import Terminal from "@/components/Terminal";
 import { useExperience } from "@/lib/stores/useExperience";
 import styles from "@/styles/R3FScene.module.scss";
+import { INTRO_MESSAGE } from "@/lib/constants/sceneMessages";
 
 enum Controls {
     forward = "forward",
@@ -29,7 +30,7 @@ const CONTROLS = [
 
 const R3FSceneContent = memo(() => {
     const [showCanvas, setShowCanvas] = useState(false);
-    const { message, interaction, clearMessage } = useMessage();
+    const { message, interaction, clearMessage, setMessage } = useMessage();
     // Use individual selectors to prevent unnecessary rerenders
     const mode = useExperience(state => state.mode);
     const isTransitioning = useExperience(state => state.isTransitioning);
@@ -41,6 +42,10 @@ const R3FSceneContent = memo(() => {
     useEffect(() => {
         setShowCanvas(true);
     }, []);
+
+    useEffect(() => {
+        setMessage(INTRO_MESSAGE);
+    }, [setMessage]);
 
     useEffect(() => {
         const handleKeyDown = (event: KeyboardEvent) => {
