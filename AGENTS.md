@@ -67,4 +67,5 @@ Additionally, have the character model facing the camera by default, rather than
 
 # Notes from Agent
 
-[Replace this with any relevant notes on work done by the agent]
+- Added a shared intro message constant and set it on scene load, clearing it on first character movement.
+- Initialized the character rotation to face the camera by default.
