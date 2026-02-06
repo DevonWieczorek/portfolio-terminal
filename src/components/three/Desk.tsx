@@ -1,47 +1,66 @@
 import { memo, useMemo } from "react";
 import { useGLTF } from "@react-three/drei";
-import { useControls, folder } from "leva";
+// #if DEBUG
+import { useControls } from "leva";
+// #endif
 import * as THREE from "three";
 import { useScene } from "@/lib/contexts/SceneContext";
 import { useMovement } from "@/lib/stores/useMovement";
 import Monitor from "@/components/three/Monitor";
+
+type DeskControls = {
+    deskX: number;
+    deskY: number;
+    deskZ: number;
+    deskScale: number;
+};
 
 const Desk = memo(() => {
     const { desk } = useScene();
     const characterPosition = useMovement(state => state.position);
     const deskModel = useGLTF("/models/l_shaped_desk.glb");
 
-    const { deskX, deskY, deskZ, deskScale } = useControls({
-        Desk: folder(
-            {
-                deskX: {
-                    value: desk?.position?.x,
-                    min: -20,
-                    max: 10,
-                    step: 0.01,
-                },
-                deskY: {
-                    value: desk?.position?.y,
-                    min: -10,
-                    max: 10,
-                    step: 0.01,
-                },
-                deskZ: {
-                    value: desk?.position?.z,
-                    min: -20,
-                    max: 10,
-                    step: 0.01,
-                },
-                deskScale: {
-                    value: desk?.scale,
-                    min: 0.1,
-                    max: 10,
-                    step: 0.01,
-                },
+    let deskX, deskY, deskZ, deskScale;
+
+    // #if DEBUG
+    ({ deskX, deskY, deskZ, deskScale } = useControls(
+        "Desk",
+        {
+            deskX: {
+                value: desk?.position?.x ?? 0,
+                min: -20,
+                max: 10,
+                step: 0.01,
             },
-            { collapsed: true }
-        ),
-    });
+            deskY: {
+                value: desk?.position?.y ?? 0,
+                min: -10,
+                max: 10,
+                step: 0.01,
+            },
+            deskZ: {
+                value: desk?.position?.z ?? 0,
+                min: -20,
+                max: 10,
+                step: 0.01,
+            },
+            deskScale: {
+                value: desk?.scale ?? 0,
+                min: 0.1,
+                max: 10,
+                step: 0.01,
+            },
+        },
+        { collapsed: true }
+    ) as DeskControls);
+    // #endif
+
+    // #if !DEBUG
+    deskX = desk?.position?.x;
+    deskY = desk?.position?.y;
+    deskZ = desk?.position?.z;
+    deskScale = desk?.scale;
+    // #endif
 
     // L-shaped desk positioned snug in northwest corner
     const cornerX = deskX ?? desk?.position?.x; // Very close to west wall

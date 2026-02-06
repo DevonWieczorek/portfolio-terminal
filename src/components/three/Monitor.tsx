@@ -1,7 +1,9 @@
 import { memo, useCallback, useEffect, useState, useMemo } from "react";
 import { Vector3, Box3, type Quaternion } from "three";
 import { useGLTF } from "@react-three/drei";
-import { useControls, folder } from "leva";
+// #if DEBUG
+import { useControls } from "leva";
+// #endif
 import { useScene } from "@/lib/contexts/SceneContext";
 import InteractiveBox from "@/components/three/InteractiveBox";
 import { useExperience } from "@/lib/stores/useExperience";
@@ -11,13 +13,12 @@ interface MonitorProps {
     proximityPosition: PositionArray;
 }
 
-interface ControlValue {
-    [key: string]: number;
-}
-
-interface ControlValues {
-    [key: string]: ControlValue;
-}
+type MonitorControls = {
+    monitorRotationY: number;
+    monitorX: number;
+    monitorY: number;
+    monitorZ: number;
+};
 
 const MONITOR_MESSAGE = "Press ENTER to use the computer.";
 
@@ -31,39 +32,47 @@ const Monitor = memo(({ proximityPosition }: MonitorProps) => {
     const forwardBase = useMemo(() => new Vector3(0, 0, -1), []);
     const upBase = useMemo(() => new Vector3(0, 1, 0), []);
 
-    const controls: ControlValues = useControls({
-        Monitor: folder(
-            {
-                monitorRotationY: {
-                    value: monitor?.rotation?.y,
-                    min: -5,
-                    max: Math.PI * 2,
-                    step: 0.01,
-                },
-                monitorX: {
-                    value: monitor?.position?.x,
-                    min: -20,
-                    max: 10,
-                    step: 0.1,
-                },
-                monitorY: {
-                    value: monitor?.position?.y,
-                    min: -10,
-                    max: 10,
-                    step: 0.1,
-                },
-                monitorZ: {
-                    value: monitor?.position?.z,
-                    min: -20,
-                    max: 10,
-                    step: 0.1,
-                },
-            } as any,
-            { collapsed: true }
-        ), // TODO: Fix type
-    });
+    let monitorX, monitorY, monitorZ, monitorRotationY;
 
-    const { monitorRotationY, monitorX, monitorY, monitorZ } = controls;
+    // #if DEBUG
+    ({ monitorRotationY, monitorX, monitorY, monitorZ } = useControls(
+        "Monitor",
+        {
+            monitorRotationY: {
+                value: monitor?.rotation?.y ?? 0,
+                min: -5,
+                max: Math.PI * 2,
+                step: 0.01,
+            },
+            monitorX: {
+                value: monitor?.position?.x ?? 0,
+                min: -20,
+                max: 10,
+                step: 0.1,
+            },
+            monitorY: {
+                value: monitor?.position?.y ?? 0,
+                min: -10,
+                max: 10,
+                step: 0.1,
+            },
+            monitorZ: {
+                value: monitor?.position?.z ?? 0,
+                min: -20,
+                max: 10,
+                step: 0.1,
+            },
+        },
+        { collapsed: true }
+    ) as MonitorControls);
+    // #endif
+
+    // #if !DEBUG
+    monitorRotationY = monitor?.rotation?.y;
+    monitorX = monitor?.position?.x;
+    monitorY = monitor?.position?.y;
+    monitorZ = monitor?.position?.z;
+    // #endif
 
     useEffect(() => {
         if (monitorModel?.scene) {

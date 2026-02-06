@@ -1,9 +1,19 @@
 import { memo, useMemo } from "react";
 import { useGLTF } from "@react-three/drei";
-import { useControls, folder } from "leva";
+// #if DEBUG
+import { useControls } from "leva";
+// #endif
 import { useScene } from "@/lib/contexts/SceneContext";
 import Bass from "@/components/three/Bass";
 import InteractiveBox from "@/components/three/InteractiveBox";
+
+type BassControls = {
+    bassX: number;
+    bassY: number;
+    bassZ: number;
+    bassScale: number;
+    bassSpacing: number;
+};
 
 const NUM_BASSES = 4;
 // Subtracting 1.5 from i ensures the group of 4 basses is centered on bassX, not offset to one side.
@@ -24,43 +34,54 @@ const BassGroup = memo(
     ({ proximityPosition }: { proximityPosition: PositionArray }) => {
         const { bass } = useScene();
 
-        const { bassX, bassY, bassZ, bassScale, bassSpacing } = useControls({
-            Bass: folder(
-                {
-                    bassX: {
-                        value: bass?.position?.x,
-                        min: -20,
-                        max: 10,
-                        step: 0.01,
-                    },
-                    bassY: {
-                        value: bass?.position?.y,
-                        min: -10,
-                        max: 10,
-                        step: 0.01,
-                    },
-                    bassZ: {
-                        value: bass?.position?.z,
-                        min: -20,
-                        max: 10,
-                        step: 0.01,
-                    },
-                    bassScale: {
-                        value: bass?.scale,
-                        min: 0.1,
-                        max: 10,
-                        step: 0.1,
-                    },
-                    bassSpacing: {
-                        value: bass?.spacing,
-                        min: 0.5,
-                        max: 5,
-                        step: 0.1,
-                    },
+        let bassX, bassY, bassZ, bassScale, bassSpacing;
+
+        // #if DEBUG
+        ({ bassX, bassY, bassZ, bassScale, bassSpacing } = useControls(
+            "Bass",
+            {
+                bassX: {
+                    value: bass?.position?.x ?? 0,
+                    min: -20,
+                    max: 10,
+                    step: 0.01,
                 },
-                { collapsed: true }
-            ),
-        });
+                bassY: {
+                    value: bass?.position?.y ?? 0,
+                    min: -10,
+                    max: 10,
+                    step: 0.01,
+                },
+                bassZ: {
+                    value: bass?.position?.z ?? 0,
+                    min: -20,
+                    max: 10,
+                    step: 0.01,
+                },
+                bassScale: {
+                    value: bass?.scale ?? 0,
+                    min: 0.1,
+                    max: 10,
+                    step: 0.1,
+                },
+                bassSpacing: {
+                    value: bass?.spacing ?? 0,
+                    min: 0.5,
+                    max: 5,
+                    step: 0.1,
+                },
+            },
+            { collapsed: true }
+        ) as BassControls);
+        // #endif
+
+        // #if !DEBUG
+        bassX = bass?.position?.x;
+        bassY = bass?.position?.y;
+        bassZ = bass?.position?.z;
+        bassScale = bass?.scale;
+        bassSpacing = bass?.spacing;
+        // #endif
 
         const BassElements = useMemo(
             () =>

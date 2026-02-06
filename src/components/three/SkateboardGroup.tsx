@@ -1,9 +1,19 @@
 import { memo, useMemo } from "react";
 import { useGLTF } from "@react-three/drei";
-import { useControls, folder } from "leva";
+// #if DEBUG
+import { useControls } from "leva";
+// #endif
 import { useScene } from "@/lib/contexts/SceneContext";
 import Skateboard from "@/components/three/Skateboard";
 import InteractiveBox from "@/components/three/InteractiveBox";
+
+type DeckControls = {
+    deckX: number;
+    deckY: number;
+    deckZ: number;
+    deckScale: number;
+    deckSpacing: number;
+};
 
 const NUM_DECKS = 4;
 const DECK_MODEL_PATH = "/models/skateboard_deck_2.glb";
@@ -16,43 +26,54 @@ const SkateboardGroup = memo(
     ({ proximityPosition }: { proximityPosition: PositionArray }) => {
         const { deck, rotations } = useScene();
 
-        const { deckX, deckY, deckZ, deckScale, deckSpacing } = useControls({
-            Skateboard: folder(
-                {
-                    deckX: {
-                        value: deck?.position?.x,
-                        min: -20,
-                        max: 20,
-                        step: 0.01,
-                    },
-                    deckY: {
-                        value: deck?.position?.y,
-                        min: -10,
-                        max: 10,
-                        step: 0.01,
-                    },
-                    deckZ: {
-                        value: deck?.position?.z,
-                        min: -20,
-                        max: 20,
-                        step: 0.01,
-                    },
-                    deckScale: {
-                        value: deck?.scale,
-                        min: 0.1,
-                        max: 10,
-                        step: 0.1,
-                    },
-                    deckSpacing: {
-                        value: deck?.spacing,
-                        min: 0.5,
-                        max: 5,
-                        step: 0.1,
-                    },
+        let deckX, deckY, deckZ, deckScale, deckSpacing;
+
+        // #if DEBUG
+        ({ deckX, deckY, deckZ, deckScale, deckSpacing } = useControls(
+            "Skateboard",
+            {
+                deckX: {
+                    value: deck?.position?.x ?? 0,
+                    min: -20,
+                    max: 20,
+                    step: 0.01,
                 },
-                { collapsed: true }
-            ),
-        });
+                deckY: {
+                    value: deck?.position?.y ?? 0,
+                    min: -10,
+                    max: 10,
+                    step: 0.01,
+                },
+                deckZ: {
+                    value: deck?.position?.z ?? 0,
+                    min: -20,
+                    max: 20,
+                    step: 0.01,
+                },
+                deckScale: {
+                    value: deck?.scale ?? 0,
+                    min: 0.1,
+                    max: 10,
+                    step: 0.1,
+                },
+                deckSpacing: {
+                    value: deck?.spacing ?? 0,
+                    min: 0.5,
+                    max: 5,
+                    step: 0.1,
+                },
+            },
+            { collapsed: true }
+        ) as DeckControls);
+        // #endif
+
+        // #if !DEBUG
+        deckX = deck?.position?.x;
+        deckY = deck?.position?.y;
+        deckZ = deck?.position?.z;
+        deckScale = deck?.scale;
+        deckSpacing = deck?.spacing;
+        // #endif
 
         // Memoize skateboard elements to prevent recreation on every render
         const skateboardElements = useMemo(
