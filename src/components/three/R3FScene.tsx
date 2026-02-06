@@ -1,10 +1,7 @@
 import { memo } from "react";
 import React, { Canvas } from "@react-three/fiber";
 import { Suspense, useEffect, useMemo, useState } from "react";
-import {
-    KeyboardControls,
-    // Environment
-} from "@react-three/drei";
+import { KeyboardControls } from "@react-three/drei";
 import Room from "@/components/three/Room";
 import Character from "@/components/three/Character";
 import Lights from "@/components/three/Lights";
@@ -132,9 +129,6 @@ const R3FSceneContent = memo(() => {
                                 powerPreference: "default",
                             }}
                         >
-                            {/* Environment = the “Material Preview” look */}
-                            {/* <Environment preset="studio" intensity={1} /> */}
-
                             <color attach="background" args={["#87CEEB"]} />
 
                             {/* Lighting */}
