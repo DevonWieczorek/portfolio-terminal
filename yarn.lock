@@ -2302,6 +2302,11 @@ babel-jest@30.2.0:
     graceful-fs "^4.2.11"
     slash "^3.0.0"
 
+babel-plugin-conditional-compilation@^0.0.1:
+  version "0.0.1"
+  resolved "https://registry.yarnpkg.com/babel-plugin-conditional-compilation/-/babel-plugin-conditional-compilation-0.0.1.tgz#a77b41c7c5500fc7eba2fe2dff9ef6dd83e143c6"
+  integrity sha512-ilYeIubphXHU/flIcEjU6RpcPng3TiZ/Wct/+C8xeNmV/WXAKJObUXBwGXuJ8eVM/7HHyh872ILqeW2mJTidZg==
+
 babel-plugin-istanbul@^7.0.1:
   version "7.0.1"
   resolved "https://registry.yarnpkg.com/babel-plugin-istanbul/-/babel-plugin-istanbul-7.0.1.tgz#d8b518c8ea199364cf84ccc82de89740236daf92"
