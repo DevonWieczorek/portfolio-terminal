@@ -57,11 +57,7 @@ const InteractiveBox = memo(function InteractiveBox({
     debugMesh = (
         <mesh>
             <boxGeometry
-                args={[
-                    triggerDistance * 2,
-                    triggerDistance * 2,
-                    triggerDistance * 2,
-                ]}
+                args={[triggerDistance, triggerDistance, triggerDistance]}
             />
             <meshBasicMaterial color="#8b5cf6" transparent opacity={0.2} />
         </mesh>
