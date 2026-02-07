@@ -57,15 +57,8 @@ Use existing ESLint and Prettier rules when making updates.
 
 # Current Task for Agent
 
-When our R3F scene first loads, display the following message via the `useMessage` hook:
-
-"Welcome to Devon's office! This is a 3D interactive resume built with Next.js, React, and React Three Fiber. Use your arrow keys to move around the scene. Approach objects to learn more about my skills and experience. If you have any questions or want to connect, don't hesitate to reach out!"
-
-As soon as the character is moved by the user, clear the above message.
-
-Additionally, have the character model facing the camera by default, rather than away.
+Update InteractiveBox so that in DEBUG mode, the box is visible and is a transparent color. Use ifdef-loader style conditional comments to restrict that functionality to DEBUG mode only.
 
 # Notes from Agent
 
-- Added a shared intro message constant and set it on scene load, clearing it on first character movement.
-- Initialized the character rotation to face the camera by default.
+[Add any relevant notes of the agent here, such as assumptions made, questions for the user, or areas where you may need further clarification.]
