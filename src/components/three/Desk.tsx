@@ -1,14 +1,11 @@
-import { memo, useCallback, useMemo, useRef } from "react";
+import { memo, useMemo } from "react";
 import { useGLTF } from "@react-three/drei";
 // #if DEBUG
 import { useControls } from "leva";
 // #endif
-import { Group, Quaternion, Vector3 } from "three";
+import * as THREE from "three";
 import { useScene } from "@/lib/contexts/SceneContext";
 import { useMovement } from "@/lib/stores/useMovement";
-import { useExperience } from "@/lib/stores/useExperience";
-import type { CameraTarget } from "@/lib/stores/useExperience";
-import InteractiveBox from "@/components/three/InteractiveBox";
 import Monitor from "@/components/three/Monitor";
 
 type DeskControls = {
@@ -16,24 +13,18 @@ type DeskControls = {
     deskY: number;
     deskZ: number;
     deskScale: number;
+    proximityX: number;
+    proximityY: number;
+    proximityZ: number;
 };
 
-const MONITOR_MESSAGE = "Press ENTER to use the computer.";
-
 const Desk = memo(() => {
-    const { desk } = useScene();
+    const { desk, monitor } = useScene();
     const characterPosition = useMovement(state => state.position);
-    const enterTerminal = useExperience(state => state.enterTerminal);
     const deskModel = useGLTF("/models/l_shaped_desk.glb");
-    const monitorRef = useRef<Group>(null);
-    const deskAnchorRef = useRef<Group>(null);
-
-    const forwardBase = useMemo(() => new Vector3(0, 0, -1), []);
-    const upBase = useMemo(() => new Vector3(0, 1, 0), []);
-    const sharedPosition = useMemo(() => new Vector3(), []);
-    const sharedQuaternion = useMemo(() => new Quaternion(), []);
 
     let deskX, deskY, deskZ, deskScale;
+    let proximityX, proximityY, proximityZ;
 
     // #if DEBUG
     ({ deskX, deskY, deskZ, deskScale } = useControls(
@@ -63,6 +54,24 @@ const Desk = memo(() => {
                 max: 10,
                 step: 0.01,
             },
+            proximityX: {
+                value: monitor?.position?.x ?? 0,
+                min: -20,
+                max: 10,
+                step: 0.01,
+            },
+            proximityY: {
+                value: monitor?.position?.y ?? 0,
+                min: -10,
+                max: 10,
+                step: 0.01,
+            },
+            proximityZ: {
+                value: monitor?.position?.z ?? 0,
+                min: -20,
+                max: 10,
+                step: 0.01,
+            },
         },
         { collapsed: true }
     ) as DeskControls);
@@ -73,6 +82,9 @@ const Desk = memo(() => {
     deskY = desk?.position?.y;
     deskZ = desk?.position?.z;
     deskScale = desk?.scale;
+    proximityX = monitor?.position?.x;
+    proximityY = monitor?.position?.y;
+    proximityZ = monitor?.position?.z;
     // #endif
 
     // L-shaped desk positioned snug in northwest corner
@@ -83,7 +95,7 @@ const Desk = memo(() => {
     // Memoize Vector3 creation to prevent recreation on every render
     const proximityPosition = useMemo(
         () =>
-            new Vector3(
+            new THREE.Vector3(
                 characterPosition.x,
                 characterPosition.y,
                 characterPosition.z
@@ -91,80 +103,19 @@ const Desk = memo(() => {
         [characterPosition.x, characterPosition.y, characterPosition.z]
     );
 
-    const computeCameraTarget = useCallback(
-        ({ group, worldPosition, worldQuaternion }: {
-            group: Group;
-            worldPosition: Vector3;
-            worldQuaternion: Quaternion;
-        }) => {
-            const targetGroup = monitorRef.current ?? group;
-
-            if (monitorRef.current) {
-                targetGroup.getWorldPosition(sharedPosition);
-                targetGroup.getWorldQuaternion(sharedQuaternion);
-            } else {
-                sharedPosition.copy(worldPosition);
-                sharedQuaternion.copy(worldQuaternion);
-            }
-
-            const forward = forwardBase
-                .clone()
-                .applyQuaternion(sharedQuaternion)
-                .normalize();
-            const up = upBase.clone().applyQuaternion(sharedQuaternion).normalize();
-
-            const cameraPosition = sharedPosition
-                .clone()
-                .add(forward.clone().multiplyScalar(3.25))
-                .add(up.clone().multiplyScalar(1.4));
-
-            const lookAtPosition = sharedPosition
-                .clone()
-                .add(up.clone().multiplyScalar(0.9));
-
-            return {
-                position: [
-                    cameraPosition.x,
-                    cameraPosition.y,
-                    cameraPosition.z,
-                ],
-                lookAt: [
-                    lookAtPosition.x,
-                    lookAtPosition.y,
-                    lookAtPosition.z,
-                ],
-            } satisfies CameraTarget;
-        },
-        [forwardBase, upBase, sharedPosition, sharedQuaternion]
-    );
-
-    const handleEnter = useCallback(
-        (target?: CameraTarget) => {
-            if (!target) {
-                return;
-            }
-
-            enterTerminal(target);
-        },
-        [enterTerminal]
-    );
-
     return (
-        <InteractiveBox
-            message={MONITOR_MESSAGE}
+        <group
             position={[deskX, deskY, deskZ]}
             scale={[deskScale, deskScale, deskScale]}
-            proximityPosition={proximityPosition}
-            proximityTargetRef={deskAnchorRef}
-            onEnter={handleEnter}
-            computeCameraTarget={computeCameraTarget}
         >
             {/* Desk model */}
             <primitive object={deskModel.scene} />
-            <group ref={deskAnchorRef} />
 
             {/* Monitor model */}
-            <Monitor ref={monitorRef} />
+            <Monitor
+                proximityPosition={proximityPosition}
+                proximityOverride={[proximityX, proximityY, proximityZ]}
+            />
 
             {/* Invisible collision boxes */}
             <group>
@@ -184,7 +135,7 @@ const Desk = memo(() => {
                     <boxGeometry args={[2.2, deskHeight * 2, 3.2]} />
                 </mesh>
             </group>
-        </InteractiveBox>
+        </group>
     );
 });
 Desk.displayName = "Desk";

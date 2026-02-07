@@ -13,6 +13,9 @@ type BassControls = {
     bassZ: number;
     bassScale: number;
     bassSpacing: number;
+    proximityX: number;
+    proximityY: number;
+    proximityZ: number;
 };
 
 const NUM_BASSES = 4;
@@ -35,6 +38,7 @@ const BassGroup = memo(
         const { bass } = useScene();
 
         let bassX, bassY, bassZ, bassScale, bassSpacing;
+        let proximityX, proximityY, proximityZ;
 
         // #if DEBUG
         ({ bassX, bassY, bassZ, bassScale, bassSpacing } = useControls(
@@ -70,6 +74,24 @@ const BassGroup = memo(
                     max: 5,
                     step: 0.1,
                 },
+                proximityX: {
+                    value: bass?.position?.x ?? 0,
+                    min: -20,
+                    max: 10,
+                    step: 0.01,
+                },
+                proximityY: {
+                    value: 0,
+                    min: -10,
+                    max: 10,
+                    step: 0.01,
+                },
+                proximityZ: {
+                    value: bass?.position?.z ?? 0,
+                    min: -20,
+                    max: 10,
+                    step: 0.01,
+                },
             },
             { collapsed: true }
         ) as BassControls);
@@ -81,6 +103,9 @@ const BassGroup = memo(
         bassZ = bass?.position?.z;
         bassScale = bass?.scale;
         bassSpacing = bass?.spacing;
+        proximityX = bass?.position?.x;
+        proximityY = 0;
+        proximityZ = bass?.position?.z;
         // #endif
 
         const BassElements = useMemo(
@@ -119,10 +144,18 @@ const BassGroup = memo(
         return (
             <InteractiveBox
                 message={BASS_MESSAGE}
-                position={[bassX, 0, bassZ]}
+                position={[proximityX, proximityY, proximityZ]}
                 proximityPosition={proximityPosition}
             >
-                <group>{BassElements}</group>
+                <group
+                    position={[
+                        bassX - proximityX,
+                        -proximityY,
+                        bassZ - proximityZ,
+                    ]}
+                >
+                    {BassElements}
+                </group>
             </InteractiveBox>
         );
     }

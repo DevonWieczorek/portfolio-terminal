@@ -13,6 +13,9 @@ type DeckControls = {
     deckZ: number;
     deckScale: number;
     deckSpacing: number;
+    proximityX: number;
+    proximityY: number;
+    proximityZ: number;
 };
 
 const NUM_DECKS = 4;
@@ -27,6 +30,7 @@ const SkateboardGroup = memo(
         const { deck, rotations } = useScene();
 
         let deckX, deckY, deckZ, deckScale, deckSpacing;
+        let proximityX, proximityY, proximityZ;
 
         // #if DEBUG
         ({ deckX, deckY, deckZ, deckScale, deckSpacing } = useControls(
@@ -62,6 +66,24 @@ const SkateboardGroup = memo(
                     max: 5,
                     step: 0.1,
                 },
+                proximityX: {
+                    value: deck?.position?.x ?? 0,
+                    min: -20,
+                    max: 20,
+                    step: 0.01,
+                },
+                proximityY: {
+                    value: 0,
+                    min: -10,
+                    max: 10,
+                    step: 0.01,
+                },
+                proximityZ: {
+                    value: deck?.position?.z ?? 0,
+                    min: -20,
+                    max: 20,
+                    step: 0.01,
+                },
             },
             { collapsed: true }
         ) as DeckControls);
@@ -73,6 +95,9 @@ const SkateboardGroup = memo(
         deckZ = deck?.position?.z;
         deckScale = deck?.scale;
         deckSpacing = deck?.spacing;
+        proximityX = deck?.position?.x;
+        proximityY = 0;
+        proximityZ = deck?.position?.z;
         // #endif
 
         // Memoize skateboard elements to prevent recreation on every render
@@ -96,12 +121,20 @@ const SkateboardGroup = memo(
         return (
             <InteractiveBox
                 message={SKATEBOARD_MESSAGE}
-                position={[deckX, 0, deckZ]}
+                position={[proximityX, proximityY, proximityZ]}
                 proximityPosition={proximityPosition}
                 rotation={[0, rotations.clockwise, 0]}
             >
                 {/* Skateboards */}
-                <group>{skateboardElements}</group>
+                <group
+                    position={[
+                        deckX - proximityX,
+                        -proximityY,
+                        deckZ - proximityZ,
+                    ]}
+                >
+                    {skateboardElements}
+                </group>
             </InteractiveBox>
         );
     }

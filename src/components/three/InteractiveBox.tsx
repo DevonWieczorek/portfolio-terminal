@@ -4,11 +4,10 @@ import {
     useEffect,
     useMemo,
     useRef,
-    type RefObject,
     type ReactNode,
 } from "react";
 import { useFrame, useThree } from "@react-three/fiber";
-import { Group, Object3D, Quaternion, Vector3 } from "three";
+import { Group, Quaternion, Vector3 } from "three";
 import { useMessage } from "@/lib/contexts/MessageContext";
 import type { CameraTarget } from "@/lib/stores/useExperience";
 
@@ -17,7 +16,6 @@ interface InteractiveBoxProps {
     message: string;
     triggerDistance?: number;
     proximityPosition?: PositionArray;
-    proximityTargetRef?: RefObject<Object3D>;
     position?: [number, number, number];
     rotation?: [number, number, number];
     scale?: [number, number, number];
@@ -38,7 +36,6 @@ const InteractiveBox = memo(function InteractiveBox({
     message,
     triggerDistance = 3,
     proximityPosition,
-    proximityTargetRef,
     position = [0, 0, 0],
     rotation = [0, 0, 0],
     scale = [1, 1, 1],
@@ -53,22 +50,6 @@ const InteractiveBox = memo(function InteractiveBox({
     const proximityVector = useMemo(() => new Vector3(), []);
     const hasActiveMessageRef = useRef(false);
     const lastTargetRef = useRef<CameraTarget | undefined>(undefined);
-    let debugMesh: ReactNode = null;
-
-    // #if DEBUG
-    debugMesh = (
-        <mesh>
-            <boxGeometry
-                args={[
-                    triggerDistance * 2,
-                    triggerDistance * 2,
-                    triggerDistance * 2,
-                ]}
-            />
-            <meshBasicMaterial color="#8b5cf6" transparent opacity={0.2} />
-        </mesh>
-    );
-    // #endif
 
     const resolveCameraTarget = useCallback(() => {
         const group = groupRef.current;
@@ -94,15 +75,13 @@ const InteractiveBox = memo(function InteractiveBox({
             return;
         }
 
-        const proximityTarget = proximityTargetRef?.current ?? group;
-
         const targetPosition = proximityPosition
             ? proximityPosition instanceof Vector3
                 ? proximityPosition
                 : proximityVector.set(...proximityPosition)
             : camera.position;
 
-        proximityTarget.getWorldPosition(worldPosition);
+        group.getWorldPosition(worldPosition);
 
         const distance = targetPosition.distanceTo(worldPosition);
         const shouldShow = distance < triggerDistance;
@@ -146,7 +125,6 @@ const InteractiveBox = memo(function InteractiveBox({
             rotation={rotation}
             scale={scale}
         >
-            {debugMesh}
             {children}
         </group>
     );
