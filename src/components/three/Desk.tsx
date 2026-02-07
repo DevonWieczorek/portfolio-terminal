@@ -18,14 +18,21 @@ type DeskControls = {
     deskScale: number;
 };
 
+type MonitorControls = {
+    monitorRotationY: number;
+    monitorX: number;
+    monitorY: number;
+    monitorZ: number;
+};
+
 const MONITOR_MESSAGE = "Press ENTER to use the computer.";
 
 const Desk = memo(() => {
-    const { desk } = useScene();
+    const { desk, monitor } = useScene();
     const characterPosition = useMovement(state => state.position);
     const enterTerminal = useExperience(state => state.enterTerminal);
     const deskModel = useGLTF("/models/l_shaped_desk.glb");
-    const monitorRef = useRef<Group>(null);
+    const monitorAnchorRef = useRef<Group>(null);
 
     const forwardBase = useMemo(() => new Vector3(0, 0, -1), []);
     const upBase = useMemo(() => new Vector3(0, 1, 0), []);
@@ -33,6 +40,7 @@ const Desk = memo(() => {
     const sharedQuaternion = useMemo(() => new Quaternion(), []);
 
     let deskX, deskY, deskZ, deskScale;
+    let monitorX, monitorY, monitorZ, monitorRotationY;
 
     // #if DEBUG
     ({ deskX, deskY, deskZ, deskScale } = useControls(
@@ -67,11 +75,48 @@ const Desk = memo(() => {
     ) as DeskControls);
     // #endif
 
+    // #if DEBUG
+    ({ monitorRotationY, monitorX, monitorY, monitorZ } = useControls(
+        "Monitor",
+        {
+            monitorRotationY: {
+                value: monitor?.rotation?.y ?? 0,
+                min: -5,
+                max: Math.PI * 2,
+                step: 0.01,
+            },
+            monitorX: {
+                value: monitor?.position?.x ?? 0,
+                min: -20,
+                max: 10,
+                step: 0.1,
+            },
+            monitorY: {
+                value: monitor?.position?.y ?? 0,
+                min: -10,
+                max: 10,
+                step: 0.1,
+            },
+            monitorZ: {
+                value: monitor?.position?.z ?? 0,
+                min: -20,
+                max: 10,
+                step: 0.1,
+            },
+        },
+        { collapsed: true }
+    ) as MonitorControls);
+    // #endif
+
     // #if !DEBUG
     deskX = desk?.position?.x;
     deskY = desk?.position?.y;
     deskZ = desk?.position?.z;
     deskScale = desk?.scale;
+    monitorRotationY = monitor?.rotation?.y;
+    monitorX = monitor?.position?.x;
+    monitorY = monitor?.position?.y;
+    monitorZ = monitor?.position?.z;
     // #endif
 
     // L-shaped desk positioned snug in northwest corner
@@ -96,9 +141,9 @@ const Desk = memo(() => {
             worldPosition: Vector3;
             worldQuaternion: Quaternion;
         }) => {
-            const targetGroup = monitorRef.current ?? group;
+            const targetGroup = monitorAnchorRef.current ?? group;
 
-            if (monitorRef.current) {
+            if (monitorAnchorRef.current) {
                 targetGroup.getWorldPosition(sharedPosition);
                 targetGroup.getWorldQuaternion(sharedQuaternion);
             } else {
@@ -154,7 +199,7 @@ const Desk = memo(() => {
             position={[deskX, deskY, deskZ]}
             scale={[deskScale, deskScale, deskScale]}
             proximityPosition={proximityPosition}
-            proximityTargetRef={monitorRef}
+            proximityTargetRef={monitorAnchorRef}
             onEnter={handleEnter}
             computeCameraTarget={computeCameraTarget}
         >
@@ -162,7 +207,15 @@ const Desk = memo(() => {
             <primitive object={deskModel.scene} />
 
             {/* Monitor model */}
-            <Monitor ref={monitorRef} />
+            <Monitor
+                position={[monitorX, monitorY, monitorZ]}
+                rotationY={monitorRotationY}
+            />
+            <group
+                ref={monitorAnchorRef}
+                position={[monitorX, monitorY, monitorZ]}
+                rotation={[0, monitorRotationY, 0]}
+            />
 
             {/* Invisible collision boxes */}
             <group>
