@@ -51,6 +51,23 @@ const InteractiveBox = memo(function InteractiveBox({
     const hasActiveMessageRef = useRef(false);
     const lastTargetRef = useRef<CameraTarget | undefined>(undefined);
 
+    let debugMesh: ReactNode = null;
+
+    // #if DEBUG
+    debugMesh = (
+        <mesh>
+            <boxGeometry
+                args={[
+                    triggerDistance * 2,
+                    triggerDistance * 2,
+                    triggerDistance * 2,
+                ]}
+            />
+            <meshBasicMaterial color="#8b5cf6" transparent opacity={0.2} />
+        </mesh>
+    );
+    // #endif
+
     const resolveCameraTarget = useCallback(() => {
         const group = groupRef.current;
 
@@ -125,6 +142,7 @@ const InteractiveBox = memo(function InteractiveBox({
             rotation={rotation}
             scale={scale}
         >
+            {debugMesh}
             {children}
         </group>
     );
