@@ -15,6 +15,7 @@ interface InteractiveBoxProps {
     children: ReactNode;
     message: string;
     triggerDistance?: number;
+    triggerBox?: [number, number, number];
     proximityPosition?: PositionArray;
     position?: [number, number, number];
     rotation?: [number, number, number];
@@ -35,6 +36,7 @@ const InteractiveBox = memo(function InteractiveBox({
     children,
     message,
     triggerDistance = 3,
+    triggerBox,
     proximityPosition,
     position = [0, 0, 0],
     rotation = [0, 0, 0],
@@ -50,6 +52,34 @@ const InteractiveBox = memo(function InteractiveBox({
     const proximityVector = useMemo(() => new Vector3(), []);
     const hasActiveMessageRef = useRef(false);
     const lastTargetRef = useRef<CameraTarget | undefined>(undefined);
+    let debugMesh: ReactNode = null;
+
+    const resolvedTriggerBox = useMemo(
+        () =>
+            triggerBox
+                ? ([
+                      Math.abs(triggerBox[0]),
+                      Math.abs(triggerBox[1]),
+                      Math.abs(triggerBox[2]),
+                  ] as const)
+                : null,
+        [triggerBox]
+    );
+
+    // #if DEBUG
+    debugMesh = (
+        <mesh>
+            <boxGeometry
+                args={[
+                    resolvedTriggerBox?.[0] ?? triggerDistance * 2,
+                    resolvedTriggerBox?.[1] ?? triggerDistance * 2,
+                    resolvedTriggerBox?.[2] ?? triggerDistance * 2,
+                ]}
+            />
+            <meshBasicMaterial color="#8b5cf6" transparent opacity={0.2} />
+        </mesh>
+    );
+    // #endif
 
     const resolveCameraTarget = useCallback(() => {
         const group = groupRef.current;
@@ -83,8 +113,14 @@ const InteractiveBox = memo(function InteractiveBox({
 
         group.getWorldPosition(worldPosition);
 
-        const distance = targetPosition.distanceTo(worldPosition);
-        const shouldShow = distance < triggerDistance;
+        const shouldShow = resolvedTriggerBox
+            ? Math.abs(targetPosition.x - worldPosition.x) <=
+                  resolvedTriggerBox[0] / 2 &&
+              Math.abs(targetPosition.y - worldPosition.y) <=
+                  resolvedTriggerBox[1] / 2 &&
+              Math.abs(targetPosition.z - worldPosition.z) <=
+                  resolvedTriggerBox[2] / 2
+            : targetPosition.distanceTo(worldPosition) < triggerDistance;
 
         if (shouldShow) {
             if (!hasActiveMessageRef.current || activeMessage !== message) {
@@ -125,6 +161,7 @@ const InteractiveBox = memo(function InteractiveBox({
             rotation={rotation}
             scale={scale}
         >
+            {debugMesh}
             {children}
         </group>
     );

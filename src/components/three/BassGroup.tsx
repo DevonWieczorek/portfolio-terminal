@@ -75,21 +75,21 @@ const BassGroup = memo(
                     step: 0.1,
                 },
                 proximityX: {
-                    value: bass?.position?.x ?? 0,
-                    min: -20,
-                    max: 10,
+                    value: Math.max(0.1, Math.abs(bass?.position?.x ?? 0)),
+                    min: 0.1,
+                    max: 20,
                     step: 0.01,
                 },
                 proximityY: {
-                    value: 0,
-                    min: -10,
-                    max: 10,
+                    value: 0.1,
+                    min: 0.1,
+                    max: 20,
                     step: 0.01,
                 },
                 proximityZ: {
-                    value: bass?.position?.z ?? 0,
-                    min: -20,
-                    max: 10,
+                    value: Math.max(0.1, Math.abs(bass?.position?.z ?? 0)),
+                    min: 0.1,
+                    max: 20,
                     step: 0.01,
                 },
             },
@@ -103,9 +103,9 @@ const BassGroup = memo(
         bassZ = bass?.position?.z;
         bassScale = bass?.scale;
         bassSpacing = bass?.spacing;
-        proximityX = bass?.position?.x;
-        proximityY = 0;
-        proximityZ = bass?.position?.z;
+        proximityX = Math.max(0.1, Math.abs(bass?.position?.x ?? 0));
+        proximityY = 0.1;
+        proximityZ = Math.max(0.1, Math.abs(bass?.position?.z ?? 0));
         // #endif
 
         const BassElements = useMemo(
@@ -144,18 +144,11 @@ const BassGroup = memo(
         return (
             <InteractiveBox
                 message={BASS_MESSAGE}
-                position={[proximityX, proximityY, proximityZ]}
+                position={[bassX, 0, bassZ]}
                 proximityPosition={proximityPosition}
+                triggerBox={[proximityX, proximityY, proximityZ]}
             >
-                <group
-                    position={[
-                        bassX - proximityX,
-                        -proximityY,
-                        bassZ - proximityZ,
-                    ]}
-                >
-                    {BassElements}
-                </group>
+                <group>{BassElements}</group>
             </InteractiveBox>
         );
     }

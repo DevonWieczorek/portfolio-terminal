@@ -11,7 +11,7 @@ import type { CameraTarget } from "@/lib/stores/useExperience";
 
 interface MonitorProps {
     proximityPosition: PositionArray;
-    proximityOverride?: [number, number, number];
+    triggerBox?: [number, number, number];
 }
 
 type MonitorControls = {
@@ -23,7 +23,7 @@ type MonitorControls = {
 
 const MONITOR_MESSAGE = "Press ENTER to use the computer.";
 
-const Monitor = memo(({ proximityPosition }: MonitorProps) => {
+const Monitor = memo(({ proximityPosition, triggerBox }: MonitorProps) => {
     const { monitor } = useScene();
     const monitorModel = useGLTF("/models/monitor.glb");
     const [size, setSize] = useState<Vector3>(new Vector3());
@@ -134,38 +134,25 @@ const Monitor = memo(({ proximityPosition }: MonitorProps) => {
         [enterTerminal]
     );
 
-    const triggerPosition = proximityOverride ?? [
-        monitorX,
-        monitorY,
-        monitorZ,
-    ];
-
-    const modelOffset = [
-        monitorX - triggerPosition[0],
-        monitorY - triggerPosition[1],
-        monitorZ - triggerPosition[2],
-    ] as const;
-
     return (
         <InteractiveBox
             message={MONITOR_MESSAGE}
-            position={triggerPosition}
+            position={[monitorX, monitorY, monitorZ]}
             rotation={[0, monitorRotationY, 0]}
             proximityPosition={proximityPosition}
+            triggerBox={triggerBox}
             onEnter={handleEnter}
             computeCameraTarget={computeCameraTarget}
         >
-            <group position={modelOffset}>
-                <primitive
-                    object={monitorModel.scene}
-                    position={[0, 0, 0]}
-                    rotation={[0, 0, 0]}
-                />
-                {/* Collision for monitor */}
-                <mesh visible={false}>
-                    <boxGeometry args={[size.x, size.y, size.z]} />
-                </mesh>
-            </group>
+            <primitive
+                object={monitorModel.scene}
+                position={[0, 0, 0]}
+                rotation={[0, 0, 0]}
+            />
+            {/* Collision for monitor */}
+            <mesh visible={false}>
+                <boxGeometry args={[size.x, size.y, size.z]} />
+            </mesh>
         </InteractiveBox>
     );
 });

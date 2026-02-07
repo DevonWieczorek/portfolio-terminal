@@ -67,20 +67,20 @@ const SkateboardGroup = memo(
                     step: 0.1,
                 },
                 proximityX: {
-                    value: deck?.position?.x ?? 0,
-                    min: -20,
+                    value: Math.max(0.1, Math.abs(deck?.position?.x ?? 0)),
+                    min: 0.1,
                     max: 20,
                     step: 0.01,
                 },
                 proximityY: {
-                    value: 0,
-                    min: -10,
-                    max: 10,
+                    value: 0.1,
+                    min: 0.1,
+                    max: 20,
                     step: 0.01,
                 },
                 proximityZ: {
-                    value: deck?.position?.z ?? 0,
-                    min: -20,
+                    value: Math.max(0.1, Math.abs(deck?.position?.z ?? 0)),
+                    min: 0.1,
                     max: 20,
                     step: 0.01,
                 },
@@ -95,9 +95,9 @@ const SkateboardGroup = memo(
         deckZ = deck?.position?.z;
         deckScale = deck?.scale;
         deckSpacing = deck?.spacing;
-        proximityX = deck?.position?.x;
-        proximityY = 0;
-        proximityZ = deck?.position?.z;
+        proximityX = Math.max(0.1, Math.abs(deck?.position?.x ?? 0));
+        proximityY = 0.1;
+        proximityZ = Math.max(0.1, Math.abs(deck?.position?.z ?? 0));
         // #endif
 
         // Memoize skateboard elements to prevent recreation on every render
@@ -121,20 +121,13 @@ const SkateboardGroup = memo(
         return (
             <InteractiveBox
                 message={SKATEBOARD_MESSAGE}
-                position={[proximityX, proximityY, proximityZ]}
+                position={[deckX, 0, deckZ]}
                 proximityPosition={proximityPosition}
                 rotation={[0, rotations.clockwise, 0]}
+                triggerBox={[proximityX, proximityY, proximityZ]}
             >
                 {/* Skateboards */}
-                <group
-                    position={[
-                        deckX - proximityX,
-                        -proximityY,
-                        deckZ - proximityZ,
-                    ]}
-                >
-                    {skateboardElements}
-                </group>
+                <group>{skateboardElements}</group>
             </InteractiveBox>
         );
     }

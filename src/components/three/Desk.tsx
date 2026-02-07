@@ -55,21 +55,21 @@ const Desk = memo(() => {
                 step: 0.01,
             },
             proximityX: {
-                value: monitor?.position?.x ?? 0,
-                min: -20,
-                max: 10,
+                value: Math.max(0.1, Math.abs(monitor?.position?.x ?? 0)),
+                min: 0.1,
+                max: 20,
                 step: 0.01,
             },
             proximityY: {
-                value: monitor?.position?.y ?? 0,
-                min: -10,
-                max: 10,
+                value: Math.max(0.1, Math.abs(monitor?.position?.y ?? 0)),
+                min: 0.1,
+                max: 20,
                 step: 0.01,
             },
             proximityZ: {
-                value: monitor?.position?.z ?? 0,
-                min: -20,
-                max: 10,
+                value: Math.max(0.1, Math.abs(monitor?.position?.z ?? 0)),
+                min: 0.1,
+                max: 20,
                 step: 0.01,
             },
         },
@@ -82,9 +82,9 @@ const Desk = memo(() => {
     deskY = desk?.position?.y;
     deskZ = desk?.position?.z;
     deskScale = desk?.scale;
-    proximityX = monitor?.position?.x;
-    proximityY = monitor?.position?.y;
-    proximityZ = monitor?.position?.z;
+    proximityX = Math.max(0.1, Math.abs(monitor?.position?.x ?? 0));
+    proximityY = Math.max(0.1, Math.abs(monitor?.position?.y ?? 0));
+    proximityZ = Math.max(0.1, Math.abs(monitor?.position?.z ?? 0));
     // #endif
 
     // L-shaped desk positioned snug in northwest corner
@@ -114,7 +114,7 @@ const Desk = memo(() => {
             {/* Monitor model */}
             <Monitor
                 proximityPosition={proximityPosition}
-                proximityOverride={[proximityX, proximityY, proximityZ]}
+                triggerBox={[proximityX, proximityY, proximityZ]}
             />
 
             {/* Invisible collision boxes */}
