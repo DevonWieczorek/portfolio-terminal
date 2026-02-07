@@ -154,6 +154,7 @@ const Desk = memo(() => {
             position={[deskX, deskY, deskZ]}
             scale={[deskScale, deskScale, deskScale]}
             proximityPosition={proximityPosition}
+            proximityTargetRef={monitorRef}
             onEnter={handleEnter}
             computeCameraTarget={computeCameraTarget}
         >
