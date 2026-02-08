@@ -3,18 +3,15 @@ import "./globals.css";
 import "@/styles/reset.scss";
 
 export const metadata: Metadata = {
-    title: "DevonGPT - Terminal Portfolio",
-    description: "Devon Wieczorek's Personal Assistant Terminal",
+    title: "Devon.Codes",
+    description: "Devon Wieczorek's Personal Website",
 };
 
-export default function RootLayout({
-    children,
-}: {
-    children: React.ReactNode;
-}) {
+export default function RootLayout({ children }: { children: ReactNode }) {
     return (
         <html lang="en">
-            <body>{children}</body>
+            {/* suppressHydrationWarning added to avoid error caused by browser extensions */}
+            <body suppressHydrationWarning>{children}</body>
         </html>
     );
 }
