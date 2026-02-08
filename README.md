@@ -25,6 +25,9 @@ The following React Three Fiber optimizations are implemented in this codebase:
 - **Narrowed Zustand subscription in camera**: `Camera` now subscribes only to `position` instead of the full movement store object, reducing avoidable rerenders from unrelated movement-store changes (`src/components/three/Camera.tsx`).
 - **Stable proximity vector for interactive checks**: `Room` now updates a shared `Vector3` via `useFrame` and passes that stable reference through `Desk`, `BassGroup`, and `SkateboardGroup`, removing movement-driven React rerenders from the room subtree (`src/components/three/Room.tsx`, `src/components/three/Desk.tsx`).
 - **Removed per-frame camera vector allocations**: `Camera` now reuses preallocated vectors for zoomed camera offset calculations instead of cloning vectors each frame (`src/components/three/Camera.tsx`).
+- **Moved debug model introspection out of render**: Bass dimension logging now runs in `useEffect` and only when the model path changes, keeping render pure in debug mode (`src/components/three/Bass.tsx`).
+- **Reduced interaction-time allocations in monitor targeting**: `Monitor` now reuses preallocated vectors when computing terminal camera targets instead of repeatedly cloning vectors (`src/components/three/Monitor.tsx`).
+- **Removed unused GLTF preload**: dropped preload of `/models/bass-4.glb` since the current bass config does not use that asset (`src/components/three/BassGroup.tsx`).
 
 ### Design Decisions
 

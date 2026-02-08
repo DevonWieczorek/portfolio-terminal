@@ -1,4 +1,4 @@
-import { memo, useMemo } from "react";
+import { memo, useEffect, useMemo } from "react";
 import { useGLTF } from "@react-three/drei";
 import { getModelDimensions } from "@/utils/three";
 
@@ -12,10 +12,13 @@ const DEFAULT_MODEL = "/models/bass-1.glb";
 
 const Bass = memo(
     ({ position, scale = [1, 1, 1], modelPath = DEFAULT_MODEL }: BassProps) => {
-        if (process.env.NEXT_PUBLIC_DEBUG) {
-            getModelDimensions(modelPath);
-        }
         const { scene } = useGLTF(modelPath);
+
+        // #if DEBUG
+        useEffect(() => {
+            getModelDimensions(modelPath);
+        }, [modelPath]);
+        // #endif
 
         // Clone the scene so multiple instances can exist in the scene graph
         const clonedScene = useMemo(() => scene.clone(true), [scene]);

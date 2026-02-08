@@ -258,5 +258,4 @@ BassGroup.displayName = "BassGroup";
 useGLTF.preload("/models/bass-1.glb");
 useGLTF.preload("/models/bass-2.glb");
 useGLTF.preload("/models/bass-3.glb");
-useGLTF.preload("/models/bass-4.glb");
 export default BassGroup;

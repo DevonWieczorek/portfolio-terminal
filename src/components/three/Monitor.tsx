@@ -52,6 +52,12 @@ const Monitor = memo(({ proximityPosition }: MonitorProps) => {
     // approach straight into the front of the screen.
     const forwardBase = useMemo(() => new Vector3(0, 0, 1), []);
     const upBase = useMemo(() => new Vector3(0, 1, 0), []);
+    const forwardWorld = useMemo(() => new Vector3(), []);
+    const upWorld = useMemo(() => new Vector3(), []);
+    const adjustedForward = useMemo(() => new Vector3(), []);
+    const screenCenterWorld = useMemo(() => new Vector3(), []);
+    const cameraPosition = useMemo(() => new Vector3(), []);
+    const lookAtPosition = useMemo(() => new Vector3(), []);
 
     let monitorX, monitorY, monitorZ, monitorRotationY;
     let monitorBoxSizeX,
@@ -222,44 +228,37 @@ const Monitor = memo(({ proximityPosition }: MonitorProps) => {
             group: Group;
             worldQuaternion: Quaternion;
         }) => {
-            const forward = forwardBase
-                .clone()
+            forwardWorld
+                .copy(forwardBase)
                 .applyQuaternion(worldQuaternion)
                 .normalize();
-            const up = upBase
-                .clone()
-                .applyQuaternion(worldQuaternion)
-                .normalize();
+            upWorld.copy(upBase).applyQuaternion(worldQuaternion).normalize();
             // The monitor interaction anchor is biased to the left of the
             // visible screen center, so we apply a configurable yaw offset
             // to keep the terminal transition visually centered on display.
-            const adjustedForward = forward
-                .clone()
-                .applyAxisAngle(up, monitorApproachYawOffset)
+            adjustedForward
+                .copy(forwardWorld)
+                .applyAxisAngle(upWorld, monitorApproachYawOffset)
                 .normalize();
 
             // Use the interactive box anchor as the focal point so we move
             // into the monitor screen instead of the model pivot.
-            const screenCenterWorld = group.localToWorld(
-                new Vector3(
-                    monitorBoxAnchorX,
-                    monitorBoxAnchorY,
-                    monitorBoxAnchorZ
-                )
+            screenCenterWorld.set(
+                monitorBoxAnchorX,
+                monitorBoxAnchorY,
+                monitorBoxAnchorZ
             );
+            group.localToWorld(screenCenterWorld);
 
-            const cameraPosition = screenCenterWorld
-                .clone()
-                .add(
-                    adjustedForward
-                        .clone()
-                        .multiplyScalar(MONITOR_CAMERA_DISTANCE)
-                )
-                .add(up.clone().multiplyScalar(MONITOR_CAMERA_HEIGHT));
+            // Reuse vectors to avoid allocation spikes when entering the terminal.
+            cameraPosition
+                .copy(screenCenterWorld)
+                .addScaledVector(adjustedForward, MONITOR_CAMERA_DISTANCE)
+                .addScaledVector(upWorld, MONITOR_CAMERA_HEIGHT);
 
-            const lookAtPosition = screenCenterWorld
-                .clone()
-                .add(up.clone().multiplyScalar(MONITOR_LOOK_AT_HEIGHT));
+            lookAtPosition
+                .copy(screenCenterWorld)
+                .addScaledVector(upWorld, MONITOR_LOOK_AT_HEIGHT);
 
             return {
                 position: [
@@ -272,6 +271,12 @@ const Monitor = memo(({ proximityPosition }: MonitorProps) => {
         },
         [
             forwardBase,
+            forwardWorld,
+            upWorld,
+            adjustedForward,
+            screenCenterWorld,
+            cameraPosition,
+            lookAtPosition,
             monitorBoxAnchorX,
             monitorBoxAnchorY,
             monitorBoxAnchorZ,
