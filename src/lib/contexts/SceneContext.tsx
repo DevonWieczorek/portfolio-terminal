@@ -11,6 +11,7 @@ interface ObjectTraits {
     rotation: Coordinates;
     boxSize: Coordinates;
     boxAnchor: Coordinates;
+    approachYawOffset: number;
 }
 
 interface RoomDimensions {
@@ -111,6 +112,7 @@ const defaultMonitorTraits: DeepPartial<ObjectTraits> = {
         y: 0,
         z: 0,
     },
+    approachYawOffset: Math.PI / 4,
 };
 
 const BASS_SCALE: number = scaledFeet(3.5);

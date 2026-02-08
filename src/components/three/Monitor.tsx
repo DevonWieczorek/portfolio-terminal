@@ -1,5 +1,5 @@
 import { memo, useCallback, useMemo, useRef } from "react";
-import { Vector3, type Quaternion } from "three";
+import { Vector3, type Group, type Quaternion } from "three";
 import { useGLTF } from "@react-three/drei";
 // #if DEBUG
 import { useControls } from "leva";
@@ -27,9 +27,14 @@ type MonitorControls = {
     monitorBoxAnchorX: number;
     monitorBoxAnchorY: number;
     monitorBoxAnchorZ: number;
+    monitorApproachYawOffset: number;
 };
 
 const MONITOR_MESSAGE = "Press ENTER to use the computer.";
+const MONITOR_CAMERA_DISTANCE = 3.25;
+const MONITOR_CAMERA_HEIGHT = 1.4;
+const MONITOR_LOOK_AT_HEIGHT = 0.9;
+const MONITOR_APPROACH_YAW_OFFSET = Math.PI / 4;
 
 const Monitor = memo(({ proximityPosition }: MonitorProps) => {
     const { monitor } = useScene();
@@ -43,7 +48,9 @@ const Monitor = memo(({ proximityPosition }: MonitorProps) => {
     // #endif
 
     // Memoize Vector3 instances to prevent recreation
-    const forwardBase = useMemo(() => new Vector3(0, 0, -1), []);
+    // Monitor model faces local +Z; using that normal keeps the transition
+    // approach straight into the front of the screen.
+    const forwardBase = useMemo(() => new Vector3(0, 0, 1), []);
     const upBase = useMemo(() => new Vector3(0, 1, 0), []);
 
     let monitorX, monitorY, monitorZ, monitorRotationY;
@@ -52,7 +59,8 @@ const Monitor = memo(({ proximityPosition }: MonitorProps) => {
         monitorBoxSizeZ,
         monitorBoxAnchorX,
         monitorBoxAnchorY,
-        monitorBoxAnchorZ;
+        monitorBoxAnchorZ,
+        monitorApproachYawOffset;
     let monitorInteractiveSize: Coordinate | undefined = undefined;
     let monitorInteractiveCenter: Coordinate | undefined = undefined;
 
@@ -120,6 +128,13 @@ const Monitor = memo(({ proximityPosition }: MonitorProps) => {
                 max: 20,
                 step: 0.01,
             },
+            monitorApproachYawOffset: {
+                value:
+                    monitor?.approachYawOffset ?? MONITOR_APPROACH_YAW_OFFSET,
+                min: -Math.PI,
+                max: Math.PI,
+                step: 0.01,
+            },
         }),
         { collapsed: true }
     ) as [
@@ -138,6 +153,7 @@ const Monitor = memo(({ proximityPosition }: MonitorProps) => {
         monitorBoxAnchorX,
         monitorBoxAnchorY,
         monitorBoxAnchorZ,
+        monitorApproachYawOffset,
     } = monitorControls);
     setControlsRef.current = setMonitorControls;
     monitorInteractiveSize = [
@@ -163,6 +179,8 @@ const Monitor = memo(({ proximityPosition }: MonitorProps) => {
     monitorBoxAnchorX = monitor?.boxAnchor?.x ?? 0;
     monitorBoxAnchorY = monitor?.boxAnchor?.y ?? 0;
     monitorBoxAnchorZ = monitor?.boxAnchor?.z ?? 0;
+    monitorApproachYawOffset =
+        monitor?.approachYawOffset ?? MONITOR_APPROACH_YAW_OFFSET;
     monitorInteractiveSize = [
         monitorBoxSizeX,
         monitorBoxSizeY,
@@ -198,10 +216,10 @@ const Monitor = memo(({ proximityPosition }: MonitorProps) => {
 
     const computeCameraTarget = useCallback(
         ({
-            worldPosition,
+            group,
             worldQuaternion,
         }: {
-            worldPosition: Vector3;
+            group: Group;
             worldQuaternion: Quaternion;
         }) => {
             const forward = forwardBase
@@ -212,15 +230,36 @@ const Monitor = memo(({ proximityPosition }: MonitorProps) => {
                 .clone()
                 .applyQuaternion(worldQuaternion)
                 .normalize();
-
-            const cameraPosition = worldPosition
+            // The monitor interaction anchor is biased to the left of the
+            // visible screen center, so we apply a configurable yaw offset
+            // to keep the terminal transition visually centered on display.
+            const adjustedForward = forward
                 .clone()
-                .add(forward.clone().multiplyScalar(3.25))
-                .add(up.clone().multiplyScalar(1.4));
+                .applyAxisAngle(up, monitorApproachYawOffset)
+                .normalize();
 
-            const lookAtPosition = worldPosition
+            // Use the interactive box anchor as the focal point so we move
+            // into the monitor screen instead of the model pivot.
+            const screenCenterWorld = group.localToWorld(
+                new Vector3(
+                    monitorBoxAnchorX,
+                    monitorBoxAnchorY,
+                    monitorBoxAnchorZ
+                )
+            );
+
+            const cameraPosition = screenCenterWorld
                 .clone()
-                .add(up.clone().multiplyScalar(0.9));
+                .add(
+                    adjustedForward
+                        .clone()
+                        .multiplyScalar(MONITOR_CAMERA_DISTANCE)
+                )
+                .add(up.clone().multiplyScalar(MONITOR_CAMERA_HEIGHT));
+
+            const lookAtPosition = screenCenterWorld
+                .clone()
+                .add(up.clone().multiplyScalar(MONITOR_LOOK_AT_HEIGHT));
 
             return {
                 position: [
@@ -231,7 +270,14 @@ const Monitor = memo(({ proximityPosition }: MonitorProps) => {
                 lookAt: [lookAtPosition.x, lookAtPosition.y, lookAtPosition.z],
             } satisfies CameraTarget;
         },
-        [forwardBase, upBase]
+        [
+            forwardBase,
+            monitorBoxAnchorX,
+            monitorBoxAnchorY,
+            monitorBoxAnchorZ,
+            monitorApproachYawOffset,
+            upBase,
+        ]
     );
 
     const handleEnter = useCallback(
