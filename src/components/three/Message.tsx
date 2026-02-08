@@ -23,7 +23,11 @@ const Message = memo(({ text = "", className }: MessageProps) => {
             role="status"
             aria-live="polite"
         >
-            <span>{trimmedText}</span>
+            <span
+                className={styles.messageContent}
+                // Messages are defined in source and treated as trusted content.
+                dangerouslySetInnerHTML={{ __html: trimmedText }}
+            />
         </div>
     );
 });
