@@ -53,31 +53,32 @@ const Character = memo(() => {
         }
     }, []);
 
-    // Subscribe to keyboard events for logging (only in development)
+    // #if DEBUG
+    // Subscribe to keyboard events for movement logging in debug mode only.
     useEffect(() => {
-        if (process.env.NEXT_PUBLIC_DEBUG) {
-            const unsubscribe = subscribe(
-                state => [
-                    state.forward,
-                    state.backward,
-                    state.leftward,
-                    state.rightward,
-                ],
-                keys => {
-                    const [forward, backward, leftward, rightward] = keys;
-                    if (forward || backward || leftward || rightward) {
-                        console.log("Movement keys:", {
-                            forward,
-                            backward,
-                            leftward,
-                            rightward,
-                        });
-                    }
+        const unsubscribe = subscribe(
+            state => [
+                state.forward,
+                state.backward,
+                state.leftward,
+                state.rightward,
+            ],
+            keys => {
+                const [forward, backward, leftward, rightward] = keys;
+                if (forward || backward || leftward || rightward) {
+                    console.log("Movement keys:", {
+                        forward,
+                        backward,
+                        leftward,
+                        rightward,
+                    });
                 }
-            );
-            return unsubscribe;
-        }
+            }
+        );
+
+        return unsubscribe;
     }, [subscribe]);
+    // #endif
 
     // Desk collision detection function
     const checkDeskCollision = (x: number, z: number, roomSize: number) => {

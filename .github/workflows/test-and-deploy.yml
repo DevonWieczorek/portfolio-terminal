@@ -1,12 +1,15 @@
 name: CI
 
 on:
+  pull_request:
+    branches:
+      - main
   push:
     branches:
       - main
 
 jobs:
-  test:
+  validate:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -17,10 +20,14 @@ jobs:
       - run: corepack enable
       - run: corepack prepare yarn@1.22.19 --activate
       - run: yarn install --frozen-lockfile
-      - run: yarn test
+      - run: yarn lint
+      - run: yarn typecheck
+      - run: yarn test --ci
+      - run: yarn build
 
   deploy:
-    needs: test
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    needs: validate
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4

@@ -37,8 +37,7 @@ const BASS_CONFIGS = [
     { src: "/models/bass-1.glb" },
     { src: "/models/bass-2.glb", scale: 1.28 },
     { src: "/models/bass-3.glb", scale: 27.22 },
-    // { src: "/models/bass-4.glb", scale: 0.094 },
-    { src: "/models/bass-1.glb" }, // TODO: find fourth model that fits with the rest
+    { src: "/models/bass-1.glb" }, // TODO: replace with a distinct fourth model
 ];
 
 const BassGroup = memo(

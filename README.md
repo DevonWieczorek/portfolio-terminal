@@ -27,7 +27,7 @@ The following React Three Fiber optimizations are implemented in this codebase:
 - **Removed per-frame camera vector allocations**: `Camera` now reuses preallocated vectors for zoomed camera offset calculations instead of cloning vectors each frame (`src/components/three/Camera.tsx`).
 - **Moved debug model introspection out of render**: Bass dimension logging now runs in `useEffect` and only when the model path changes, keeping render pure in debug mode (`src/components/three/Bass.tsx`).
 - **Reduced interaction-time allocations in monitor targeting**: `Monitor` now reuses preallocated vectors when computing terminal camera targets instead of repeatedly cloning vectors (`src/components/three/Monitor.tsx`).
-- **Removed unused GLTF preload**: dropped preload of `/models/bass-4.glb` since the current bass config does not use that asset (`src/components/three/BassGroup.tsx`).
+- **Removed unused GLTF preload**: dropped a stale bass preload from `BassGroup` to match the active model set (`src/components/three/BassGroup.tsx`).
 
 ### Design Decisions
 
@@ -144,8 +144,8 @@ src/utils/
 
 ### Prerequisites
 
-- Node.js 18+
-- Yarn or npm
+- Node.js 20.x (see `.nvmrc`)
+- Yarn 1.22.19
 - OpenAI API key with Assistant API access
 
 ### Installation
@@ -162,11 +162,10 @@ yarn install
    Create a `.env.local` file in the root directory:
 
 ```env
-NEXT_PUBLIC_OPENAI_API_KEY=your_openai_api_key_here
-NEXT_PUBLIC_OPENAI_ASSISTANT_ID=your_assistant_id_here
+OPENAI_API_KEY=your_openai_api_key_here
+# Optional: enables file_search tool in API responses endpoint
+VECTOR_STORE_ID=your_vector_store_id_here
 ```
-
-**Note**: The `NEXT_PUBLIC_` prefix is used because these values are needed on the client side for the API calls. In a production environment, you might want to handle this differently for security.
 
 3. **Start development server:**
 
@@ -193,6 +192,12 @@ yarn dev
 
 ```bash
 yarn test
+```
+
+Run lint, types, tests, and production build locally (same checks used in CI):
+
+```bash
+yarn lint && yarn typecheck && yarn test --ci && yarn build
 ```
 
 Run only Three component tests:
@@ -265,13 +270,13 @@ The project includes configuration for:
 ### Environment Variables for Production
 
 ```env
-NEXT_PUBLIC_OPENAI_API_KEY=your_production_api_key
-NEXT_PUBLIC_OPENAI_ASSISTANT_ID=your_production_assistant_id
+OPENAI_API_KEY=your_production_api_key
+VECTOR_STORE_ID=your_vector_store_id
 ```
 
 ### Continuous Integration and Deployment
 
-This repository includes a GitHub Actions workflow at `.github/workflows/test-and-deploy.yml` that runs tests on every push to `main` and deploys to Heroku if they pass.
+This repository includes a GitHub Actions workflow at `.github/workflows/test-and-deploy.yml` that runs lint, typecheck, tests, and build on pull requests to `main`, and deploys to Heroku on pushes to `main` after validation passes.
 
 Add the following secrets in your GitHub repository settings:
 
@@ -279,13 +284,13 @@ Add the following secrets in your GitHub repository settings:
 - `HEROKU_APP_NAME` – your Heroku app name
 - `HEROKU_EMAIL` – the email associated with the Heroku account
 
-Also ensure `NEXT_PUBLIC_OPENAI_API_KEY` and `NEXT_PUBLIC_OPENAI_ASSISTANT_ID` are set in the Heroku environment.
+Also ensure `OPENAI_API_KEY` (and optionally `VECTOR_STORE_ID`) are set in the Heroku environment.
 
 ## 🛠️ Technologies & Dependencies
 
 ### Core Framework
 
-- **Next.js 14**: React framework with App Router
+- **Next.js 15**: React framework with App Router
 - **React 18**: Latest React with concurrent features
 - **TypeScript 5**: Type-safe JavaScript
 
