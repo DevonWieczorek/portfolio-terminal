@@ -28,8 +28,10 @@ const NUM_DECKS = 4;
 const DECK_MODEL_PATH = "/models/skateboard_deck_2.glb";
 // Subtracting 1.5 from i ensures the group of 4 decks is centered on deckX, not offset to one side.
 const GROUP_CENTER_OFFSET = (NUM_DECKS - 1) / 2;
-const SKATEBOARD_MESSAGE =
-    "In 2018, Devon and his brother started a skateboard company called Brew Crew Skateboards.";
+const SKATEBOARD_MESSAGE = `
+    In 2018, Devon and his brother started a skateboard company called
+    <a href="https://www.instagram.com/brewcrewskateboards" target="_blank">Brew Crew Skateboards</a>.
+`;
 
 const SkateboardGroup = memo(
     ({ proximityPosition }: { proximityPosition: PositionArray }) => {

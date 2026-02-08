@@ -27,8 +27,10 @@ type BassControls = {
 const NUM_BASSES = 4;
 // Subtracting 1.5 from i ensures the group of 4 basses is centered on bassX, not offset to one side.
 const GROUP_CENTER_OFFSET = (NUM_BASSES - 1) / 2;
-const BASS_MESSAGE =
-    "Devon is the bassist and co-vocalist of an alternative Punk Rock band called Friend Z.";
+const BASS_MESSAGE = `
+    Devon is the bassist and co-vocalist of an alternative Punk Rock band called
+    <a href="https://linktr.ee/friend_z" target="_blank">Friend Z</a>.
+`;
 
 // Static bass configurations - moved outside component to prevent recreation
 const BASS_CONFIGS = [
@@ -36,7 +38,7 @@ const BASS_CONFIGS = [
     { src: "/models/bass-2.glb", scale: 1.28 },
     { src: "/models/bass-3.glb", scale: 27.22 },
     // { src: "/models/bass-4.glb", scale: 0.094 },
-    { src: "/models/bass-1.glb" },
+    { src: "/models/bass-1.glb" }, // TODO: find fourth model that fits with the rest
 ];
 
 const BassGroup = memo(
