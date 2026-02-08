@@ -187,6 +187,45 @@ yarn dev
 | `help`     | Shows available commands and descriptions  | `HelpMenu.tsx` |
 | `clear`    | Clears the terminal output                 | Built-in       |
 
+## ✅ Testing
+
+### Run Tests
+
+```bash
+yarn test
+```
+
+Run only Three component tests:
+
+```bash
+yarn test src/components/three
+```
+
+Run a single test file:
+
+```bash
+yarn test src/components/three/Bass.test.tsx
+```
+
+### Test Organization
+
+- Non-Three component tests live in `src/components/*.test.tsx`.
+- Three component tests live in `src/components/three/*.test.tsx` with one file per component.
+
+### Three.js / R3F Test Strategy
+
+- Three tests are unit-level and run in `jsdom`.
+- Shared test mocks are centralized in `__mocks__/threeTestHarness.tsx`.
+- The harness mocks `@react-three/fiber`, `@react-three/drei`, scene/message contexts, and relevant Zustand stores so tests do not require a real WebGL runtime.
+
+### Troubleshooting
+
+If Jest fails with a Node dynamic library error like:
+
+`Library not loaded: /usr/local/opt/icu4c/lib/libicui18n.*.dylib`
+
+your local Node/Homebrew ICU linkage is broken. Reinstall/relink Node (or ICU) and rerun tests.
+
 ## 🔌 API Integration
 
 ### OpenAI Assistant API Flow
