@@ -7,12 +7,13 @@ import { useExperience } from "@/lib/stores/useExperience";
 
 export default function Camera() {
     const { camera } = useThree();
-    const { position } = useMovement();
+    // Keep subscription narrow to avoid rerenders from unrelated movement actions.
+    const position = useMovement(state => state.position);
     const {
         roomSize,
         wallThickness,
         cameraBuffer,
-        cameraOffset,
+        cameraOffset: cameraOffsetConfig,
         zoomSettings,
     } = useScene();
     // Use individual selectors to prevent unnecessary rerenders
@@ -31,14 +32,19 @@ export default function Camera() {
     const zoomSpeed = zoomSettings.speed;
 
     // Camera follow settings from context
-    const baseCameraOffset = new THREE.Vector3(
-        cameraOffset.x,
-        cameraOffset.y,
-        cameraOffset.z
+    const baseCameraOffset = useMemo(
+        () =>
+            new THREE.Vector3(
+                cameraOffsetConfig.x,
+                cameraOffsetConfig.y,
+                cameraOffsetConfig.z
+            ),
+        [cameraOffsetConfig.x, cameraOffsetConfig.y, cameraOffsetConfig.z]
     );
-    const lookAtOffset = new THREE.Vector3(0, 2, 0);
+    const lookAtOffset = useMemo(() => new THREE.Vector3(0, 2, 0), []);
 
     // Smooth camera movement
+    const frameCameraOffset = useRef(new THREE.Vector3());
     const targetPosition = useRef(new THREE.Vector3());
     const targetLookAt = useRef(new THREE.Vector3());
     const overridePosition = useMemo(() => new THREE.Vector3(), []);
@@ -91,8 +97,10 @@ export default function Camera() {
     }, [minZoom, maxZoom, zoomSpeed]);
 
     useFrame(() => {
-        // Calculate camera offset based on zoom
-        const cameraOffset = baseCameraOffset.clone().multiplyScalar(zoom);
+        // Reuse the same vector instance to avoid per-frame allocations.
+        const cameraOffset = frameCameraOffset.current
+            .copy(baseCameraOffset)
+            .multiplyScalar(zoom);
 
         // Room boundary limits
         const maxX = roomSize / 2 - wallThickness - cameraBuffer;

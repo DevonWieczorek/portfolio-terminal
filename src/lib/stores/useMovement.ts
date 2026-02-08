@@ -18,10 +18,17 @@ const initialPosition: Position = {
     z: 0,
 };
 
+// Zustand uses referential equality; avoid publishing identical position state.
+const hasPositionChanged = (current: Position, next: Position) =>
+    current.x !== next.x || current.y !== next.y || current.z !== next.z;
+
 export const useMovement = create<MovementState>(set => ({
     position: initialPosition,
 
-    setPosition: position => set({ position }),
+    setPosition: position =>
+        set(state =>
+            hasPositionChanged(state.position, position) ? { position } : state
+        ),
 
     resetPosition: () => set({ position: initialPosition }),
 }));

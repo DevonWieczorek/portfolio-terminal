@@ -15,10 +15,14 @@ enum Controls {
     rightward = "rightward",
 }
 
+const POSITION_EPSILON = 1e-5;
+
 const Character = memo(() => {
     const characterRef = useRef<THREE.Group>(null);
     const [subscribe, getKeys] = useKeyboardControls<Controls>();
-    const { position, setPosition } = useMovement();
+    // Subscribe only to the slices used by this component.
+    const position = useMovement(state => state.position);
+    const setPosition = useMovement(state => state.setPosition);
     const { characterSpeed, characterBoundary, characterScale, roomSize } =
         useScene();
     const { message, clearMessage } = useMessage();
@@ -186,8 +190,16 @@ const Character = memo(() => {
             characterRef.current.rotation.y = currentRotation.current;
         }
 
-        // Update position
-        setPosition(newPosition);
+        // Ignore tiny float jitter so the movement store only updates on real moves.
+        const positionChanged =
+            Math.abs(newPosition.x - position.x) > POSITION_EPSILON ||
+            Math.abs(newPosition.y - position.y) > POSITION_EPSILON ||
+            Math.abs(newPosition.z - position.z) > POSITION_EPSILON;
+
+        if (positionChanged) {
+            setPosition(newPosition);
+        }
+
         characterRef.current.position.set(
             newPosition.x,
             newPosition.y,

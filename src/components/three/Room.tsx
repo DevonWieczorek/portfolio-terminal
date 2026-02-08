@@ -1,4 +1,5 @@
-import { memo, useEffect, useMemo } from "react";
+import { memo, useEffect, useRef } from "react";
+import { useFrame } from "@react-three/fiber";
 import { useTexture } from "@react-three/drei";
 import * as THREE from "three";
 import { useMovement } from "@/lib/stores/useMovement";
@@ -8,7 +9,6 @@ import BassGroup from "@/components/three/BassGroup";
 import SkateboardGroup from "@/components/three/SkateboardGroup";
 
 const Room = memo(() => {
-    const characterPosition = useMovement(state => state.position);
     const { roomSize, wallColor, wallHeight, wallThickness } = useScene();
 
     // Load wood texture for floor
@@ -25,16 +25,14 @@ const Room = memo(() => {
         floorTexture.needsUpdate = true; // Critical to apply changes
     }, [floorTexture, roomSize]);
 
-    // Memoize Vector3 creation to prevent recreation on every render
-    const proxyPosition = useMemo(
-        () =>
-            new THREE.Vector3(
-                characterPosition.x,
-                characterPosition.y,
-                characterPosition.z
-            ),
-        [characterPosition.x, characterPosition.y, characterPosition.z]
-    );
+    // Keep a stable vector reference and mutate it in the frame loop so
+    // movement updates do not force React rerenders of the room subtree.
+    const proximityPositionRef = useRef<THREE.Vector3>(new THREE.Vector3());
+
+    useFrame(() => {
+        const { position } = useMovement.getState();
+        proximityPositionRef.current.set(position.x, position.y, position.z);
+    });
 
     return (
         <group>
@@ -50,10 +48,10 @@ const Room = memo(() => {
                 <meshLambertMaterial color={wallColor} />
             </mesh>
 
-            <BassGroup proximityPosition={proxyPosition} />
+            <BassGroup proximityPosition={proximityPositionRef.current} />
 
             {/* Desk and Computer Setup */}
-            <Desk />
+            <Desk proximityPosition={proximityPositionRef.current} />
 
             {/* South Wall */}
             <mesh position={[0, wallHeight / 2, roomSize / 2]} receiveShadow>
@@ -67,7 +65,7 @@ const Room = memo(() => {
                 <meshLambertMaterial color={wallColor} />
             </mesh>
 
-            <SkateboardGroup proximityPosition={proxyPosition} />
+            <SkateboardGroup proximityPosition={proximityPositionRef.current} />
 
             {/* West Wall */}
             <mesh position={[-roomSize / 2, wallHeight / 2, 0]} receiveShadow>

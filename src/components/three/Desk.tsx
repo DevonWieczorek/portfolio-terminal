@@ -1,11 +1,9 @@
-import { memo, useMemo } from "react";
+import { memo } from "react";
 import { useGLTF } from "@react-three/drei";
 // #if DEBUG
 import { useControls } from "leva";
 // #endif
-import * as THREE from "three";
 import { useScene } from "@/lib/contexts/SceneContext";
-import { useMovement } from "@/lib/stores/useMovement";
 import Monitor from "@/components/three/Monitor";
 
 type DeskControls = {
@@ -15,9 +13,12 @@ type DeskControls = {
     deskScale: number;
 };
 
-const Desk = memo(() => {
+interface DeskProps {
+    proximityPosition: PositionArray;
+}
+
+const Desk = memo(({ proximityPosition }: DeskProps) => {
     const { desk } = useScene();
-    const characterPosition = useMovement(state => state.position);
     const deskModel = useGLTF("/models/l_shaped_desk.glb");
 
     let deskX, deskY, deskZ, deskScale;
@@ -66,17 +67,6 @@ const Desk = memo(() => {
     const cornerX = deskX ?? desk?.position?.x; // Very close to west wall
     const cornerZ = deskZ ?? desk?.position?.z; // Very close to north wall
     const deskHeight = desk?.height;
-
-    // Memoize Vector3 creation to prevent recreation on every render
-    const proximityPosition = useMemo(
-        () =>
-            new THREE.Vector3(
-                characterPosition.x,
-                characterPosition.y,
-                characterPosition.z
-            ),
-        [characterPosition.x, characterPosition.y, characterPosition.z]
-    );
 
     return (
         <group
