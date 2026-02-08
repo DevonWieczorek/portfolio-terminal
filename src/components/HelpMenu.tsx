@@ -12,19 +12,18 @@ const HelpMenu = () => {
             <p>fun-fact: displays a random &quot;fun fact&quot; about Devon</p>
             <p>clear: clear the console</p>
             <p>help: displays this menu</p>
-            {!isMobile && (
-                <>
-                    <p>
-                        <br />
-                        <br />
-                        View this page on desktop for the full, 3D experience.
-                    </p>
-                    <p>
-                        <br />
-                        <br />
-                        Press ESC to exit computer.
-                    </p>
-                </>
+            {!isMobile ? (
+                <p>
+                    <br />
+                    <br />
+                    Press ESC to exit computer.
+                </p>
+            ) : (
+                <p>
+                    <br />
+                    <br />
+                    View this page on desktop for the full, 3D experience.
+                </p>
             )}
         </div>
     );
