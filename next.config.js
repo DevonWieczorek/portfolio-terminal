@@ -4,10 +4,9 @@ const nextConfig = {
     eslint: {
         ignoreDuringBuilds: false,
     },
-    webpack: (config, { isServer }) => {
+    webpack: config => {
         config.module.rules.push({
-            test: /\.(js|ts|tsx)$/,
-            exclude: /node_modules/,
+            test: /src\/components\/three\/(InteractiveBox|SkateboardGroup|Desk|BassGroup|Bass|Character|Monitor)\.tsx$/,
             enforce: "pre",
             use: [
                 {

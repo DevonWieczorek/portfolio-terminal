@@ -1,6 +1,7 @@
-import { memo } from "react";
-import React, { Canvas } from "@react-three/fiber";
-import { Suspense, useEffect, useMemo, useState } from "react";
+"use client";
+
+import { memo, Suspense, useEffect, useMemo, useState } from "react";
+import { Canvas } from "@react-three/fiber";
 import { KeyboardControls } from "@react-three/drei";
 import Room from "@/components/three/Room";
 import Character from "@/components/three/Character";
