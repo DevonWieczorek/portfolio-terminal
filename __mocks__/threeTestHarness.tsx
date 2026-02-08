@@ -1,6 +1,9 @@
 import React from "react";
 import * as THREE from "three";
 
+const originalConsoleError = console.error;
+const originalConsoleWarn = console.warn;
+
 export const frameCallbacks: Array<() => void> = [];
 
 export const mockCamera = {
@@ -17,7 +20,10 @@ export const useThreeMock = jest.fn(() => ({ camera: mockCamera }));
 export const useGLTFMock = jest.fn((_: string) => ({
     scene: new THREE.Group(),
 }));
-(useGLTFMock as jest.Mock & { preload: jest.Mock }).preload = jest.fn();
+export const useGLTFPreloadMock = jest.fn();
+const useGLTFModuleMock = Object.assign((path: string) => useGLTFMock(path), {
+    preload: useGLTFPreloadMock,
+});
 
 export const useTextureMock = jest.fn(() => ({
     wrapS: 0,
@@ -131,7 +137,7 @@ jest.mock("@react-three/fiber", () => ({
 
 jest.mock("@react-three/drei", () => ({
     __esModule: true,
-    useGLTF: (path: string) => useGLTFMock(path),
+    useGLTF: useGLTFModuleMock,
     useTexture: (path: string) => useTextureMock(path),
     useKeyboardControls: () => [subscribeMock, getKeysMock],
     KeyboardControls: ({ children }: { children: React.ReactNode }) => (
@@ -172,6 +178,26 @@ jest.mock("@/components/Terminal", () => ({
         <div data-testid="terminal" data-active={String(isActive)} />
     ),
 }));
+
+beforeAll(() => {
+    jest.spyOn(console, "warn").mockImplementation(() => {});
+    jest.spyOn(console, "error").mockImplementation((...args: unknown[]) => {
+        const message = String(args[0] ?? "");
+        const isWarning = message.startsWith("Warning:");
+
+        if (isWarning) {
+            return;
+        }
+
+        originalConsoleError(...args);
+    });
+});
+
+afterAll(() => {
+    (console.warn as jest.Mock).mockRestore();
+    (console.error as jest.Mock).mockRestore();
+    console.warn = originalConsoleWarn;
+});
 
 export function resetThreeTestState() {
     jest.clearAllMocks();

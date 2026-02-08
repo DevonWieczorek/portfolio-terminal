@@ -211,6 +211,7 @@ yarn test src/components/three/Bass.test.tsx
 
 - Non-Three component tests live in `src/components/*.test.tsx`.
 - Three component tests live in `src/components/three/*.test.tsx` with one file per component.
+- Shared browser API mocks (like `window.matchMedia`) are installed via `jest.setup.js` from `__mocks__/matchMediaMock.js`.
 
 ### Three.js / R3F Test Strategy
 

@@ -8,6 +8,10 @@ import {
     resetThreeTestState,
 } from "../../../__mocks__/threeTestHarness";
 import { INTRO_MESSAGE } from "@/lib/constants/sceneMessages";
+jest.mock("./Character", () => ({
+    __esModule: true,
+    default: () => <group data-testid="mock-character" />,
+}));
 import R3FScene from "./R3FScene";
 
 describe("R3FScene", () => {
