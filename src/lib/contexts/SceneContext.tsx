@@ -1,11 +1,5 @@
 import React, { createContext, useContext, ReactNode } from "react";
 
-interface Coordinates {
-    x: number;
-    y: number;
-    z: number;
-}
-
 interface ObjectTraits {
     width: number;
     height: number;
@@ -15,6 +9,8 @@ interface ObjectTraits {
     color: string;
     position: Coordinates;
     rotation: Coordinates;
+    boxSize: Coordinates;
+    boxAnchor: Coordinates;
 }
 
 interface RoomDimensions {
@@ -105,6 +101,16 @@ const defaultMonitorTraits: DeepPartial<ObjectTraits> = {
     rotation: {
         y: -1,
     },
+    boxSize: {
+        x: 5,
+        y: 2,
+        z: 3,
+    },
+    boxAnchor: {
+        x: 0,
+        y: 0,
+        z: 0,
+    },
 };
 
 const BASS_SCALE: number = scaledFeet(3.5);
@@ -116,6 +122,16 @@ const defaultBassTraits: DeepPartial<ObjectTraits> = {
     },
     scale: BASS_SCALE,
     spacing: scaledFeet(5),
+    boxSize: {
+        x: 15,
+        y: 18,
+        z: 5,
+    },
+    boxAnchor: {
+        x: 1,
+        y: 0,
+        z: 0,
+    },
 };
 
 // const NUM_DECKS: number = 4;
@@ -128,6 +144,16 @@ const defaultDeckTraits: DeepPartial<ObjectTraits> = {
     },
     scale: DECK_SCALE,
     spacing: scaledFeet(5),
+    boxSize: {
+        x: 20,
+        y: 12,
+        z: 5,
+    },
+    boxAnchor: {
+        x: 0,
+        y: 0,
+        z: 0,
+    },
 };
 
 // Scene configuration interface

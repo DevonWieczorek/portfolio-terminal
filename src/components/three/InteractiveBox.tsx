@@ -1,28 +1,34 @@
-import {
-    memo,
-    useCallback,
-    useEffect,
-    useMemo,
-    useRef,
-    type ReactNode,
-} from "react";
+import { memo, useCallback, useEffect, useMemo, useRef } from "react";
+// #if DEBUG
+import { useState } from "react";
+// #endif
 import { useFrame, useThree } from "@react-three/fiber";
-import { Group, Quaternion, Vector3 } from "three";
+import {
+    Box3,
+    Group,
+    Matrix4,
+    Object3D,
+    Quaternion,
+    Vector3,
+    type BufferGeometry,
+    type Mesh,
+} from "three";
 import { useMessage } from "@/lib/contexts/MessageContext";
 import type { CameraTarget } from "@/lib/stores/useExperience";
 
 interface InteractiveBoxProps {
-    children: ReactNode;
     message: string;
-    triggerDistance?: number;
     proximityPosition?: PositionArray;
-    position?: [number, number, number];
-    rotation?: [number, number, number];
-    scale?: [number, number, number];
     onEnter?: (target?: CameraTarget) => void;
     computeCameraTarget?: (
         params: ComputeCameraTargetParams
     ) => CameraTarget | undefined;
+    padding?: number;
+    size?: [number, number, number] | Vector3;
+    center?: [number, number, number] | Vector3;
+    // #if DEBUG
+    onResolvedBounds?: (bounds: InteractiveBounds) => void;
+    // #endif
 }
 
 interface ComputeCameraTargetParams {
@@ -31,60 +37,292 @@ interface ComputeCameraTargetParams {
     worldQuaternion: Quaternion;
 }
 
+export interface InteractiveBounds {
+    center: [number, number, number];
+    size: [number, number, number];
+}
+
+// Small float tolerance used to ignore tiny math jitter.
+const EPSILON = 1e-4;
+
 const InteractiveBox = memo(function InteractiveBox({
-    children,
     message,
-    triggerDistance = 3,
     proximityPosition,
-    position = [0, 0, 0],
-    rotation = [0, 0, 0],
-    scale = [1, 1, 1],
     onEnter,
     computeCameraTarget,
+    padding = 0,
+    size,
+    center,
+    // #if DEBUG
+    onResolvedBounds,
+    // #endif
 }: InteractiveBoxProps) {
-    const groupRef = useRef<Group>(null);
+    const selfRef = useRef<Group>(null);
+    const targetRef = useRef<Object3D | null>(null);
     const { camera } = useThree();
     const { message: activeMessage, setMessage, clearMessage } = useMessage();
+
     const worldPosition = useMemo(() => new Vector3(), []);
     const worldQuaternion = useMemo(() => new Quaternion(), []);
     const proximityVector = useMemo(() => new Vector3(), []);
+    const localTargetPosition = useMemo(() => new Vector3(), []);
+    const localCenterVector = useMemo(() => new Vector3(), []);
+    const localSizeVector = useMemo(() => new Vector3(), []);
+    const localBounds = useMemo(() => new Box3(), []);
+    const parentBounds = useMemo(() => new Box3(), []);
+    const candidateBounds = useMemo(() => new Box3(), []);
+    const parentInverse = useMemo(() => new Matrix4(), []);
+
     const hasActiveMessageRef = useRef(false);
+    const hasBoundsRef = useRef(false);
     const lastTargetRef = useRef<CameraTarget | undefined>(undefined);
-
-    let debugMesh: ReactNode = null;
-
     // #if DEBUG
-    debugMesh = (
-        <mesh>
-            <boxGeometry
-                args={[triggerDistance, triggerDistance, triggerDistance]}
-            />
-            <meshBasicMaterial color="#8b5cf6" transparent opacity={0.2} />
-        </mesh>
-    );
+    const lastBoundsSignatureRef = useRef<string>("");
     // #endif
+    const localCenterRef = useRef<Vector3>(new Vector3());
+    const localSizeRef = useRef<Vector3>(new Vector3());
+    // #if DEBUG
+    const [debugCenter, setDebugCenter] = useState<[number, number, number]>([
+        0, 0, 0,
+    ]);
+    const [debugSize, setDebugSize] = useState<[number, number, number]>([
+        0, 0, 0,
+    ]);
+    // #endif
+    let debugMesh = null;
+
+    const clearActiveMessage = useCallback(() => {
+        if (!hasActiveMessageRef.current) {
+            return;
+        }
+
+        if (activeMessage === message) {
+            clearMessage();
+        }
+
+        hasActiveMessageRef.current = false;
+    }, [activeMessage, clearMessage, message]);
+
+    const applyResolvedBounds = useCallback(
+        (nextCenter: Vector3, nextSize: Vector3, nextHasBounds: boolean) => {
+            hasBoundsRef.current = nextHasBounds;
+
+            if (!nextHasBounds) {
+                return;
+            }
+
+            localCenterRef.current.copy(nextCenter);
+            localSizeRef.current.copy(nextSize);
+
+            // #if DEBUG
+            if (onResolvedBounds) {
+                // Quantized signature prevents repeated callback updates when
+                // values only differ by insignificant floating-point drift.
+                const signature = [
+                    nextCenter.x.toFixed(4),
+                    nextCenter.y.toFixed(4),
+                    nextCenter.z.toFixed(4),
+                    nextSize.x.toFixed(4),
+                    nextSize.y.toFixed(4),
+                    nextSize.z.toFixed(4),
+                ].join(",");
+
+                if (signature !== lastBoundsSignatureRef.current) {
+                    lastBoundsSignatureRef.current = signature;
+                    onResolvedBounds({
+                        center: [nextCenter.x, nextCenter.y, nextCenter.z],
+                        size: [nextSize.x, nextSize.y, nextSize.z],
+                    });
+                }
+            }
+            // #endif
+
+            // #if DEBUG
+            const centerTuple: [number, number, number] = [
+                nextCenter.x,
+                nextCenter.y,
+                nextCenter.z,
+            ];
+            const sizeTuple: [number, number, number] = [
+                nextSize.x,
+                nextSize.y,
+                nextSize.z,
+            ];
+
+            const centerChanged =
+                Math.abs(centerTuple[0] - debugCenter[0]) > EPSILON ||
+                Math.abs(centerTuple[1] - debugCenter[1]) > EPSILON ||
+                Math.abs(centerTuple[2] - debugCenter[2]) > EPSILON;
+            const sizeChanged =
+                Math.abs(sizeTuple[0] - debugSize[0]) > EPSILON ||
+                Math.abs(sizeTuple[1] - debugSize[1]) > EPSILON ||
+                Math.abs(sizeTuple[2] - debugSize[2]) > EPSILON;
+
+            if (centerChanged) {
+                setDebugCenter(centerTuple);
+            }
+
+            if (sizeChanged) {
+                setDebugSize(sizeTuple);
+            }
+            // #endif
+        },
+        [
+            // #if DEBUG
+            debugCenter,
+            debugSize,
+            onResolvedBounds,
+            // #endif
+        ]
+    );
+
+    const resolveVectorProp = useCallback(
+        (
+            source: [number, number, number] | Vector3 | undefined,
+            fallback: Vector3,
+            target: Vector3
+        ) => {
+            if (!source) {
+                return target.copy(fallback);
+            }
+
+            if (source instanceof Vector3) {
+                return target.copy(source);
+            }
+
+            return target.set(source[0], source[1], source[2]);
+        },
+        []
+    );
+
+    const computeBoundsFromParent = useCallback(() => {
+        const self = selfRef.current;
+        const target = targetRef.current;
+
+        if (!self || !target) {
+            return false;
+        }
+
+        target.updateWorldMatrix(true, true);
+        // Convert world-space values back into parent-local space so computed
+        // center/size can be used directly by this component.
+        parentInverse.copy(target.matrixWorld).invert();
+        parentBounds.makeEmpty();
+
+        target.traverse(obj => {
+            if (obj === self || self.children.includes(obj)) {
+                return;
+            }
+
+            const mesh = obj as Mesh;
+            const geometry = mesh.geometry as BufferGeometry | undefined;
+
+            if (!mesh.isMesh || !mesh.visible || !geometry) {
+                return;
+            }
+
+            if (!geometry.boundingBox) {
+                geometry.computeBoundingBox();
+            }
+
+            if (!geometry.boundingBox) {
+                return;
+            }
+
+            candidateBounds
+                .copy(geometry.boundingBox)
+                // Geometry bounds are mesh-local; convert mesh-local -> world
+                // and world -> parent-local before unioning into one box.
+                .applyMatrix4(mesh.matrixWorld)
+                .applyMatrix4(parentInverse);
+
+            parentBounds.union(candidateBounds);
+        });
+
+        if (parentBounds.isEmpty()) {
+            applyResolvedBounds(localCenterVector, localSizeVector, false);
+            return false;
+        }
+
+        parentBounds.getCenter(localCenterVector);
+        parentBounds.getSize(localSizeVector);
+
+        resolveVectorProp(center, localCenterVector, localCenterVector);
+        resolveVectorProp(size, localSizeVector, localSizeVector);
+
+        localSizeVector.set(
+            Math.max(localSizeVector.x + padding * 2, 0),
+            Math.max(localSizeVector.y + padding * 2, 0),
+            Math.max(localSizeVector.z + padding * 2, 0)
+        );
+
+        // Treat near-zero dimensions as invalid to avoid degenerate boxes.
+        const hasBounds =
+            localSizeVector.x > EPSILON &&
+            localSizeVector.y > EPSILON &&
+            localSizeVector.z > EPSILON;
+
+        applyResolvedBounds(localCenterVector, localSizeVector, hasBounds);
+
+        return hasBounds;
+    }, [
+        applyResolvedBounds,
+        candidateBounds,
+        center,
+        localCenterVector,
+        localSizeVector,
+        padding,
+        parentBounds,
+        parentInverse,
+        resolveVectorProp,
+        size,
+    ]);
 
     const resolveCameraTarget = useCallback(() => {
-        const group = groupRef.current;
+        const target = targetRef.current;
 
-        if (!group || !computeCameraTarget) {
+        if (!target || !computeCameraTarget || !(target instanceof Group)) {
             return undefined;
         }
 
-        group.getWorldPosition(worldPosition);
-        group.getWorldQuaternion(worldQuaternion);
+        target.getWorldPosition(worldPosition);
+        target.getWorldQuaternion(worldQuaternion);
 
         return computeCameraTarget({
-            group,
+            group: target,
             worldPosition: worldPosition.clone(),
             worldQuaternion: worldQuaternion.clone(),
         });
     }, [computeCameraTarget, worldPosition, worldQuaternion]);
 
-    useFrame(() => {
-        const group = groupRef.current;
+    useEffect(() => {
+        hasBoundsRef.current = false;
+    }, [padding, center, size]);
 
-        if (!group) {
+    useFrame(() => {
+        const self = selfRef.current;
+
+        if (!self) {
+            clearActiveMessage();
+            return;
+        }
+
+        const parent = self.parent;
+
+        if (!parent) {
+            targetRef.current = null;
+            hasBoundsRef.current = false;
+            clearActiveMessage();
+            return;
+        }
+
+        if (targetRef.current !== parent) {
+            targetRef.current = parent;
+            hasBoundsRef.current = false;
+        }
+
+        if (!hasBoundsRef.current && !computeBoundsFromParent()) {
+            clearActiveMessage();
             return;
         }
 
@@ -94,10 +332,38 @@ const InteractiveBox = memo(function InteractiveBox({
                 : proximityVector.set(...proximityPosition)
             : camera.position;
 
-        group.getWorldPosition(worldPosition);
+        const parentTarget = targetRef.current;
 
-        const distance = targetPosition.distanceTo(worldPosition);
-        const shouldShow = distance < triggerDistance;
+        if (!parentTarget) {
+            clearActiveMessage();
+            return;
+        }
+
+        localTargetPosition.copy(targetPosition);
+        parentTarget.worldToLocal(localTargetPosition);
+
+        localBounds.setFromCenterAndSize(
+            localCenterRef.current,
+            localSizeRef.current
+        );
+
+        // Primary rule: full 3D containment.
+        const shouldShowByVolume =
+            localBounds.containsPoint(localTargetPosition);
+        const halfSizeX = localSizeRef.current.x / 2;
+        const halfSizeZ = localSizeRef.current.z / 2;
+        const minX = localCenterRef.current.x - halfSizeX;
+        const maxX = localCenterRef.current.x + halfSizeX;
+        const minZ = localCenterRef.current.z - halfSizeZ;
+        const maxZ = localCenterRef.current.z + halfSizeZ;
+        const shouldShowByFootprint =
+            localTargetPosition.x >= minX &&
+            localTargetPosition.x <= maxX &&
+            localTargetPosition.z >= minZ &&
+            localTargetPosition.z <= maxZ;
+        // Secondary rule: XZ footprint containment, so interaction still works
+        // when character height differs from object center height.
+        const shouldShow = shouldShowByVolume || shouldShowByFootprint;
 
         if (shouldShow) {
             if (!hasActiveMessageRef.current || activeMessage !== message) {
@@ -115,11 +381,8 @@ const InteractiveBox = memo(function InteractiveBox({
                 setMessage(message, interaction ?? null);
                 hasActiveMessageRef.current = true;
             }
-        } else if (hasActiveMessageRef.current) {
-            if (activeMessage === message) {
-                clearMessage();
-            }
-            hasActiveMessageRef.current = false;
+        } else {
+            clearActiveMessage();
         }
     });
 
@@ -131,17 +394,16 @@ const InteractiveBox = memo(function InteractiveBox({
         };
     }, [activeMessage, clearMessage, message]);
 
-    return (
-        <group
-            ref={groupRef}
-            position={position}
-            rotation={rotation}
-            scale={scale}
-        >
-            {debugMesh}
-            {children}
-        </group>
+    // #if DEBUG
+    debugMesh = (
+        <mesh position={debugCenter}>
+            <boxGeometry args={debugSize} />
+            <meshBasicMaterial color="#8b5cf6" transparent opacity={0.2} />
+        </mesh>
     );
+    // #endif
+
+    return <group ref={selfRef}>{debugMesh}</group>;
 });
 InteractiveBox.displayName = "InteractiveBox";
 
