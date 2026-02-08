@@ -1,344 +1,246 @@
-# DevonGPT - Terminal Portfolio (Next.js)
+# DevonGPT Portfolio Terminal
 
-A terminal-style portfolio website built with Next.js 14, featuring an AI assistant powered by OpenAI's Assistant API. This project demonstrates modern React patterns, server-side API integration, and a unique terminal interface for portfolio presentation.
+A Next.js 15 portfolio that presents two experiences:
 
-## 🚀 Features
+- Desktop: an interactive 3D office built with React Three Fiber.
+- Mobile: a classic terminal-only interface.
 
-- **Terminal-style interface** with command-line interactions and authentic terminal aesthetics
-- **AI assistant** powered by OpenAI's Assistant API with thread-based conversations
-- **Interactive resume display** with markdown rendering
-- **Contact information** with styled output
-- **Fun facts** about Devon with random selection
-- **Help menu** with available commands and descriptions
-- **Responsive design** that works across different screen sizes
-- **Desktop 3D scene** built with React Three Fiber (mobile devices use the classic terminal)
-- **TypeScript** for type safety and better developer experience
+The terminal includes static portfolio commands (`resume`, `contact`, `fun-fact`, `help`) and an AI-powered `ask` command backed by a server-side OpenAI API route.
 
-## 🏗️ Architecture Overview
+## Current Product Behavior
 
-## ⚡ R3F Performance Improvements
+- `/` renders `src/app/page.tsx`.
+- If viewport width is `< 768px` (`useIsMobile`), users get terminal-only mode.
+- Otherwise users get the full 3D scene (`R3FScene`) with in-world interactions.
+- Desktop controls: `WASD`/arrow keys move, proximity triggers contextual messages, `Enter` on the monitor enters terminal mode, and `Escape` returns to the scene.
 
-The following React Three Fiber optimizations are implemented in this codebase:
+## Tech Stack
 
-- **Guarded movement store updates**: `setPosition` now no-ops when position values are unchanged, preventing redundant Zustand updates and rerenders (`src/lib/stores/useMovement.ts`).
-- **Frame-loop write reduction in character movement**: `Character` now checks for real coordinate changes before writing to the movement store, avoiding per-frame no-op writes while idle or blocked by collision (`src/components/three/Character.tsx`).
-- **Narrowed Zustand subscription in camera**: `Camera` now subscribes only to `position` instead of the full movement store object, reducing avoidable rerenders from unrelated movement-store changes (`src/components/three/Camera.tsx`).
-- **Stable proximity vector for interactive checks**: `Room` now updates a shared `Vector3` via `useFrame` and passes that stable reference through `Desk`, `BassGroup`, and `SkateboardGroup`, removing movement-driven React rerenders from the room subtree (`src/components/three/Room.tsx`, `src/components/three/Desk.tsx`).
-- **Removed per-frame camera vector allocations**: `Camera` now reuses preallocated vectors for zoomed camera offset calculations instead of cloning vectors each frame (`src/components/three/Camera.tsx`).
-- **Moved debug model introspection out of render**: Bass dimension logging now runs in `useEffect` and only when the model path changes, keeping render pure in debug mode (`src/components/three/Bass.tsx`).
-- **Reduced interaction-time allocations in monitor targeting**: `Monitor` now reuses preallocated vectors when computing terminal camera targets instead of repeatedly cloning vectors (`src/components/three/Monitor.tsx`).
-- **Removed unused GLTF preload**: dropped a stale bass preload from `BassGroup` to match the active model set (`src/components/three/BassGroup.tsx`).
+- Framework: Next.js 15 (App Router), React 19, TypeScript (strict)
+- 3D: `three`, `@react-three/fiber`, `@react-three/drei`
+- State: Zustand + React Context
+- AI: OpenAI Node SDK (`responses.create`) via `src/app/api/gpt/route.ts`
+- Styling: SCSS modules + global CSS
+- Testing: Jest + React Testing Library + SWC
+- Build-time debug gates: `ifdef-loader`
 
-### Design Decisions
+## Architecture
 
-**Why Terminal Interface?**
-
-- **Unique UX**: Stands out from traditional portfolio layouts
-- **Developer-friendly**: Appeals to technical audiences and recruiters
-- **Interactive**: Creates engagement through command discovery
-- **Nostalgic**: Evokes classic computing experiences
-- **Immersive showcase**: Desktop visitors explore a 3D room built with React Three Fiber
-
-**Why Next.js 14 with App Router?**
-
-- **Server-side rendering**: Better SEO and initial load performance
-- **API routes**: Secure server-side API calls (OpenAI keys stay private)
-- **File-based routing**: Intuitive project structure
-- **Built-in optimizations**: Automatic code splitting and bundling
-
-**Why OpenAI Assistant API over Chat Completions?**
-
-- **Thread-based conversations**: Maintains context across interactions
-- **More sophisticated responses**: Can use tools and access files
-- **Better for personal assistants**: Designed for ongoing conversations
-- **Future extensibility**: Can easily add more capabilities
-
-## 📁 Next.js Project Structure Deep Dive
-
-This project uses Next.js 14 with the **App Router** (the newer routing system). Here's how the structure works:
-
-### App Router Structure (`src/app/`)
-
-```
-src/app/
-├── layout.tsx          # Root layout (applies to all pages)
-├── page.tsx           # Home page (route: /)
-├── globals.css        # Global styles
-└── api/               # API routes (server-side endpoints)
-    └── gpt/
-        └── route.ts   # POST /api/gpt endpoint
+```txt
+src/
+  app/
+    layout.tsx
+    page.tsx
+    api/gpt/
+      route.ts
+      prompt.ts
+  components/
+    Terminal.tsx
+    AskGPT.tsx
+    Contact.tsx
+    Resume.tsx
+    FunFact.tsx
+    HelpMenu.tsx
+    three/
+      R3FScene.tsx
+      Room.tsx
+      Character.tsx
+      Camera.tsx
+      Message.tsx
+      InteractiveBox.tsx
+      Desk.tsx
+      Monitor.tsx
+      BassGroup.tsx
+      SkateboardGroup.tsx
+  lib/
+    stores/
+      useExperience.ts
+      useMovement.ts
+    contexts/
+      SceneContext.tsx
+      MessageContext.tsx
 ```
 
-**Key Concepts:**
+## Stores And Context
 
-1. **Layout.tsx** - The root layout that wraps all pages
-    - Defines the `<html>` and `<body>` tags
-    - Sets metadata (title, description)
-    - Imports global styles
-    - Applies to every route in the app
+### Zustand Stores
 
-2. **Page.tsx** - The home page component
-    - Uses `"use client"` directive (client-side component)
-    - Renders the main Terminal component
-    - Handles state management for the app
+`src/lib/stores/useExperience.ts`
 
-3. **API Routes** - Server-side endpoints
-    - Located in `app/api/` directory
-    - `route.ts` files define HTTP methods (GET, POST, etc.)
-    - Run on the server, keeping API keys secure
-    - Handle OpenAI API calls and data processing
+- Owns experience mode and transition state.
+- State fields: `mode`, `targetMode`, `isTransitioning`, `cameraOverride`, `isBlackout`.
+- Actions: `enterTerminal(target)`, `exitTerminal()`, `startBlackout()`, `completeTransition()`.
 
-### Component Architecture
+`src/lib/stores/useMovement.ts`
 
-```
-src/components/
-├── Terminal.tsx       # Main terminal interface
-├── AskGPT.tsx         # AI interaction component
-├── Resume.tsx         # Resume display component
-├── Contact.tsx        # Contact information
-├── FunFact.tsx        # Random fun facts
-└── HelpMenu.tsx       # Command help system
-```
+- Owns character position `{ x, y, z }`.
+- `setPosition` is guarded to avoid no-op writes when coordinates have not changed.
+- `resetPosition` restores the initial spawn position.
 
-**Component Design Patterns:**
+### React Contexts
 
-- **Container Pattern**: `Terminal.tsx` acts as the main container
-- **Command Pattern**: Each command (`resume`, `contact`, etc.) has its own component
-- **State Management**: Uses React hooks for local state
-- **Event Handling**: Custom keyboard utilities for terminal-like input
+`src/lib/contexts/SceneContext.tsx`
 
-### Styling Strategy
+- Provides scene-wide configuration (room dimensions, wall properties, camera settings, object placement, object interaction box defaults).
+- All scene objects consume this for shared, consistent layout and tuning values.
 
-```
-src/styles/
-├── reset.scss           # Global reset for consistent styling
-├── Home.module.scss     # Home page styles
-├── Terminal.module.scss # Terminal interface styles
-├── AskGPT.module.scss   # AI interaction styles
-├── Resume.module.scss   # Resume display styles
-└── Contact.module.scss  # Contact information styles
-```
+`src/lib/contexts/MessageContext.tsx`
 
-**SCSS Modules Approach:**
+- Owns transient UI message state shown by `Message` overlay.
+- Supports optional `interaction.onEnter` callback for context-sensitive Enter behavior (for example entering terminal at the monitor).
 
-- **Scoped styles**: Each component has its own SCSS module
-- **No global conflicts**: Styles are automatically scoped to components
-- **TypeScript support**: SCSS modules work well with TypeScript
-- **Maintainable**: Easy to find and modify component-specific styles
+## Data Flow
 
-### Utility Functions
+### App Entry Flow
 
-```
-src/utils/
-├── keyboard.ts        # Keyboard event utilities
-└── formatting.ts      # Text formatting helpers
-```
+1. `src/app/page.tsx` checks `useIsMobile()`.
+2. Mobile renders `Terminal` directly.
+3. Desktop renders `R3FScene` (dynamic import with `ssr: false`).
+4. `R3FScene` wraps content with `MessageProvider` and `SceneProvider`.
 
-**Utility Design:**
+### 3D Interaction Flow
 
-- **Single responsibility**: Each utility file has a specific purpose
-- **Reusable**: Functions can be used across components
-- **Type-safe**: TypeScript ensures proper usage
+1. `Character` updates movement in `useMovement` based on keyboard input.
+2. `Room` mirrors store position into a stable `Vector3` ref (`proximityPositionRef`) each frame.
+3. Object groups (`Monitor`, `BassGroup`, `SkateboardGroup`) receive that ref.
+4. `InteractiveBox` computes parent bounds and tests containment against proximity position.
+5. When inside bounds, it pushes contextual message via `MessageContext`.
+6. If interaction includes `onEnter`, pressing Enter executes it.
 
-## 🔧 Setup & Development
+### Scene <-> Terminal Transition Flow
 
-### Prerequisites
+1. Monitor interaction resolves camera target and calls `useExperience.enterTerminal(target)`.
+2. `Camera` lerps toward the override target.
+3. On close-enough threshold, `startBlackout()` runs.
+4. After blackout timeout, store finalizes to `mode: "terminal"`.
+5. Terminal becomes visible/interactable while canvas is visually inactive.
+6. Pressing `Escape` triggers `exitTerminal()`, camera returns to follow mode, transition completes.
 
-- Node.js 20.x (see `.nvmrc`)
-- Yarn 1.22.19
-- OpenAI API key with Assistant API access
+### Terminal Command Flow
 
-### Installation
+1. `Terminal` listens for Enter on input.
+2. Commands append component output into local `output` history.
+3. `help` auto-renders on mount after `clear`.
+4. `ask` renders `AskGPT`, which POSTs to `/api/gpt`.
 
-1. **Clone and install dependencies:**
+### AI Request Flow
+
+1. `AskGPT` sends `{ query }` to `POST /api/gpt`.
+2. Route validates input and builds `input` from system prompt (`prompt.ts`), optional short history (last 6 turns if provided), optional `userProfile`, and current user query.
+3. If `VECTOR_STORE_ID` exists, request includes `file_search` tool.
+4. Server calls `client.responses.create({ model: "gpt-4o-mini", ... })`.
+5. Client displays `response.output_text` (after citation cleanup).
+
+## Rendering Logic
+
+### Scene Composition (`src/components/three/R3FScene.tsx`)
+
+- `Canvas` is mounted after first client render (`showCanvas`) to avoid hydration pitfalls.
+- Canvas scene graph includes `Lights`, `Room`, `Character`, and `Camera`.
+- `Message` overlay is rendered outside Canvas for legible UI layering.
+- Terminal layer and blackout overlay are class-driven from `useExperience` state.
+
+### Interaction Volumes (`src/components/three/InteractiveBox.tsx`)
+
+- Computes bounds from parent mesh geometry (or explicit `size`/`center` overrides).
+- Containment checks include both full 3D volume containment and XZ footprint containment fallback.
+- This allows interactions to trigger even when character Y differs from object center.
+
+## Performance Optimizations Currently In Place
+
+- Guarded Zustand updates in `useMovement.setPosition` prevent no-op store publishes.
+- `Character` only writes movement when position changes beyond epsilon.
+- `Camera` subscribes only to movement `position` slice and preallocates vectors for frame-loop math.
+- `Room` mutates a stable proximity `Vector3` in `useFrame` to avoid React rerenders in child object groups.
+- Heavy scene components use `memo` (`Room`, `Lights`, `Character`, `Desk`, `Monitor`, `BassGroup`, `SkateboardGroup`, `Message`).
+- Repeated mapped object children are memoized in `BassGroup` and `SkateboardGroup`.
+- Textures are configured in `useEffect` rather than per render (`Room`).
+- GLTF assets are preloaded where applicable (`useGLTF.preload`).
+- Interactive monitor camera target calculations reuse vectors to limit allocation churn.
+- Debug-only behavior is stripped in non-debug builds via `ifdef-loader`.
+
+## Debug Mode
+
+Run debug mode:
 
 ```bash
-git clone <repository-url>
-cd portfolio-terminal
-yarn install
+yarn debug
 ```
 
-2. **Environment Configuration:**
-   Create a `.env.local` file in the root directory:
+This sets `NEXT_PUBLIC_DEBUG=true`, enabling `#if DEBUG` blocks in selected Three components via webpack `ifdef-loader` (`next.config.js`).
+
+Debug-only capabilities include:
+
+- Leva controls for object transforms and interaction box tuning.
+- Optional movement logging in `Character`.
+- Interactive bounds visualization from `InteractiveBox`.
+- Initial interaction-box control seeding from resolved mesh bounds.
+
+In non-debug mode, those blocks are compiled out.
+
+## Environment Variables
+
+Required:
 
 ```env
-OPENAI_API_KEY=your_openai_api_key_here
-# Optional: enables file_search tool in API responses endpoint
-VECTOR_STORE_ID=your_vector_store_id_here
+OPENAI_API_KEY=...
 ```
 
-3. **Start development server:**
+Optional:
+
+```env
+VECTOR_STORE_ID=...
+```
+
+Notes:
+
+- `OPENAI_API_KEY` must remain server-only.
+- `VECTOR_STORE_ID` enables `file_search` tool usage in `/api/gpt`.
+
+## Local Development
 
 ```bash
+yarn install
 yarn dev
 ```
 
-4. **Open your browser** to [http://localhost:3000](http://localhost:3000)
+Open `http://localhost:3000`.
 
-### Available Commands
+## Scripts
 
-| Command    | Description                                | Component      |
-| ---------- | ------------------------------------------ | -------------- |
-| `resume`   | Displays Devon's resume in markdown format | `Resume.tsx`   |
-| `contact`  | Shows contact information and social links | `Contact.tsx`  |
-| `ask`      | Opens AI assistant for questions           | `AskGPT.tsx`   |
-| `fun-fact` | Displays a random fun fact about Devon     | `FunFact.tsx`  |
-| `help`     | Shows available commands and descriptions  | `HelpMenu.tsx` |
-| `clear`    | Clears the terminal output                 | Built-in       |
+- `yarn dev`: standard dev server
+- `yarn debug`: dev server with debug-gated Three tooling
+- `yarn build`: production build
+- `yarn start`: run production server
+- `yarn lint`: Next.js ESLint
+- `yarn typecheck`: `tsc --noEmit`
+- `yarn test`: Jest test suite
+- `yarn compile-resume-markdown`: converts `src/assets/resume.pdf` -> `src/assets/resume.md`
+- `yarn compile-resume-html`: converts `src/assets/resume.pdf` -> `src/assets/resume.html`
 
-## ✅ Testing
-
-### Run Tests
+## Testing
 
 ```bash
 yarn test
 ```
 
-Run lint, types, tests, and production build locally (same checks used in CI):
+Recommended pre-merge check:
 
 ```bash
 yarn lint && yarn typecheck && yarn test --ci && yarn build
 ```
 
-Run only Three component tests:
+Three component tests are unit-level and run under `jsdom` with shared harness mocks in `__mocks__/threeTestHarness.tsx`.
 
-```bash
-yarn test src/components/three
-```
+## Handoff Notes For Engineers
 
-Run a single test file:
+- The README intentionally reflects current implementation, not aspirational architecture.
+- `AskGPT` and `/api/gpt` are stateless by default unless caller passes history/profile.
+- 3D and terminal experiences are intentionally split by viewport width and desktop transition state.
+- If you add new debug-only controls, include the file in the `ifdef-loader` test regex in `next.config.js`.
+- Message rendering uses `dangerouslySetInnerHTML`; keep message sources trusted.
 
-```bash
-yarn test src/components/three/Bass.test.tsx
-```
+## Deployment
 
-### Test Organization
-
-- Non-Three component tests live in `src/components/*.test.tsx`.
-- Three component tests live in `src/components/three/*.test.tsx` with one file per component.
-- Shared browser API mocks (like `window.matchMedia`) are installed via `jest.setup.js` from `__mocks__/matchMediaMock.js`.
-
-### Three.js / R3F Test Strategy
-
-- Three tests are unit-level and run in `jsdom`.
-- Shared test mocks are centralized in `__mocks__/threeTestHarness.tsx`.
-- The harness mocks `@react-three/fiber`, `@react-three/drei`, scene/message contexts, and relevant Zustand stores so tests do not require a real WebGL runtime.
-
-### Troubleshooting
-
-If Jest fails with a Node dynamic library error like:
-
-`Library not loaded: /usr/local/opt/icu4c/lib/libicui18n.*.dylib`
-
-your local Node/Homebrew ICU linkage is broken. Reinstall/relink Node (or ICU) and rerun tests.
-
-## 🔌 API Integration
-
-### OpenAI Assistant API Flow
-
-1. **Client Request**: User types a question in the terminal
-2. **API Route**: `/api/gpt` receives the request
-3. **Thread Creation**: Creates a new conversation thread
-4. **Message Addition**: Adds the user's question to the thread
-5. **Assistant Run**: Executes the assistant with the configured ID
-6. **Response Retrieval**: Polls for completion and retrieves the response
-7. **Client Display**: Shows the response in the terminal
-
-### Error Handling
-
-- **Network errors**: Graceful fallback with user-friendly messages
-- **API limits**: Proper error messages for rate limiting
-- **Invalid requests**: Validation on both client and server side
-- **Timeout handling**: Automatic retry logic for long-running requests
-
-## 🚀 Deployment
-
-### Vercel (Recommended)
-
-1. **Connect repository** to Vercel
-2. **Set environment variables** in Vercel dashboard
-3. **Deploy automatically** on git push
-
-### Other Platforms
-
-The project includes configuration for:
-
-- **Heroku**: `heroku.yml` and `Dockerfile` included
-- **Netlify**: Compatible with standard Next.js build process
-- **Railway**: Works with the included Docker configuration
-
-### Environment Variables for Production
-
-```env
-OPENAI_API_KEY=your_production_api_key
-VECTOR_STORE_ID=your_vector_store_id
-```
-
-### Continuous Integration and Deployment
-
-This repository includes a GitHub Actions workflow at `.github/workflows/test-and-deploy.yml` that runs lint, typecheck, tests, and build on pull requests to `main`, and deploys to Heroku on pushes to `main` after validation passes.
-
-Add the following secrets in your GitHub repository settings:
-
-- `HEROKU_API_KEY` – your Heroku API key
-- `HEROKU_APP_NAME` – your Heroku app name
-- `HEROKU_EMAIL` – the email associated with the Heroku account
-
-Also ensure `OPENAI_API_KEY` (and optionally `VECTOR_STORE_ID`) are set in the Heroku environment.
-
-## 🛠️ Technologies & Dependencies
-
-### Core Framework
-
-- **Next.js 15**: React framework with App Router
-- **React 18**: Latest React with concurrent features
-- **TypeScript 5**: Type-safe JavaScript
-
-### AI & APIs
-
-- **OpenAI SDK**: Official OpenAI JavaScript library
-- **Assistant API**: Thread-based conversation management
-
-### UI & Styling
-
-- **CSS Modules**: Scoped component styling
-- **React Markdown**: Markdown rendering for resume
-- **React Three Fiber**: Desktop-only 3D scene rendering
-
-### Development Tools
-
-- **ESLint**: Code linting and formatting
-- **TypeScript**: Static type checking
-- **Next.js Config**: Custom webpack and build configuration
-
-## 🎯 Learning Opportunities
-
-This project is designed as a learning platform for Next.js concepts:
-
-### Next.js App Router Patterns
-
-- **File-based routing**: Understanding how `page.tsx` creates routes
-- **Layouts**: How `layout.tsx` provides consistent structure
-- **API routes**: Server-side API handling with `route.ts` files
-- **Client vs Server components**: When to use `"use client"`
-
-### React Patterns
-
-- **Custom hooks**: State management and side effects
-- **Component composition**: Building complex UIs from simple components
-- **Event handling**: Keyboard interactions and form submissions
-- **State management**: Local state with useState and useCallback
-
-### Modern JavaScript/TypeScript
-
-- **Async/await**: Handling API calls and promises
-- **Type safety**: TypeScript interfaces and type definitions
-- **ES6+ features**: Arrow functions, destructuring, template literals
-
-## 🤝 Contributing
-
-This is a personal portfolio project, but suggestions and improvements are welcome! The codebase is structured to be educational and maintainable.
-
-## 📄 License
-
-MIT License - feel free to use this as a template for your own portfolio!
+- `next.config.js` uses `output: "standalone"` for container/deployment friendliness.
+- `Dockerfile` and `heroku.yml` are present for non-Vercel deployments.
