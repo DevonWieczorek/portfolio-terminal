@@ -2,6 +2,12 @@ import { Vector3 } from "three";
 export {};
 
 declare global {
+    type Coordinates = {
+        x: number;
+        y: number;
+        z: number;
+    };
+
     type DeepPartial<T> = {
         [P in keyof T]?: T[P] extends object
             ? T[P] extends Function
