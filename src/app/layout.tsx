@@ -3,18 +3,18 @@ import "./globals.css";
 import "@/styles/reset.scss";
 
 export const metadata: Metadata = {
-	title: "DevonGPT - Terminal Portfolio",
-	description: "Devon Wieczorek's Personal Assistant Terminal",
+    title: "DevonGPT - Terminal Portfolio",
+    description: "Devon Wieczorek's Personal Assistant Terminal",
 };
 
 export default function RootLayout({
-	children,
+    children,
 }: {
-	children: React.ReactNode;
+    children: React.ReactNode;
 }) {
-	return (
-		<html lang="en">
-			<body>{children}</body>
-		</html>
-	);
+    return (
+        <html lang="en">
+            <body>{children}</body>
+        </html>
+    );
 }
