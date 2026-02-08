@@ -3,8 +3,8 @@ import { useGLTF } from "@react-three/drei";
 import { getModelDimensions } from "@/utils/three";
 
 interface BassProps {
-    position: [number, number, number];
-    scale?: [number, number, number];
+    position: Coordinate;
+    scale?: Coordinate;
     modelPath?: string;
 }
 

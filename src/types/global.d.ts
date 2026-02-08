@@ -2,6 +2,8 @@ import { Vector3 } from "three";
 export {};
 
 declare global {
+    type Coordinate = [number, number, number];
+
     type Coordinates = {
         x: number;
         y: number;
@@ -16,5 +18,5 @@ declare global {
             : T[P];
     };
 
-    type PositionArray = [number, number, number] | Vector3;
+    type PositionArray = Coordinate | Vector3;
 }

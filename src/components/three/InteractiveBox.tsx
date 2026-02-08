@@ -24,8 +24,8 @@ interface InteractiveBoxProps {
         params: ComputeCameraTargetParams
     ) => CameraTarget | undefined;
     padding?: number;
-    size?: [number, number, number] | Vector3;
-    center?: [number, number, number] | Vector3;
+    size?: Coordinate | Vector3;
+    center?: Coordinate | Vector3;
     // #if DEBUG
     onResolvedBounds?: (bounds: InteractiveBounds) => void;
     // #endif
@@ -38,8 +38,8 @@ interface ComputeCameraTargetParams {
 }
 
 export interface InteractiveBounds {
-    center: [number, number, number];
-    size: [number, number, number];
+    center: Coordinate;
+    size: Coordinate;
 }
 
 // Small float tolerance used to ignore tiny math jitter.
@@ -82,12 +82,8 @@ const InteractiveBox = memo(function InteractiveBox({
     const localCenterRef = useRef<Vector3>(new Vector3());
     const localSizeRef = useRef<Vector3>(new Vector3());
     // #if DEBUG
-    const [debugCenter, setDebugCenter] = useState<[number, number, number]>([
-        0, 0, 0,
-    ]);
-    const [debugSize, setDebugSize] = useState<[number, number, number]>([
-        0, 0, 0,
-    ]);
+    const [debugCenter, setDebugCenter] = useState<Coordinate>([0, 0, 0]);
+    const [debugSize, setDebugSize] = useState<Coordinate>([0, 0, 0]);
     // #endif
     let debugMesh = null;
 
@@ -138,16 +134,12 @@ const InteractiveBox = memo(function InteractiveBox({
             // #endif
 
             // #if DEBUG
-            const centerTuple: [number, number, number] = [
+            const centerTuple: Coordinate = [
                 nextCenter.x,
                 nextCenter.y,
                 nextCenter.z,
             ];
-            const sizeTuple: [number, number, number] = [
-                nextSize.x,
-                nextSize.y,
-                nextSize.z,
-            ];
+            const sizeTuple: Coordinate = [nextSize.x, nextSize.y, nextSize.z];
 
             const centerChanged =
                 Math.abs(centerTuple[0] - debugCenter[0]) > EPSILON ||
@@ -178,7 +170,7 @@ const InteractiveBox = memo(function InteractiveBox({
 
     const resolveVectorProp = useCallback(
         (
-            source: [number, number, number] | Vector3 | undefined,
+            source: Coordinate | Vector3 | undefined,
             fallback: Vector3,
             target: Vector3
         ) => {

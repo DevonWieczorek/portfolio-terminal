@@ -20,12 +20,8 @@ const BoundingBox = memo(
         wireframe = false,
     }: BoundingBoxProps) => {
         const groupRef = useRef<THREE.Group>(null);
-        const [boxSize, setBoxSize] = useState<[number, number, number]>([
-            1, 1, 1,
-        ]);
-        const [boxCenter, setBoxCenter] = useState<[number, number, number]>([
-            0, 0, 0,
-        ]);
+        const [boxSize, setBoxSize] = useState<Coordinate>([1, 1, 1]);
+        const [boxCenter, setBoxCenter] = useState<Coordinate>([0, 0, 0]);
 
         useEffect(() => {
             if (groupRef.current) {

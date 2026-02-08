@@ -48,10 +48,8 @@ const SkateboardGroup = memo(
             deckBoxAnchorX,
             deckBoxAnchorY,
             deckBoxAnchorZ;
-        let deckInteractiveSize: [number, number, number] | undefined =
-            undefined;
-        let deckInteractiveCenter: [number, number, number] | undefined =
-            undefined;
+        let deckInteractiveSize: Coordinate | undefined = undefined;
+        let deckInteractiveCenter: Coordinate | undefined = undefined;
 
         // #if DEBUG
         const [deckControls, setDeckControls] = useControls(

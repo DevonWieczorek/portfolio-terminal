@@ -2,8 +2,8 @@ import { memo, useMemo } from "react";
 import { useGLTF } from "@react-three/drei";
 
 interface SkateboardProps {
-    position: [number, number, number];
-    scale?: [number, number, number];
+    position: Coordinate;
+    scale?: Coordinate;
     modelPath?: string;
 }
 

@@ -56,10 +56,8 @@ const BassGroup = memo(
             bassBoxAnchorX,
             bassBoxAnchorY,
             bassBoxAnchorZ;
-        let bassInteractiveSize: [number, number, number] | undefined =
-            undefined;
-        let bassInteractiveCenter: [number, number, number] | undefined =
-            undefined;
+        let bassInteractiveSize: Coordinate | undefined = undefined;
+        let bassInteractiveCenter: Coordinate | undefined = undefined;
 
         // #if DEBUG
         const [bassControls, setBassControls] = useControls(

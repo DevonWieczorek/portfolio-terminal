@@ -53,10 +53,8 @@ const Monitor = memo(({ proximityPosition }: MonitorProps) => {
         monitorBoxAnchorX,
         monitorBoxAnchorY,
         monitorBoxAnchorZ;
-    let monitorInteractiveSize: [number, number, number] | undefined =
-        undefined;
-    let monitorInteractiveCenter: [number, number, number] | undefined =
-        undefined;
+    let monitorInteractiveSize: Coordinate | undefined = undefined;
+    let monitorInteractiveCenter: Coordinate | undefined = undefined;
 
     // #if DEBUG
     const [monitorControls, setMonitorControls] = useControls(
