@@ -1,29 +1,29 @@
-const main = () => {
-	const fs = require('fs');
-	const path = require('path');
-	const pdfParse = require('pdf-parse');
-	const puppeteer = require('puppeteer');
+const convertResumeToHtml = () => {
+    const fs = require("fs");
+    const path = require("path");
+    const pdfParse = require("pdf-parse");
+    const puppeteer = require("puppeteer");
 
-	const pdfFilePath = path.resolve(__dirname, '../src/assets/resume.pdf');
-	const outputFilePath = path.resolve(__dirname, '../src/assets/resume.html');
+    const pdfFilePath = path.resolve(__dirname, "../src/assets/resume.pdf");
+    const outputFilePath = path.resolve(__dirname, "../src/assets/resume.html");
 
-	async function convertPDFtoHTML(pdfPath, outputPath) {
-		try {
-			// Read the PDF file
-			const pdfFile = fs.readFileSync(pdfPath);
-			
-			// Parse the PDF content
-			const pdfData = await pdfParse(pdfFile);
-			
-			// Extract text content
-			const textContent = pdfData.text;
+    async function convertPDFtoHTML(pdfPath: string, outputPath: string) {
+        try {
+            // Read the PDF file
+            const pdfFile = fs.readFileSync(pdfPath);
 
-			// Launch a new browser instance
-			const browser = await puppeteer.launch();
-			const page = await browser.newPage();
+            // Parse the PDF content
+            const pdfData = await pdfParse(pdfFile);
 
-			// Generate HTML content
-			const htmlContent = `
+            // Extract text content
+            const textContent = pdfData.text;
+
+            // Launch a new browser instance
+            const browser = await puppeteer.launch();
+            const page = await browser.newPage();
+
+            // Generate HTML content
+            const htmlContent = `
 			<!DOCTYPE html>
 			<html>
 				<head>
@@ -35,25 +35,25 @@ const main = () => {
 			</html>
 			`;
 
-			// Set the HTML content to the page
-			await page.setContent(htmlContent);
+            // Set the HTML content to the page
+            await page.setContent(htmlContent);
 
-			// Save the HTML content to a file
-			await page.content().then((content) => {
-			fs.writeFileSync(outputPath, content);
-			});
+            // Save the HTML content to a file
+            await page.content().then((content: string) => {
+                fs.writeFileSync(outputPath, content);
+            });
 
-			console.log('PDF converted to HTML successfully');
+            console.log("PDF converted to HTML successfully");
 
-			// Close the browser
-			await browser.close();
-		} catch (error) {
-			console.error('Error converting PDF to HTML:', error);
-		}
-	}
+            // Close the browser
+            await browser.close();
+        } catch (error) {
+            console.error("Error converting PDF to HTML:", error);
+        }
+    }
 
-	// Usage
-	convertPDFtoHTML(pdfFilePath, outputFilePath);
-}
+    // Usage
+    convertPDFtoHTML(pdfFilePath, outputFilePath);
+};
 
-main();
+convertResumeToHtml();

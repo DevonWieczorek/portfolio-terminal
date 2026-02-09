@@ -1,0 +1,13 @@
+.contact {
+    display: grid;
+    grid-gap: var(--grid-gap);
+
+    a {
+        color: var(--terminal-green);
+        text-decoration: underline;
+    }
+
+    a:hover {
+        text-decoration: none;
+    }
+}

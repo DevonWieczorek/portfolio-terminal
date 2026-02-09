@@ -1,15 +1,30 @@
 "use client";
 
+import dynamic from "next/dynamic";
 import { useState } from "react";
 import Terminal from "@/components/Terminal";
-import styles from "@/styles/Home.module.css";
+import styles from "@/styles/Home.module.scss";
+import { useIsMobile } from "@/hooks/use-is-mobile";
+
+const R3FScene = dynamic(() => import("@/components/three/R3FScene"), {
+    ssr: true,
+});
 
 export default function Home() {
-	const [, setSelectedOption] = useState<string>("");
+    const isMobile = useIsMobile();
+    const [, setSelectedOption] = useState<string>("");
 
-	return (
-		<div className={styles.home}>
-			<Terminal onCommand={setSelectedOption} />
-		</div>
-	);
+    if (isMobile === undefined) {
+        return null;
+    }
+
+    return (
+        <div className={styles.home}>
+            {isMobile ? (
+                <Terminal onCommand={setSelectedOption} isActive />
+            ) : (
+                <R3FScene />
+            )}
+        </div>
+    );
 }
