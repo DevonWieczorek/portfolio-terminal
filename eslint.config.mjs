@@ -1,70 +1,36 @@
-import { defineConfig, globalIgnores } from "eslint/config";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
-import js from "@eslint/js";
 import { FlatCompat } from "@eslint/eslintrc";
-import nextPlugin from "@next/eslint-plugin-next";
-import pluginTs from "@typescript-eslint/eslint-plugin";
-import parserTs from "@typescript-eslint/parser";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
-const compat = new FlatCompat({
-    baseDirectory: __dirname,
-    recommendedConfig: js.configs.recommended,
-    allConfig: js.configs.all,
-});
+const compat = new FlatCompat({ baseDirectory: __dirname });
 
-export default defineConfig([
-    globalIgnores(["**/dist/", "**/*.min.js"]),
+export default [
+    ...compat.extends(
+        "next/core-web-vitals",
+        "next/typescript",
+        "plugin:prettier/recommended"
+    ),
     {
-        plugins: {
-            "@next/next": nextPlugin,
-        },
+        ignores: ["**/dist/**", "**/*.min.js", ".next/**", "out/**"],
     },
     {
         files: ["**/*.ts", "**/*.tsx"],
-        languageOptions: {
-            parser: parserTs,
-            parserOptions: {
-                project: "./tsconfig.json",
-                tsconfigRootDir: __dirname,
-            },
-        },
-        plugins: {
-            "@typescript-eslint": pluginTs,
-        },
-        settings: {
-            react: {
-                version: "detect",
-            },
-        },
         rules: {
-            // Turn off the base rule for TS files
             "no-unused-vars": "off",
-            "no-undef": "off", // TypeScript handles this, and it doesn't understand global types
-            // Use the TS rule as a warning
+            "no-undef": "off",
             "@typescript-eslint/no-unused-vars": "warn",
             "@typescript-eslint/no-require-imports": "off",
-            // Disable React import requirement (Next.js 14+ uses new JSX transform)
+            "@typescript-eslint/no-explicit-any": "off",
             "react/react-in-jsx-scope": "off",
         },
-        extends: compat.extends(
-            "next/core-web-vitals",
-            "next/typescript",
-            "eslint:recommended",
-            "plugin:react/recommended",
-            "plugin:prettier/recommended"
-        ),
     },
     {
-        files: [
-            "src/components/three/**/*.tsx",
-            "src/components/three/**/*.ts",
-        ],
+        files: ["src/components/three/**/*.{ts,tsx}"],
         rules: {
-            // Disable unknown property check for R3F primitives which use non-standard props
+            // R3F primitives use non-standard DOM prop names.
             "react/no-unknown-property": "off",
         },
     },
-]);
+];

@@ -109,8 +109,8 @@ export default function Camera() {
         const minZ = -roomSize / 2 + wallThickness + cameraBuffer;
 
         // Calculate ideal camera position
-        let idealCameraX = position.x + cameraOffset.x;
-        let idealCameraZ = position.z + cameraOffset.z;
+        const idealCameraX = position.x + cameraOffset.x;
+        const idealCameraZ = position.z + cameraOffset.z;
 
         // Check if we need to adjust camera position due to wall proximity
         let adjustedCameraX = idealCameraX;

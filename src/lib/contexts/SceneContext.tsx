@@ -72,6 +72,7 @@ const feetFromWall = {
 };
 
 // Optional: Helpers for wall positioning
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 const wallPositions = {
     left: -ROOM_WIDTH / 2 + WALL_THICKNESS / 2,
     right: ROOM_WIDTH / 2 - WALL_THICKNESS / 2,

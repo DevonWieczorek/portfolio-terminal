@@ -13,7 +13,7 @@ const initialFunFacts = [
 
 const FunFact: FC = () => {
     const [currentFact, setCurrentFact] = useState<string | null>(null);
-    const [funFacts, setFunFacts] = useState(initialFunFacts);
+    const [, setFunFacts] = useState(initialFunFacts);
 
     useEffect(() => {
         setFunFacts(prevFacts => {

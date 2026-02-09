@@ -12,8 +12,8 @@ declare global {
 
     type DeepPartial<T> = {
         [P in keyof T]?: T[P] extends object
-            ? T[P] extends Function
-                ? T[P]
+            ? T[P] extends (...args: infer Args) => infer Return
+                ? (...args: Args) => Return
                 : DeepPartial<T[P]>
             : T[P];
     };
