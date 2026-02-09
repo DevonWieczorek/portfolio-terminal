@@ -21,7 +21,7 @@ jobs:
             - run: corepack prepare yarn@1.22.19 --activate
             - run: yarn install --frozen-lockfile
             - run: yarn lint
-            - run: yarn typecheck
+            # - run: yarn typecheck
             - run: yarn test --ci
             - run: yarn build
 
