@@ -30,7 +30,7 @@ const DECK_MODEL_PATH = "/models/skateboard_deck_2.glb";
 const GROUP_CENTER_OFFSET = (NUM_DECKS - 1) / 2;
 const SKATEBOARD_MESSAGE = `
     In 2018, Devon and his brother started a skateboard company called
-    <a href="https://www.instagram.com/brewcrewskateboards" target="_blank">Brew Crew Skateboards</a>.
+    <a href="https://www.instagram.com/brewcrewskateboards" target="_blank" rel="noopener noreferrer">Brew Crew Skateboards</a>.
 `;
 
 const SkateboardGroup = memo(

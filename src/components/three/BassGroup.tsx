@@ -29,7 +29,7 @@ const NUM_BASSES = 4;
 const GROUP_CENTER_OFFSET = (NUM_BASSES - 1) / 2;
 const BASS_MESSAGE = `
     Devon is the bassist and co-vocalist of an alternative Punk Rock band called
-    <a href="https://linktr.ee/friend_z" target="_blank">Friend Z</a>.
+    <a href="https://linktr.ee/friend_z" target="_blank" rel="noopener noreferrer">Friend Z</a>.
 `;
 
 // Static bass configurations - moved outside component to prevent recreation
