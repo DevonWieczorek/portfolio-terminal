@@ -3,6 +3,7 @@ import { useIsMobile } from "@/hooks/use-is-mobile";
 
 const HelpMenu = () => {
     const isMobile = useIsMobile();
+
     return (
         <div style={{ display: "grid", gridGap: "var(--grid-gap)" }}>
             <p>commands:</p>
@@ -12,19 +13,19 @@ const HelpMenu = () => {
             <p>fun-fact: displays a random &quot;fun fact&quot; about Devon</p>
             <p>clear: clear the console</p>
             <p>help: displays this menu</p>
-            {!isMobile ? (
+            {isMobile === false ? (
                 <p>
                     <br />
                     <br />
                     Press ESC to exit computer.
                 </p>
-            ) : (
+            ) : isMobile === true ? (
                 <p>
                     <br />
                     <br />
                     View this page on desktop for the full, 3D experience.
                 </p>
-            )}
+            ) : null}
         </div>
     );
 };
