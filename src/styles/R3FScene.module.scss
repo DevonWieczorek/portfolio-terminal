@@ -6,6 +6,31 @@
     background: #000;
 }
 
+.loadingOverlay {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 2;
+    pointer-events: none;
+}
+
+.spinner {
+    width: 2.5rem;
+    height: 2.5rem;
+    border: 0.2rem solid rgba(255, 255, 255, 0.35);
+    border-top-color: #fff;
+    border-radius: 50%;
+    animation: sceneSpinner 0.8s linear infinite;
+}
+
+@keyframes sceneSpinner {
+    to {
+        transform: rotate(360deg);
+    }
+}
+
 .canvasLayer {
     position: relative;
     width: 100%;

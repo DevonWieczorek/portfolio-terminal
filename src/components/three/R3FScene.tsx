@@ -1,6 +1,13 @@
 "use client";
 
-import { memo, Suspense, useEffect, useMemo, useState } from "react";
+import {
+    memo,
+    Suspense,
+    useCallback,
+    useEffect,
+    useMemo,
+    useState,
+} from "react";
 import { Canvas } from "@react-three/fiber";
 import { KeyboardControls } from "@react-three/drei";
 import Room from "@/components/three/Room";
@@ -13,7 +20,6 @@ import Message from "@/components/three/Message";
 import Terminal from "@/components/Terminal";
 import { useExperience } from "@/lib/stores/useExperience";
 import styles from "@/styles/R3FScene.module.scss";
-import { INTRO_MESSAGE } from "@/lib/constants/sceneMessages";
 
 enum Controls {
     forward = "forward",
@@ -31,7 +37,8 @@ const CONTROLS = [
 
 const R3FSceneContent = memo(() => {
     const [showCanvas, setShowCanvas] = useState(false);
-    const { message, interaction, clearMessage, setMessage } = useMessage();
+    const [isRoomReady, setIsRoomReady] = useState(false);
+    const { message, interaction, clearMessage } = useMessage();
     // Use individual selectors to prevent unnecessary rerenders
     const mode = useExperience(state => state.mode);
     const isTransitioning = useExperience(state => state.isTransitioning);
@@ -43,10 +50,6 @@ const R3FSceneContent = memo(() => {
     useEffect(() => {
         setShowCanvas(true);
     }, []);
-
-    useEffect(() => {
-        setMessage(INTRO_MESSAGE);
-    }, [setMessage]);
 
     useEffect(() => {
         const handleKeyDown = (event: KeyboardEvent) => {
@@ -110,6 +113,9 @@ const R3FSceneContent = memo(() => {
     const shouldRenderTerminal =
         mode === "terminal" || (isTransitioning && targetMode === "terminal");
     const isTerminalActive = mode === "terminal" && !isTransitioning;
+    const handleRoomReady = useCallback(() => {
+        setIsRoomReady(true);
+    }, []);
 
     useEffect(() => {
         if (isTransitioning && targetMode === "terminal") {
@@ -119,6 +125,15 @@ const R3FSceneContent = memo(() => {
 
     return (
         <div className={styles.sceneContainer}>
+            {!isRoomReady && (
+                <div className={styles.loadingOverlay}>
+                    <div
+                        className={styles.spinner}
+                        aria-label="Loading room"
+                        role="status"
+                    />
+                </div>
+            )}
             <div className={canvasClassName}>
                 {showCanvas && (
                     <KeyboardControls map={CONTROLS}>
@@ -142,7 +157,7 @@ const R3FSceneContent = memo(() => {
 
                             <Suspense fallback={null}>
                                 {/* Room environment */}
-                                <Room />
+                                <Room onReady={handleRoomReady} />
 
                                 {/* Character */}
                                 <Character />

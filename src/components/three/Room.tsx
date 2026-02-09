@@ -4,15 +4,27 @@ import { useTexture } from "@react-three/drei";
 import * as THREE from "three";
 import { useMovement } from "@/lib/stores/useMovement";
 import { useScene } from "@/lib/contexts/SceneContext";
+import { useMessage } from "@/lib/contexts/MessageContext";
 import Desk from "@/components/three/Desk";
 import BassGroup from "@/components/three/BassGroup";
 import SkateboardGroup from "@/components/three/SkateboardGroup";
+import { INTRO_MESSAGE } from "@/lib/constants/sceneMessages";
 
-const Room = memo(() => {
+interface RoomProps {
+    onReady?: () => void;
+}
+
+const Room = memo(({ onReady }: RoomProps) => {
     const { roomSize, wallColor, wallHeight, wallThickness } = useScene();
+    const { setMessage } = useMessage();
 
     // Load wood texture for floor
     const floorTexture = useTexture("/textures/wood.jpg");
+
+    useEffect(() => {
+        setMessage(INTRO_MESSAGE);
+        onReady?.();
+    }, [onReady, setMessage]);
 
     // Configure texture repeat for wooden floor - moved to useEffect to prevent reconfiguration on every render
     useEffect(() => {
