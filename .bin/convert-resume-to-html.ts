@@ -1,4 +1,4 @@
-const main = () => {
+const convertResumeToHtml = () => {
     const fs = require("fs");
     const path = require("path");
     const pdfParse = require("pdf-parse");
@@ -7,7 +7,7 @@ const main = () => {
     const pdfFilePath = path.resolve(__dirname, "../src/assets/resume.pdf");
     const outputFilePath = path.resolve(__dirname, "../src/assets/resume.html");
 
-    async function convertPDFtoHTML(pdfPath, outputPath) {
+    async function convertPDFtoHTML(pdfPath: string, outputPath: string) {
         try {
             // Read the PDF file
             const pdfFile = fs.readFileSync(pdfPath);
@@ -39,7 +39,7 @@ const main = () => {
             await page.setContent(htmlContent);
 
             // Save the HTML content to a file
-            await page.content().then(content => {
+            await page.content().then((content: string) => {
                 fs.writeFileSync(outputPath, content);
             });
 
@@ -56,4 +56,4 @@ const main = () => {
     convertPDFtoHTML(pdfFilePath, outputFilePath);
 };
 
-main();
+convertResumeToHtml();

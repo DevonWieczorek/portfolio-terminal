@@ -1,4 +1,4 @@
-const main = () => {
+const convertResumeToMarkdown = () => {
     const fs = require("fs");
     const path = require("path");
     const pdf2md = require("@opendocsg/pdf2md");
@@ -12,7 +12,7 @@ const main = () => {
 
     // Convert the PDF to Markdown
     pdf2md(new Uint8Array(utf8Buffer)) // Convert Buffer to Uint8Array
-        .then(markdownText => {
+        .then((markdownText: string) => {
             // Write the Markdown text to a file
             fs.writeFileSync(
                 path.resolve(outputFilePath),
@@ -21,9 +21,9 @@ const main = () => {
             );
             console.log(`Markdown file created at ${outputFilePath}`);
         })
-        .catch(err => {
+        .catch((err: Error) => {
             console.error("Error converting PDF to Markdown:", err);
         });
 };
 
-main();
+convertResumeToMarkdown();
