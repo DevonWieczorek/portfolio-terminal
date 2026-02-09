@@ -25,7 +25,7 @@ const useGLTFModuleMock = Object.assign((path: string) => useGLTFMock(path), {
     preload: useGLTFPreloadMock,
 });
 
-export const useTextureMock = jest.fn(() => ({
+export const useTextureMock = jest.fn((_: string) => ({
     wrapS: 0,
     wrapT: 0,
     repeat: { set: jest.fn() },

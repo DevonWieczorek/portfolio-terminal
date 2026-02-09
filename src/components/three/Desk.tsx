@@ -13,15 +13,15 @@ type DeskControls = {
     deskScale: number;
 };
 
-interface DeskProps {
+type DeskProps = {
     proximityPosition: PositionArray;
-}
+};
 
 const Desk = memo(({ proximityPosition }: DeskProps) => {
     const { desk } = useScene();
     const deskModel = useGLTF("/models/l_shaped_desk.glb");
 
-    let deskX, deskY, deskZ, deskScale;
+    let deskX: number, deskY: number, deskZ: number, deskScale: number;
 
     // #if DEBUG
     ({ deskX, deskY, deskZ, deskScale } = useControls(
@@ -57,16 +57,16 @@ const Desk = memo(({ proximityPosition }: DeskProps) => {
     // #endif
 
     // #if !DEBUG
-    deskX = desk?.position?.x;
-    deskY = desk?.position?.y;
-    deskZ = desk?.position?.z;
-    deskScale = desk?.scale;
+    deskX = desk?.position?.x ?? 0;
+    deskY = desk?.position?.y ?? 0;
+    deskZ = desk?.position?.z ?? 0;
+    deskScale = desk?.scale ?? 0;
     // #endif
 
     // L-shaped desk positioned snug in northwest corner
-    const cornerX = deskX ?? desk?.position?.x; // Very close to west wall
-    const cornerZ = deskZ ?? desk?.position?.z; // Very close to north wall
-    const deskHeight = desk?.height;
+    const cornerX = deskX; // Very close to west wall
+    const cornerZ = deskZ; // Very close to north wall
+    const deskHeight = desk?.height ?? 0;
 
     return (
         <group

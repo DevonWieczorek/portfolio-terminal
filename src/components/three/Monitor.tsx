@@ -12,9 +12,9 @@ import type { InteractiveBounds } from "@/components/three/InteractiveBox";
 import { useExperience } from "@/lib/stores/useExperience";
 import type { CameraTarget } from "@/lib/stores/useExperience";
 
-interface MonitorProps {
+type MonitorProps = {
     proximityPosition: PositionArray;
-}
+};
 
 type MonitorControls = {
     monitorRotationY: number;
@@ -59,16 +59,19 @@ const Monitor = memo(({ proximityPosition }: MonitorProps) => {
     const cameraPosition = useMemo(() => new Vector3(), []);
     const lookAtPosition = useMemo(() => new Vector3(), []);
 
-    let monitorX, monitorY, monitorZ, monitorRotationY;
-    let monitorBoxSizeX,
-        monitorBoxSizeY,
-        monitorBoxSizeZ,
-        monitorBoxAnchorX,
-        monitorBoxAnchorY,
-        monitorBoxAnchorZ,
-        monitorApproachYawOffset;
-    let monitorInteractiveSize: Coordinate | undefined = undefined;
-    let monitorInteractiveCenter: Coordinate | undefined = undefined;
+    let monitorX: number,
+        monitorY: number,
+        monitorZ: number,
+        monitorRotationY: number;
+    let monitorBoxSizeX: number,
+        monitorBoxSizeY: number,
+        monitorBoxSizeZ: number,
+        monitorBoxAnchorX: number,
+        monitorBoxAnchorY: number,
+        monitorBoxAnchorZ: number,
+        monitorApproachYawOffset: number;
+    let monitorInteractiveSize: Coordinate;
+    let monitorInteractiveCenter: Coordinate;
 
     // #if DEBUG
     const [monitorControls, setMonitorControls] = useControls(
@@ -175,10 +178,10 @@ const Monitor = memo(({ proximityPosition }: MonitorProps) => {
     // #endif
 
     // #if !DEBUG
-    monitorRotationY = monitor?.rotation?.y;
-    monitorX = monitor?.position?.x;
-    monitorY = monitor?.position?.y;
-    monitorZ = monitor?.position?.z;
+    monitorRotationY = monitor?.rotation?.y ?? 0;
+    monitorX = monitor?.position?.x ?? 0;
+    monitorY = monitor?.position?.y ?? 0;
+    monitorZ = monitor?.position?.z ?? 0;
     monitorBoxSizeX = monitor?.boxSize?.x ?? 5;
     monitorBoxSizeY = monitor?.boxSize?.y ?? 2;
     monitorBoxSizeZ = monitor?.boxSize?.z ?? 3;

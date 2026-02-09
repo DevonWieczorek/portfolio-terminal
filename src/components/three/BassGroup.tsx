@@ -50,15 +50,19 @@ const BassGroup = memo(
         >(null);
         // #endif
 
-        let bassX, bassY, bassZ, bassScale, bassSpacing;
-        let bassBoxSizeX,
-            bassBoxSizeY,
-            bassBoxSizeZ,
-            bassBoxAnchorX,
-            bassBoxAnchorY,
-            bassBoxAnchorZ;
-        let bassInteractiveSize: Coordinate | undefined = undefined;
-        let bassInteractiveCenter: Coordinate | undefined = undefined;
+        let bassX: number,
+            bassY: number,
+            bassZ: number,
+            bassScale: number,
+            bassSpacing: number;
+        let bassBoxSizeX: number,
+            bassBoxSizeY: number,
+            bassBoxSizeZ: number,
+            bassBoxAnchorX: number,
+            bassBoxAnchorY: number,
+            bassBoxAnchorZ: number;
+        let bassInteractiveSize: Coordinate;
+        let bassInteractiveCenter: Coordinate;
 
         // #if DEBUG
         const [bassControls, setBassControls] = useControls(
@@ -160,11 +164,11 @@ const BassGroup = memo(
         // #endif
 
         // #if !DEBUG
-        bassX = bass?.position?.x;
-        bassY = bass?.position?.y;
-        bassZ = bass?.position?.z;
-        bassScale = bass?.scale;
-        bassSpacing = bass?.spacing;
+        bassX = bass?.position?.x ?? 0;
+        bassY = bass?.position?.y ?? 0;
+        bassZ = bass?.position?.z ?? 0;
+        bassScale = bass?.scale ?? 0;
+        bassSpacing = bass?.spacing ?? 0;
         bassBoxSizeX = bass?.boxSize?.x ?? 15;
         bassBoxSizeY = bass?.boxSize?.y ?? 18;
         bassBoxSizeZ = bass?.boxSize?.z ?? 5;

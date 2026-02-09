@@ -43,15 +43,19 @@ const SkateboardGroup = memo(
         >(null);
         // #endif
 
-        let deckX, deckY, deckZ, deckScale, deckSpacing;
-        let deckBoxSizeX,
-            deckBoxSizeY,
-            deckBoxSizeZ,
-            deckBoxAnchorX,
-            deckBoxAnchorY,
-            deckBoxAnchorZ;
-        let deckInteractiveSize: Coordinate | undefined = undefined;
-        let deckInteractiveCenter: Coordinate | undefined = undefined;
+        let deckX: number,
+            deckY: number,
+            deckZ: number,
+            deckScale: number,
+            deckSpacing: number;
+        let deckBoxSizeX: number,
+            deckBoxSizeY: number,
+            deckBoxSizeZ: number,
+            deckBoxAnchorX: number,
+            deckBoxAnchorY: number,
+            deckBoxAnchorZ: number;
+        let deckInteractiveSize: Coordinate;
+        let deckInteractiveCenter: Coordinate;
 
         // #if DEBUG
         const [deckControls, setDeckControls] = useControls(
@@ -153,11 +157,11 @@ const SkateboardGroup = memo(
         // #endif
 
         // #if !DEBUG
-        deckX = deck?.position?.x;
-        deckY = deck?.position?.y;
-        deckZ = deck?.position?.z;
-        deckScale = deck?.scale;
-        deckSpacing = deck?.spacing;
+        deckX = deck?.position?.x ?? 0;
+        deckY = deck?.position?.y ?? 0;
+        deckZ = deck?.position?.z ?? 0;
+        deckScale = deck?.scale ?? 0;
+        deckSpacing = deck?.spacing ?? 0;
         deckBoxSizeX = deck?.boxSize?.x ?? 20;
         deckBoxSizeY = deck?.boxSize?.y ?? 12;
         deckBoxSizeZ = deck?.boxSize?.z ?? 5;
