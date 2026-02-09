@@ -3,16 +3,18 @@ import { NextRequest, NextResponse } from "next/server";
 import OpenAI from "openai";
 import SYSTEM_PROMPT from "./prompt";
 
-// ✅ IMPORTANT: Use a server-only key. Do NOT expose a NEXT_PUBLIC key.
-const apiKey = process.env.OPENAI_API_KEY;
-if (!apiKey) {
-    throw new Error("Missing OPENAI_API_KEY (server-only).");
-}
-
-const client = new OpenAI({ apiKey });
-
 export async function POST(request: NextRequest) {
     try {
+        const apiKey = process.env.OPENAI_API_KEY;
+        if (!apiKey) {
+            return NextResponse.json(
+                { error: "Missing OPENAI_API_KEY (server-only)." },
+                { status: 500 }
+            );
+        }
+
+        const client = new OpenAI({ apiKey });
+
         // You can optionally pass prior turns to keep short context in-session.
         // {
         //   "query": "What stack does Devon use?",
