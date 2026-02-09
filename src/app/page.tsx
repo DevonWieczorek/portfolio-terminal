@@ -7,7 +7,7 @@ import styles from "@/styles/Home.module.scss";
 import { useIsMobile } from "@/hooks/use-is-mobile";
 
 const R3FScene = dynamic(() => import("@/components/three/R3FScene"), {
-    ssr: false,
+    ssr: true,
 });
 
 export default function Home() {
