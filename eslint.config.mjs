@@ -3,6 +3,7 @@ import path from "node:path";
 import { fileURLToPath } from "node:url";
 import js from "@eslint/js";
 import { FlatCompat } from "@eslint/eslintrc";
+import nextPlugin from "@next/eslint-plugin-next";
 import pluginTs from "@typescript-eslint/eslint-plugin";
 import parserTs from "@typescript-eslint/parser";
 
@@ -16,6 +17,11 @@ const compat = new FlatCompat({
 
 export default defineConfig([
     globalIgnores(["**/dist/", "**/*.min.js"]),
+    {
+        plugins: {
+            "@next/next": nextPlugin,
+        },
+    },
     {
         files: ["**/*.ts", "**/*.tsx"],
         languageOptions: {
@@ -39,11 +45,13 @@ export default defineConfig([
             "no-undef": "off", // TypeScript handles this, and it doesn't understand global types
             // Use the TS rule as a warning
             "@typescript-eslint/no-unused-vars": "warn",
+            "@typescript-eslint/no-require-imports": "off",
             // Disable React import requirement (Next.js 14+ uses new JSX transform)
             "react/react-in-jsx-scope": "off",
         },
         extends: compat.extends(
             "next/core-web-vitals",
+            "next/typescript",
             "eslint:recommended",
             "plugin:react/recommended",
             "plugin:prettier/recommended"
