@@ -14,6 +14,10 @@ export default function Home() {
     const isMobile = useIsMobile();
     const [, setSelectedOption] = useState<string>("");
 
+    if (isMobile === undefined) {
+        return null;
+    }
+
     return (
         <div className={styles.home}>
             {isMobile ? (
