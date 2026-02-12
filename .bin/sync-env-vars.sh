@@ -1,18 +1,13 @@
 #!/bin/bash
 
-# Export the GH_TOKEN from the .env file
-export $(cat .env | grep GH_TOKEN | xargs)
+set -euo pipefail
 
 # === SETTINGS ===
-# Resolve script directory (assumes .bin is inside project root)
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 PROJECT_ROOT="$(dirname "$SCRIPT_DIR")"
-
-# Path to the env file relative to project root
 ENV_FILE="$PROJECT_ROOT/.env"
-
 GITHUB_REPO="DevonWieczorek/portfolio-terminal"
-HEROKU_APP_NAME="devon-portfolio"
+VERCEL_API_BASE="https://api.vercel.com"
 
 # === SAFETY CHECK ===
 if [ ! -f "$ENV_FILE" ]; then
@@ -20,25 +15,71 @@ if [ ! -f "$ENV_FILE" ]; then
   exit 1
 fi
 
+if ! command -v gh >/dev/null 2>&1; then
+  echo "❌ GitHub CLI (gh) is required but not installed."
+  exit 1
+fi
+
 echo "🚀 Syncing env variables from $ENV_FILE"
 
-# === LOOP THROUGH .env AND PUSH TO GITHUB + HEROKU ===
+# shellcheck disable=SC1090
+set -a
+source "$ENV_FILE"
+set +a
+
+if [ -z "${GH_TOKEN:-}" ]; then
+  echo "❌ GH_TOKEN is required in .env to sync GitHub Actions secrets."
+  exit 1
+fi
+
+if [ -z "${VERCEL_TOKEN:-}" ] || [ -z "${VERCEL_PROJECT_ID:-}" ] || [ -z "${VERCEL_ORG_ID:-}" ]; then
+  echo "❌ VERCEL_TOKEN, VERCEL_PROJECT_ID, and VERCEL_ORG_ID are required in .env to sync Vercel env vars."
+  exit 1
+fi
+
+export GH_TOKEN
+
+skip_key() {
+  local key="$1"
+  case "$key" in
+    GH_TOKEN|VERCEL_TOKEN|VERCEL_PROJECT_ID|VERCEL_ORG_ID)
+      return 0
+      ;;
+    *)
+      return 1
+      ;;
+  esac
+}
+
+sync_to_vercel() {
+  local key="$1"
+  local value="$2"
+  local target="$3"
+
+  curl -sS -X POST "${VERCEL_API_BASE}/v10/projects/${VERCEL_PROJECT_ID}/env?upsert=true&teamId=${VERCEL_ORG_ID}" \
+    -H "Authorization: Bearer ${VERCEL_TOKEN}" \
+    -H "Content-Type: application/json" \
+    -d "{\"key\":\"${key}\",\"value\":\"${value}\",\"type\":\"encrypted\",\"target\":[\"${target}\"]}" >/dev/null
+}
+
 while IFS='=' read -r key value || [ -n "$key" ]; do
-  # Skip comments and blank lines
   if [[ "$key" =~ ^#.*$ || -z "$key" ]]; then
     continue
   fi
 
-  # Remove surrounding quotes from value
+  key=$(echo "$key" | xargs)
   value=$(echo "$value" | sed -e 's/^["'\''"]//' -e 's/["'\''"]$//')
 
-  echo "🔧 Setting $key"
+  if skip_key "$key"; then
+    continue
+  fi
 
-  # Set secret in GitHub
+  echo "🔧 Syncing $key"
   gh secret set "$key" --body "$value" --repo "$GITHUB_REPO"
 
-  # Set config var in Heroku
-  heroku config:set "$key=$value" --app "$HEROKU_APP_NAME"
+  sync_to_vercel "$key" "$value" "development"
+  sync_to_vercel "$key" "$value" "preview"
+  sync_to_vercel "$key" "$value" "production"
 done < "$ENV_FILE"
 
-echo "✅ Done syncing secrets and config vars!"
+echo "✅ Done syncing GitHub and Vercel environment variables!"

@@ -184,6 +184,10 @@ Required:
 
 ```env
 OPENAI_API_KEY=...
+VERCEL_TOKEN=...
+VERCEL_PROJECT_ID=...
+VERCEL_ORG_ID=...
+GH_TOKEN=...
 ```
 
 Optional:
@@ -196,6 +200,8 @@ Notes:
 
 - `OPENAI_API_KEY` must remain server-only.
 - `VECTOR_STORE_ID` enables `file_search` tool usage in `/api/gpt`.
+- `VERCEL_TOKEN`, `VERCEL_PROJECT_ID`, and `VERCEL_ORG_ID` are used by `.bin/sync-env-vars.sh` and CI deployment steps.
+- `GH_TOKEN` is used by `.bin/sync-env-vars.sh` to sync GitHub Actions secrets.
 
 ## Local Development
 
@@ -217,6 +223,10 @@ Open `http://localhost:3000`.
 - `yarn test`: Jest test suite
 - `yarn compile-resume-markdown`: converts `src/assets/resume.pdf` -> `src/assets/resume.md`
 - `yarn compile-resume-html`: converts `src/assets/resume.pdf` -> `src/assets/resume.html`
+- `yarn deploy:pull`: pulls Vercel project environment/config metadata
+- `yarn deploy:build`: creates a Vercel production build artifact
+- `yarn deploy`: deploys to Vercel production
+- `yarn deploy:preview`: deploys a preview to Vercel
 
 ## Testing
 
@@ -242,5 +252,6 @@ Three component tests are unit-level and run under `jsdom` with shared harness m
 
 ## Deployment
 
-- `next.config.js` uses `output: "standalone"` for container/deployment friendliness.
-- `Dockerfile` and `heroku.yml` are present for non-Vercel deployments.
+- Deployments are configured for Vercel via CLI scripts in `package.json` and GitHub Actions (`.github/workflows/test-and-deploy.yml`).
+- `next.config.js` keeps strict ESLint checks enabled during production builds.
+- This project has been patched for the React2Shell bulletin by upgrading Next.js to a secure `15.4.x` patch release.

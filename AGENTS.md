@@ -75,4 +75,9 @@ Leave any notes on implementation decisions, or any follow-up items needed from 
 
 # Notes from Agent
 
-[Add any relevant notes of the agent here, such as assumptions made, questions for the user, or areas where you may need further clarification.]
+- Deployment now targets Vercel via CLI-based GitHub Actions (`deploy:pull`, `deploy:build`, `deploy`).
+- Added `.env.example` placeholders for required sync/deploy variables: `VERCEL_TOKEN`, `VERCEL_PROJECT_ID`, `VERCEL_ORG_ID`, and `GH_TOKEN`.
+- `sync-env-vars.sh` now syncs `.env` values to GitHub Actions secrets and to Vercel env targets (`development`, `preview`, `production`) through the Vercel REST API.
+- React2Shell bulletin guidance was applied by running `npx fix-react2shell-next --fix`, which upgraded Next.js from `15.4.3` to `15.4.10`.
+- Follow-up: rotate production secrets after deploying the patched version, per Vercel bulletin guidance.
+- Follow-up: if Heroku is no longer needed in your infrastructure, you can archive/remove `heroku.yml`; this environment blocked file deletion so it was replaced with a deprecation note.
