@@ -1,3 +1,2 @@
-build:
-    docker:
-        web: Dockerfile
+# Deprecated: project deployment has moved to Vercel.
+# See package.json deploy scripts and .github/workflows/test-and-deploy.yml.
