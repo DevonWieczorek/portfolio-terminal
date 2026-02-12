@@ -20,6 +20,11 @@ if ! command -v gh >/dev/null 2>&1; then
   exit 1
 fi
 
+if ! command -v python >/dev/null 2>&1; then
+  echo "❌ Python is required but not installed."
+  exit 1
+fi
+
 echo "🚀 Syncing env variables from $ENV_FILE"
 
 # shellcheck disable=SC1090
@@ -42,7 +47,7 @@ export GH_TOKEN
 skip_key() {
   local key="$1"
   case "$key" in
-    GH_TOKEN|VERCEL_TOKEN|VERCEL_PROJECT_ID|VERCEL_ORG_ID)
+    GH_TOKEN | VERCEL_TOKEN | VERCEL_PROJECT_ID | VERCEL_ORG_ID)
       return 0
       ;;
     *)
@@ -56,10 +61,25 @@ sync_to_vercel() {
   local value="$2"
   local target="$3"
 
-  curl -sS -X POST "${VERCEL_API_BASE}/v10/projects/${VERCEL_PROJECT_ID}/env?upsert=true&teamId=${VERCEL_ORG_ID}" \
+  local payload
+  payload=$(python - "$key" "$value" "$target" <<'PY'
+import json
+import sys
+
+key, value, target = sys.argv[1], sys.argv[2], sys.argv[3]
+print(json.dumps({
+    "key": key,
+    "value": value,
+    "type": "encrypted",
+    "target": [target],
+}))
+PY
+)
+
+  curl --fail-with-body -sS -X POST "${VERCEL_API_BASE}/v10/projects/${VERCEL_PROJECT_ID}/env?upsert=true&teamId=${VERCEL_ORG_ID}" \
     -H "Authorization: Bearer ${VERCEL_TOKEN}" \
     -H "Content-Type: application/json" \
-    -d "{\"key\":\"${key}\",\"value\":\"${value}\",\"type\":\"encrypted\",\"target\":[\"${target}\"]}" >/dev/null
+    --data "$payload" >/dev/null
 }
 
 while IFS='=' read -r key value || [ -n "$key" ]; do
@@ -68,7 +88,7 @@ while IFS='=' read -r key value || [ -n "$key" ]; do
   fi
 
   key=$(echo "$key" | xargs)
-  value=$(echo "$value" | sed -e 's/^["'\''"]//' -e 's/["'\''"]$//')
+  value=$(echo "$value" | sed -e "s/^[\"']\?//" -e "s/[\"']$//")
 
   if skip_key "$key"; then
     continue

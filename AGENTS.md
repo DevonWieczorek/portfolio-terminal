@@ -79,5 +79,7 @@ Leave any notes on implementation decisions, or any follow-up items needed from 
 - Added `.env.example` placeholders for required sync/deploy variables: `VERCEL_TOKEN`, `VERCEL_PROJECT_ID`, `VERCEL_ORG_ID`, and `GH_TOKEN`.
 - `sync-env-vars.sh` now syncs `.env` values to GitHub Actions secrets and to Vercel env targets (`development`, `preview`, `production`) through the Vercel REST API.
 - React2Shell bulletin guidance was applied by running `npx fix-react2shell-next --fix`, which upgraded Next.js from `15.4.3` to `15.4.10`.
+- Deploy workflow now exports `VERCEL_PROJECT_ID` and `VERCEL_ORG_ID` in addition to `VERCEL_TOKEN` to pin Vercel project/org context in CI.
+- `sync-env-vars.sh` now fails on Vercel API HTTP errors and JSON-escapes secret values (via Python `json.dumps`) before upsert calls.
 - Follow-up: rotate production secrets after deploying the patched version, per Vercel bulletin guidance.
 - Follow-up: if Heroku is no longer needed in your infrastructure, you can archive/remove `heroku.yml`; this environment blocked file deletion so it was replaced with a deprecation note.
