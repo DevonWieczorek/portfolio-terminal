@@ -57,7 +57,21 @@ Use existing ESLint and Prettier rules when making updates.
 
 # Current Task for Agent
 
-Update InteractiveBox so that in DEBUG mode, the box is visible and is a transparent color. Use ifdef-loader style conditional comments to restrict that functionality to DEBUG mode only.
+Update the hosting for this project from Heroku to Vercel.
+
+Any Heroku-related environment variables, and their usage, should be removed. Any enviornment variables that are needed for Vercel should be created as placeholders, and should be noted in the Notes from Agent section below.
+
+sync-env-vars.sh should be updated to eliminate Heroku logic, and replace it with logic on syncing to Vercel.
+
+Update the package.json deploy script to use Vercel CLI instead of Heroku CLI.
+
+Update the github workflow to deploy to Vercel instead of Heroku.
+
+Additionally, make whatever upgrades are requested in [this document](https://vercel.com/kb/bulletin/react2shell) to ensure the project is optimized for hosting on Vercel.
+
+Create all these changes on a branch that can be merged both into main as well as into feat/react-three-fiber.
+
+Leave any notes on implementation decisions, or any follow-up items needed from me in the Notes from Agent section below.
 
 # Notes from Agent
 
