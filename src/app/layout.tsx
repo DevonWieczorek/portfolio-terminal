@@ -1,5 +1,6 @@
 import type { ReactNode } from "react";
 import type { Metadata } from "next";
+import { Analytics } from "@vercel/analytics/next";
 import "./globals.css";
 import "@/styles/reset.scss";
 
@@ -12,7 +13,10 @@ export default function RootLayout({ children }: { children: ReactNode }) {
     return (
         <html lang="en">
             {/* suppressHydrationWarning added to avoid error caused by browser extensions */}
-            <body suppressHydrationWarning>{children}</body>
+            <body suppressHydrationWarning>
+                {children}
+                <Analytics />
+            </body>
         </html>
     );
 }
