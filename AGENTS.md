@@ -27,6 +27,23 @@ Support integration of ESLint, Prettier, and TypeScript strict mode.
 Be aware of .babelrc, tsconfig.json, next.config.js, and jest.config.js setup.
 Help debug and resolve build-time and runtime errors, including those related to three-mesh-bvh or module resolution.
 
+## Git Workflow
+
+Always use trunk-based development.
+`main` is the trunk and must stay deployable at all times.
+Never commit directly to `main`; branch from the latest `main` for every change.
+Keep branches short-lived and small in scope (hours to a day, not weeks).
+Name branches by change type: `feat/…`, `fix/…`, `docs/…`, `refactor/…`, `chore/…`.
+Rebase on `main` before merging, merge via pull request, and delete the branch afterward.
+Do not create long-lived feature, release, or develop branches; ship unfinished work in small, safe increments instead.
+
+Always use [Conventional Commits](https://www.conventionalcommits.org/en/v1.0.0/) for commit messages and PR titles:
+`<type>(<optional scope>): <short imperative description>`
+Types: `feat`, `fix`, `docs`, `style`, `refactor`, `perf`, `test`, `build`, `ci`, `chore`, `revert`.
+Use lowercase, imperative mood, and no trailing period (e.g. `feat(tracking): add vercel analytics`).
+Mark breaking changes with `!` after the type/scope or a `BREAKING CHANGE:` footer.
+Keep each commit to one logical change.
+
 ## Agent Behavior
 
 When offering sugestions, prefer clarity and simplicity but don’t avoid advanced topics when appropriate.
