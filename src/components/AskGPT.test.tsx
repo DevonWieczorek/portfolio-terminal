@@ -63,4 +63,25 @@ describe("AskGPT", () => {
             expect(screen.getByText(/done/i)).toBeInTheDocument()
         );
     });
+
+    it("displays the server error message on a non-ok response", async () => {
+        (global.fetch as jest.Mock).mockResolvedValueOnce({
+            ok: false,
+            json: () =>
+                Promise.resolve({
+                    error: "devon-gpt is temporarily unavailable.",
+                }),
+        });
+        render(<AskGPT onShowResponse={jest.fn()} />);
+        const input = screen.getByPlaceholderText(
+            /ask a question to devon-gpt/i
+        );
+        fireEvent.change(input, { target: { value: "Quota test" } });
+        fireEvent.keyDown(input, { key: "Enter", code: "Enter" });
+        await waitFor(() =>
+            expect(
+                screen.getByText(/devon-gpt is temporarily unavailable/i)
+            ).toBeInTheDocument()
+        );
+    });
 });

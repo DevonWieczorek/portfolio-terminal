@@ -13,7 +13,8 @@ export async function POST(request: NextRequest) {
             );
         }
 
-        const client = new OpenAI({ apiKey });
+        // Fail fast: the SDK's default retries add ~20s before surfacing quota errors.
+        const client = new OpenAI({ apiKey, maxRetries: 1 });
 
         // You can optionally pass prior turns to keep short context in-session.
         // {
@@ -79,6 +80,16 @@ export async function POST(request: NextRequest) {
         });
     } catch (err) {
         console.error("OpenAI API error:", err);
+
+        if (err instanceof OpenAI.APIError && err.status === 429) {
+            // insufficient_quota is a billing problem; anything else is a rate limit.
+            const message =
+                err.type === "insufficient_quota"
+                    ? "devon-gpt is temporarily unavailable. Please try again later."
+                    : "devon-gpt is getting a lot of questions right now. Please try again in a minute.";
+            return NextResponse.json({ error: message }, { status: 503 });
+        }
+
         return NextResponse.json(
             { error: "An error occurred while processing your request" },
             { status: 500 }
