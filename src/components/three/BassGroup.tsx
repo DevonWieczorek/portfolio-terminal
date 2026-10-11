@@ -26,6 +26,13 @@ type BassControls = {
 
 const NUM_BASSES = 4;
 const BASS_MODEL_PATH = "/models/bass-guitar-configurable.glb";
+// One body finish per bass, left to right
+const BASS_BODY_COLORS = [
+    "#5fa58b", // seafoam green
+    "#b3242c", // fiesta red
+    "#2d5ea8", // lake placid blue
+    "#1c1c1c", // black
+];
 // Subtracting 1.5 from i ensures the group of 4 basses is centered on bassX, not offset to one side.
 const GROUP_CENTER_OFFSET = (NUM_BASSES - 1) / 2;
 const BASS_MESSAGE = `
@@ -213,6 +220,7 @@ const BassGroup = memo(
                         ]}
                         scale={[bassScale, bassScale, bassScale]}
                         modelPath={BASS_MODEL_PATH}
+                        bodyColor={BASS_BODY_COLORS[i]}
                     />
                 )),
             [bassSpacing, bassY, bassScale]
