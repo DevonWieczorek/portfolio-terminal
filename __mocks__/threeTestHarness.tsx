@@ -112,7 +112,9 @@ export const messageState = {
 
 export const movementState = {
     position: { x: 0, y: 1, z: 0 },
+    cameraYaw: 0,
     setPosition: jest.fn(),
+    setCameraYaw: jest.fn(),
     resetPosition: jest.fn(),
 };
 
@@ -238,6 +240,7 @@ export function resetThreeTestState() {
     messageState.message = "";
     messageState.interaction = null;
     movementState.position = { x: 0, y: 1, z: 0 };
+    movementState.cameraYaw = 0;
 }
 
 export function runFrameCallbacks() {

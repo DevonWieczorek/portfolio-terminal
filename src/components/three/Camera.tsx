@@ -20,6 +20,7 @@ export default function Camera() {
     const [, getKeys] = useKeyboardControls<CameraControls>();
     // Keep subscription narrow to avoid rerenders from unrelated movement actions.
     const position = useMovement(state => state.position);
+    const setCameraYaw = useMovement(state => state.setCameraYaw);
     const {
         roomSize,
         wallThickness,
@@ -120,8 +121,13 @@ export default function Camera() {
         // Only while the player can move around the scene.
         if (mode === "scene" && !isTransitioning) {
             const keys = getKeys();
-            if (keys.rotateLeft) orbitAngle.current += cameraRotateSpeed;
-            if (keys.rotateRight) orbitAngle.current -= cameraRotateSpeed;
+            const rotateDirection =
+                Number(Boolean(keys.rotateLeft)) -
+                Number(Boolean(keys.rotateRight));
+            if (rotateDirection !== 0) {
+                orbitAngle.current += rotateDirection * cameraRotateSpeed;
+                setCameraYaw(orbitAngle.current);
+            }
 
             const panDirection =
                 Number(Boolean(keys.panForward)) -
