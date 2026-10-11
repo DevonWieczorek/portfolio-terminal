@@ -26,12 +26,13 @@ type BassControls = {
 
 const NUM_BASSES = 4;
 const BASS_MODEL_PATH = "/models/bass-guitar-configurable.glb";
-// One body finish per bass, left to right
-const BASS_BODY_COLORS = [
-    "#5fa58b", // seafoam green
-    "#b3242c", // fiesta red
-    "#2d5ea8", // lake placid blue
-    "#1c1c1c", // black
+// One finish per bass, left to right. Pastel bodies get dark pickguards and
+// the black body gets a light one so each pickguard stands out.
+const BASS_FINISHES = [
+    { body: "#ffc4dc", pickguard: "#1c1c1c" }, // pink / black
+    { body: "#d9ff9a", pickguard: "#3d2a5c" }, // lime green / deep purple
+    { body: "#c6e6ff", pickguard: "#5a2e1a" }, // powder blue / brown tortoise
+    { body: "#1c1c1c", pickguard: "#f5f3ec" }, // black / white pearl
 ];
 // Subtracting 1.5 from i ensures the group of 4 basses is centered on bassX, not offset to one side.
 const GROUP_CENTER_OFFSET = (NUM_BASSES - 1) / 2;
@@ -220,7 +221,8 @@ const BassGroup = memo(
                         ]}
                         scale={[bassScale, bassScale, bassScale]}
                         modelPath={BASS_MODEL_PATH}
-                        bodyColor={BASS_BODY_COLORS[i]}
+                        bodyColor={BASS_FINISHES[i].body}
+                        pickguardColor={BASS_FINISHES[i].pickguard}
                     />
                 )),
             [bassSpacing, bassY, bassScale]

@@ -8,11 +8,13 @@ interface BassProps {
     scale?: Coordinate;
     modelPath?: string;
     bodyColor?: THREE.ColorRepresentation;
+    pickguardColor?: THREE.ColorRepresentation;
 }
 
 const DEFAULT_MODEL = "/models/bass-guitar-configurable.glb";
-// Name of the material in the configurable model that controls the body finish
+// Names of the materials in the configurable model that can be recolored
 const BODY_MATERIAL_NAME = "body_paint";
+const PICKGUARD_MATERIAL_NAME = "tortoise";
 
 const Bass = memo(
     ({
@@ -20,6 +22,7 @@ const Bass = memo(
         scale = [1, 1, 1],
         modelPath = DEFAULT_MODEL,
         bodyColor,
+        pickguardColor,
     }: BassProps) => {
         const { scene } = useGLTF(modelPath);
 
@@ -30,28 +33,35 @@ const Bass = memo(
         // #endif
 
         // Clone the scene so multiple instances can exist in the scene graph.
-        // Materials are shared between clones, so the body material is cloned
-        // per instance before recoloring it.
+        // Materials are shared between clones, so each recolored material is
+        // cloned per instance before changing its color.
         const clonedScene = useMemo(() => {
             const clone = scene.clone(true);
-            if (bodyColor === undefined) return clone;
+            const colorsByMaterial: Record<
+                string,
+                THREE.ColorRepresentation | undefined
+            > = {
+                [BODY_MATERIAL_NAME]: bodyColor,
+                [PICKGUARD_MATERIAL_NAME]: pickguardColor,
+            };
+            const recolored = new Map<string, THREE.MeshStandardMaterial>();
 
-            let bodyMaterial: THREE.MeshStandardMaterial | undefined;
             clone.traverse(child => {
                 if (!(child instanceof THREE.Mesh)) return;
-                const material = child.material as THREE.Material;
-                if (material.name !== BODY_MATERIAL_NAME) return;
+                const material = child.material as THREE.MeshStandardMaterial;
+                const color = colorsByMaterial[material.name];
+                if (color === undefined) return;
 
-                if (!bodyMaterial) {
-                    bodyMaterial = (
-                        material as THREE.MeshStandardMaterial
-                    ).clone();
-                    bodyMaterial.color.set(bodyColor);
+                let replacement = recolored.get(material.name);
+                if (!replacement) {
+                    replacement = material.clone();
+                    replacement.color.set(color);
+                    recolored.set(material.name, replacement);
                 }
-                child.material = bodyMaterial;
+                child.material = replacement;
             });
             return clone;
-        }, [scene, bodyColor]);
+        }, [scene, bodyColor, pickguardColor]);
 
         return (
             <primitive object={clonedScene} position={position} scale={scale} />
