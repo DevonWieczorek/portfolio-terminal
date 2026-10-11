@@ -8,7 +8,7 @@ interface BassProps {
     modelPath?: string;
 }
 
-const DEFAULT_MODEL = "/models/bass-1.glb";
+const DEFAULT_MODEL = "/models/bass-guitar-configurable.glb";
 
 const Bass = memo(
     ({ position, scale = [1, 1, 1], modelPath = DEFAULT_MODEL }: BassProps) => {

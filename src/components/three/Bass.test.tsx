@@ -16,7 +16,9 @@ describe("Bass", () => {
     it("renders and loads the default bass model", () => {
         const { container } = render(<Bass position={[0, 1, 2]} />);
 
-        expect(useGLTFMock).toHaveBeenCalledWith("/models/bass-1.glb");
+        expect(useGLTFMock).toHaveBeenCalledWith(
+            "/models/bass-guitar-configurable.glb"
+        );
         expect(container.querySelector("primitive")).toBeInTheDocument();
     });
 });

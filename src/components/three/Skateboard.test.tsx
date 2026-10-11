@@ -17,7 +17,7 @@ describe("Skateboard", () => {
         const { container } = render(<Skateboard position={[0, 0, 0]} />);
 
         expect(useGLTFMock).toHaveBeenCalledWith(
-            "/models/skateboard_deck_2.glb"
+            "/models/brew-crew-deck-configurable.glb"
         );
         expect(container.querySelector("primitive")).toBeInTheDocument();
     });
