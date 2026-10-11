@@ -6,6 +6,7 @@
         "skipLibCheck": true,
         "strict": true,
         "noEmit": true,
+        "allowImportingTsExtensions": true,
         "esModuleInterop": true,
         "module": "esnext",
         "moduleResolution": "bundler",
@@ -28,6 +29,7 @@
         "**/*.ts",
         "**/*.tsx",
         ".bin/**/*.ts",
+        ".bin/**/*.mts",
         ".next/types/**/*.ts",
         "src/types/*.d.ts"
     ],

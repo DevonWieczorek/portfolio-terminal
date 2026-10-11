@@ -16,8 +16,8 @@
         "lint": "next lint",
         "typecheck": "tsc --noEmit",
         "format": "prettier --write . && eslint --fix .",
-        "compile-resume-markdown": "node .bin/convert-resume-to-markdown.ts",
-        "compile-resume-html": "node .bin/convert-resume-to-html.ts",
+        "compile-resume-markdown": "node .bin/convert-resume-to-markdown.mts",
+        "compile-resume-html": "node .bin/convert-resume-to-html.mts",
         "deploy": "vercel deploy --prod --token \"$VERCEL_TOKEN\"",
         "test": "jest",
         "sync-env-vars": "bash .bin/sync-env-vars.sh",
@@ -39,7 +39,6 @@
         ]
     },
     "dependencies": {
-        "@opendocsg/pdf2md": "^0.1.31",
         "@react-three/drei": "^10.0.0",
         "@react-three/fiber": "^9.0.0",
         "@react-three/postprocessing": "^2.19.1",
@@ -51,8 +50,6 @@
         "eslint-plugin-import": "^2.32.0",
         "next": "15.4.10",
         "openai": "^4.54.0",
-        "pdf-parse": "^1.1.1",
-        "puppeteer": "^22.15.0",
         "r3f-perf": "^7.2.3",
         "react": "19.0.0",
         "react-dom": "19.0.0",
@@ -69,7 +66,6 @@
         "@testing-library/react": "^16.3.0",
         "@testing-library/user-event": "^14.6.1",
         "@types/jest": "^30.0.0",
-        "@types/puppeteer": "^7.0.0",
         "@typescript-eslint/eslint-plugin": "^8.46.1",
         "@typescript-eslint/parser": "^8.46.1",
         "cross-env": "^10.1.0",
@@ -84,6 +80,7 @@
         "jest-environment-jsdom": "^30.0.4",
         "leva": "^0.10.0",
         "lint-staged": "^16.2.4",
+        "pdfjs-dist": "^4.10.38",
         "prettier": "^3.6.2",
         "vercel": "^48.1.1"
     }
