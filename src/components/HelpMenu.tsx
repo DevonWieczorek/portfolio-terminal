@@ -9,7 +9,7 @@ const HelpMenu = () => {
             <p>commands:</p>
             <p>resume: displays plain-text version of Devon&apos;s resume</p>
             <p>contact: find out where to reach Devon</p>
-            <p>ask: asks AI Devon a question</p>
+            <p>ask [question]: asks AI Devon a question</p>
             <p>fun-fact: displays a random &quot;fun fact&quot; about Devon</p>
             <p>clear: clear the console</p>
             <p>help: displays this menu</p>

@@ -83,4 +83,42 @@ describe("Terminal", () => {
             ).toBeInTheDocument()
         );
     });
+
+    it("handles ask command with an inline question", async () => {
+        global.fetch = jest.fn(() =>
+            Promise.resolve({
+                ok: true,
+                json: () => Promise.resolve({ response: "Inline answer." }),
+            })
+        ) as jest.Mock;
+        render(<Terminal onCommand={jest.fn()} />);
+        const input = screen.getAllByRole("textbox")[0];
+        fireEvent.change(input, {
+            target: { value: "ask where is devon from" },
+        });
+        fireEvent.keyDown(input, { key: "Enter", code: "Enter" });
+        await waitFor(() =>
+            expect(screen.getByText(/inline answer/i)).toBeInTheDocument()
+        );
+        expect(global.fetch).toHaveBeenCalledWith(
+            "/api/gpt",
+            expect.objectContaining({
+                body: JSON.stringify({ query: "where is devon from" }),
+            })
+        );
+    });
+
+    it("handles bare ask command by prompting for a question", async () => {
+        global.fetch = jest.fn() as jest.Mock;
+        render(<Terminal onCommand={jest.fn()} />);
+        const input = screen.getByRole("textbox");
+        fireEvent.change(input, { target: { value: "ask" } });
+        fireEvent.keyDown(input, { key: "Enter", code: "Enter" });
+        await waitFor(() =>
+            expect(
+                screen.getByPlaceholderText(/ask a question to devon-gpt/i)
+            ).toBeInTheDocument()
+        );
+        expect(global.fetch).not.toHaveBeenCalled();
+    });
 });

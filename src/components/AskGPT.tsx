@@ -43,9 +43,15 @@ const FormattedResponse: FC<FormattedResponseProps> = ({
     return null;
 };
 
-const AskGPT: FC<{ onShowResponse: () => void }> = ({ onShowResponse }) => {
+type AskGPTProps = {
+    onShowResponse: () => void;
+    initialQuery?: string;
+};
+
+const AskGPT: FC<AskGPTProps> = ({ onShowResponse, initialQuery = "" }) => {
     const inputRef = useRef<HTMLInputElement>(null);
-    const [query, setQuery] = useState<string>("");
+    const hasSubmittedInitialQuery = useRef(false);
+    const [query, setQuery] = useState<string>(initialQuery);
     const [inputValue, setInputValue] = useState<string>("");
     const [displayQuery, setDisplayQuery] = useState<string>("");
     const [response, setResponse] = useState<string>("");
@@ -97,16 +103,16 @@ const AskGPT: FC<{ onShowResponse: () => void }> = ({ onShowResponse }) => {
         setQuery(event.target.value);
     };
 
-    const handleSubmit = async () => {
-        if (!query || isLoading) return;
+    const handleSubmit = async (submittedQuery: string = query) => {
+        if (!submittedQuery || isLoading) return;
 
         if (inputRef?.current) {
             setInputValue("asking devon-gpt, this may take a moment... ");
-            setDisplayQuery(query);
+            setDisplayQuery(submittedQuery);
             inputRef.current.blur();
         }
 
-        await queryOpenAIAssistant(query);
+        await queryOpenAIAssistant(submittedQuery);
     };
 
     const handleKeyPress = (event: KeyboardEvent<HTMLInputElement>): void => {
@@ -116,9 +122,20 @@ const AskGPT: FC<{ onShowResponse: () => void }> = ({ onShowResponse }) => {
     };
 
     useEffect(() => {
+        // `ask <question>` submits immediately; the ref guards against
+        // StrictMode re-running this effect and sending a duplicate request.
+        if (initialQuery) {
+            if (!hasSubmittedInitialQuery.current) {
+                hasSubmittedInitialQuery.current = true;
+                handleSubmit(initialQuery);
+            }
+            return;
+        }
+
         if (inputRef?.current) {
             inputRef.current.focus();
         }
+        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, []);
 
     if (response) {
@@ -150,7 +167,7 @@ const AskGPT: FC<{ onShowResponse: () => void }> = ({ onShowResponse }) => {
                     disabled={isLoading}
                 />
                 <button
-                    onClick={handleSubmit}
+                    onClick={() => handleSubmit()}
                     className={styles.askGptButton}
                     disabled={isLoading}
                 >

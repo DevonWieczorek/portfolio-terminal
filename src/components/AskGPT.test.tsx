@@ -122,4 +122,26 @@ describe("AskGPT", () => {
             ).toBeInTheDocument()
         );
     });
+
+    it("submits an initial query immediately without user input", async () => {
+        render(
+            <AskGPT
+                onShowResponse={jest.fn()}
+                initialQuery="where is devon from"
+            />
+        );
+        await waitFor(() =>
+            expect(
+                screen.getByText(/test response from gpt/i)
+            ).toBeInTheDocument()
+        );
+        expect(global.fetch).toHaveBeenCalledTimes(1);
+        expect(global.fetch).toHaveBeenCalledWith(
+            "/api/gpt",
+            expect.objectContaining({
+                body: JSON.stringify({ query: "where is devon from" }),
+            })
+        );
+        expect(screen.getByText("where is devon from")).toBeInTheDocument();
+    });
 });
