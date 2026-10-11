@@ -54,7 +54,11 @@ const Terminal: FC<TerminalProps> = ({ onCommand, isActive = false }) => {
 
     const handleCommand = useCallback(
         (command: string): void => {
-            switch (command.toLowerCase()) {
+            const trimmed = command.trim();
+            const [name = ""] = trimmed.split(/\s+/);
+            const args = trimmed.slice(name.length).trim();
+
+            switch (name.toLowerCase()) {
                 case "resume":
                     onCommand("resume");
                     setOutput([]);
@@ -66,7 +70,12 @@ const Terminal: FC<TerminalProps> = ({ onCommand, isActive = false }) => {
                     break;
                 case "ask":
                     onCommand("ask");
-                    handleSetOutput(<AskGPT onShowResponse={focusInput} />);
+                    handleSetOutput(
+                        <AskGPT
+                            onShowResponse={focusInput}
+                            initialQuery={args}
+                        />
+                    );
                     break;
                 case "fun-fact":
                     onCommand("fun-fact");
