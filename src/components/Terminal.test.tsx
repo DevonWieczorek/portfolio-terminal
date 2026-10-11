@@ -25,7 +25,7 @@ describe("Terminal", () => {
             ).toBeGreaterThan(1)
         );
         expect(
-            screen.getAllByText(/senior software engineer/i).length
+            screen.getAllByText(/senior full-stack engineer/i).length
         ).toBeGreaterThan(0);
     });
 
