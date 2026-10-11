@@ -1,18 +1,29 @@
 import { useRef, useEffect, useState, useMemo } from "react";
 import { useFrame, useThree } from "@react-three/fiber";
+import { useKeyboardControls } from "@react-three/drei";
 import { useMovement } from "@/lib/stores/useMovement";
 import { useScene } from "@/lib/contexts/SceneContext";
 import * as THREE from "three";
 import { useExperience } from "@/lib/stores/useExperience";
 
+enum PanControls {
+    panForward = "panForward",
+    panBackward = "panBackward",
+    panLeft = "panLeft",
+    panRight = "panRight",
+}
+
 export default function Camera() {
     const { camera } = useThree();
+    const [, getKeys] = useKeyboardControls<PanControls>();
     // Keep subscription narrow to avoid rerenders from unrelated movement actions.
     const position = useMovement(state => state.position);
     const {
         roomSize,
         wallThickness,
         cameraBuffer,
+        cameraPanSpeed,
+        characterBoundary,
         cameraOffset: cameraOffsetConfig,
         zoomSettings,
     } = useScene();
@@ -53,6 +64,8 @@ export default function Camera() {
     const desiredPosition = useMemo(() => new THREE.Vector3(), []);
     const desiredLookAt = useMemo(() => new THREE.Vector3(), []);
     const modeRef = useRef(mode);
+    // WASD pan offset applied on top of the character-follow target (XZ plane).
+    const panOffset = useRef(new THREE.Vector2());
 
     useEffect(() => {
         modeRef.current = mode;
@@ -102,6 +115,27 @@ export default function Camera() {
             .copy(baseCameraOffset)
             .multiplyScalar(zoom);
 
+        // WASD camera panning, only while the player can move around the scene
+        if (mode === "scene" && !isTransitioning) {
+            const keys = getKeys();
+            if (keys.panForward) panOffset.current.y -= cameraPanSpeed;
+            if (keys.panBackward) panOffset.current.y += cameraPanSpeed;
+            if (keys.panLeft) panOffset.current.x -= cameraPanSpeed;
+            if (keys.panRight) panOffset.current.x += cameraPanSpeed;
+        }
+
+        // Keep the panned focus point inside the room
+        const focusLimit = characterBoundary / 2;
+        const focusX = Math.max(
+            -focusLimit,
+            Math.min(focusLimit, position.x + panOffset.current.x)
+        );
+        const focusZ = Math.max(
+            -focusLimit,
+            Math.min(focusLimit, position.z + panOffset.current.y)
+        );
+        panOffset.current.set(focusX - position.x, focusZ - position.z);
+
         // Room boundary limits
         const maxX = roomSize / 2 - wallThickness - cameraBuffer;
         const minX = -roomSize / 2 + wallThickness + cameraBuffer;
@@ -109,8 +143,8 @@ export default function Camera() {
         const minZ = -roomSize / 2 + wallThickness + cameraBuffer;
 
         // Calculate ideal camera position
-        const idealCameraX = position.x + cameraOffset.x;
-        const idealCameraZ = position.z + cameraOffset.z;
+        const idealCameraX = focusX + cameraOffset.x;
+        const idealCameraZ = focusZ + cameraOffset.z;
 
         // Check if we need to adjust camera position due to wall proximity
         let adjustedCameraX = idealCameraX;
@@ -151,9 +185,9 @@ export default function Camera() {
         );
 
         targetLookAt.current.set(
-            position.x + lookAtOffset.x,
+            focusX + lookAtOffset.x,
             position.y + lookAtOffset.y,
-            position.z + lookAtOffset.z
+            focusZ + lookAtOffset.z
         );
 
         // Ensure camera stays at reasonable height

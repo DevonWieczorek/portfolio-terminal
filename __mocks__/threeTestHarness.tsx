@@ -43,6 +43,10 @@ export const keyboardState = {
     backward: false,
     leftward: false,
     rightward: false,
+    panForward: false,
+    panBackward: false,
+    panLeft: false,
+    panRight: false,
 };
 
 export const subscribeMock = jest.fn(() => jest.fn());
@@ -57,6 +61,7 @@ export const sceneState = {
     cameraBuffer: 2,
     characterSpeed: 0.1,
     characterHeight: 6,
+    cameraPanSpeed: 0.2,
     cameraOffset: { x: 0, y: 8, z: 18 },
     zoomSettings: { min: 0.5, max: 2, speed: 0.1, default: 1 },
     desk: {
@@ -220,6 +225,10 @@ export function resetThreeTestState() {
     keyboardState.backward = false;
     keyboardState.leftward = false;
     keyboardState.rightward = false;
+    keyboardState.panForward = false;
+    keyboardState.panBackward = false;
+    keyboardState.panLeft = false;
+    keyboardState.panRight = false;
     experienceState.mode = "scene";
     experienceState.targetMode = "scene";
     experienceState.isTransitioning = false;
