@@ -108,15 +108,14 @@ const defaultDeskTraits: DeepPartial<ObjectTraits> = {
     },
 };
 
-// Monitor height (a ~15in CRT is ~14in tall)
-const MONITOR_SCALE: number = scaledHeight(1.2);
+// Monitor height in feet
+const MONITOR_SCALE: number = scaledHeight(1.5);
 // Monitor is positioned relative to the desk's back-left corner
 const defaultMonitorTraits: DeepPartial<ObjectTraits> = {
     scale: MONITOR_SCALE,
     position: {
         x: scaledFeet(2),
-        // Monitor is centered on its origin, so lift it half its height
-        y: DESK_HEIGHT + MONITOR_SCALE / 2,
+        y: scaledHeight(3.2),
         z: scaledFeet(1.4),
     },
     rotation: {
