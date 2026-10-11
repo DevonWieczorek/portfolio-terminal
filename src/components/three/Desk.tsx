@@ -1,10 +1,11 @@
-import { memo } from "react";
+import { memo, useMemo } from "react";
 import { useGLTF } from "@react-three/drei";
 // #if DEBUG
 import { useControls } from "leva";
 // #endif
 import { useScene } from "@/lib/contexts/SceneContext";
 import Monitor from "@/components/three/Monitor";
+import { getModelBounds } from "@/utils/three";
 
 type DeskControls = {
     deskX: number;
@@ -17,9 +18,14 @@ type DeskProps = {
     proximityPosition: PositionArray;
 };
 
+const DESK_MODEL_PATH = "/models/l_shaped_desk.glb";
+// Height of the desk top in the model's own units. Normalizing to 1 lets
+// `desk.scale` represent the desk top height in scene units.
+const MODEL_HEIGHT = 0.904;
+
 const Desk = memo(({ proximityPosition }: DeskProps) => {
     const { desk } = useScene();
-    const deskModel = useGLTF("/models/l_shaped_desk.glb");
+    const deskModel = useGLTF(DESK_MODEL_PATH);
 
     let deskX: number, deskY: number, deskZ: number, deskScale: number;
 
@@ -47,8 +53,8 @@ const Desk = memo(({ proximityPosition }: DeskProps) => {
             },
             deskScale: {
                 value: desk?.scale ?? 0,
-                min: 0.1,
-                max: 10,
+                min: 0.5,
+                max: 5,
                 step: 0.01,
             },
         },
@@ -63,45 +69,38 @@ const Desk = memo(({ proximityPosition }: DeskProps) => {
     deskScale = desk?.scale ?? 0;
     // #endif
 
-    // L-shaped desk positioned snug in northwest corner
-    const cornerX = deskX; // Very close to west wall
-    const cornerZ = deskZ; // Very close to north wall
-    const deskHeight = desk?.height ?? 0;
+    // The model's pivot isn't at a corner, so measure it once and shift it so
+    // its back-left corner sits on the group origin
+    const modelBounds = useMemo(
+        () => getModelBounds(deskModel.scene),
+        [deskModel.scene]
+    );
+    const modelScale = deskScale / MODEL_HEIGHT;
+    const modelOffset: Coordinate = modelBounds.isEmpty()
+        ? [0, 0, 0]
+        : [
+              -modelBounds.min.x * modelScale,
+              -modelBounds.min.y * modelScale,
+              -modelBounds.min.z * modelScale,
+          ];
 
     return (
-        <group
-            position={[deskX, deskY, deskZ]}
-            scale={[deskScale, deskScale, deskScale]}
-        >
+        <group position={[deskX, deskY, deskZ]}>
             {/* Desk model */}
-            <primitive object={deskModel.scene} />
+            <group
+                position={modelOffset}
+                scale={[modelScale, modelScale, modelScale]}
+            >
+                <primitive object={deskModel.scene} />
+            </group>
 
             {/* Monitor model */}
             <Monitor proximityPosition={proximityPosition} />
-
-            {/* Invisible collision boxes */}
-            <group>
-                {/* Collision for horizontal desk section */}
-                <mesh
-                    position={[cornerX + 2.5, deskHeight / 2, cornerZ + 1]}
-                    visible={false}
-                >
-                    <boxGeometry args={[5.2, deskHeight * 2, 2.2]} />
-                </mesh>
-
-                {/* Collision for vertical desk section */}
-                <mesh
-                    position={[cornerX + 1, deskHeight / 2, cornerZ + 3.5]}
-                    visible={false}
-                >
-                    <boxGeometry args={[2.2, deskHeight * 2, 3.2]} />
-                </mesh>
-            </group>
         </group>
     );
 });
 Desk.displayName = "Desk";
 
-useGLTF.preload("/models/l_shaped_desk.glb");
+useGLTF.preload(DESK_MODEL_PATH);
 
 export default Desk;

@@ -32,6 +32,12 @@ export const useTextureMock = jest.fn((_: string) => ({
     needsUpdate: false,
 }));
 
+export const useTexturePreloadMock = jest.fn();
+const useTextureModuleMock = Object.assign(
+    (path: string) => useTextureMock(path),
+    { preload: useTexturePreloadMock }
+);
+
 export const keyboardState = {
     forward: false,
     backward: false,
@@ -50,15 +56,21 @@ export const sceneState = {
     characterBoundary: 28,
     cameraBuffer: 2,
     characterSpeed: 0.1,
-    characterScale: 1.75,
+    characterHeight: 6,
     cameraOffset: { x: 0, y: 8, z: 18 },
     zoomSettings: { min: 0.5, max: 2, speed: 0.1, default: 1 },
     desk: {
-        height: 4,
-        scale: 2,
-        position: { x: -12, y: 0, z: -10 },
+        scale: 2.5,
+        position: { x: -14.5, y: 0, z: -14.5 },
+        footprint: {
+            width: 6.4,
+            depth: 5.6,
+            backArmDepth: 2.1,
+            sideArmWidth: 2.3,
+        },
     },
     monitor: {
+        scale: 1.2,
         position: { x: -0.5, y: 1.5, z: 2.6 },
         rotation: { y: -1 },
         boxSize: { x: 5, y: 2, z: 3 },
@@ -138,7 +150,7 @@ jest.mock("@react-three/fiber", () => ({
 jest.mock("@react-three/drei", () => ({
     __esModule: true,
     useGLTF: useGLTFModuleMock,
-    useTexture: (path: string) => useTextureMock(path),
+    useTexture: useTextureModuleMock,
     useKeyboardControls: () => [subscribeMock, getKeysMock],
     KeyboardControls: ({ children }: { children: React.ReactNode }) => (
         <>{children}</>
@@ -147,6 +159,8 @@ jest.mock("@react-three/drei", () => ({
 
 jest.mock("@/utils/three", () => ({
     getModelDimensions: jest.fn(),
+    getBackOffset: jest.fn(() => 0),
+    getModelBounds: jest.fn(() => new THREE.Box3()),
 }));
 
 jest.mock("@/lib/contexts/SceneContext", () => ({

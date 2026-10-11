@@ -25,20 +25,21 @@ type BassControls = {
 };
 
 const NUM_BASSES = 4;
+const BASS_MODEL_PATH = "/models/bass-guitar-configurable.glb";
+// One finish per bass, left to right. Pastel bodies get dark pickguards and
+// the black body gets a light one so each pickguard stands out.
+const BASS_FINISHES = [
+    { body: "#ffc4dc", pickguard: "#1c1c1c" }, // pink / black
+    { body: "#d9ff9a", pickguard: "#3d2a5c" }, // lime green / deep purple
+    { body: "#c6e6ff", pickguard: "#5a2e1a" }, // powder blue / brown tortoise
+    { body: "#1c1c1c", pickguard: "#f5f3ec" }, // black / white pearl
+];
 // Subtracting 1.5 from i ensures the group of 4 basses is centered on bassX, not offset to one side.
 const GROUP_CENTER_OFFSET = (NUM_BASSES - 1) / 2;
 const BASS_MESSAGE = `
     Devon is the bassist and co-vocalist of an alternative Punk Rock band called
     <a href="https://linktr.ee/friend_z" target="_blank" rel="noopener noreferrer">Friend Z</a>.
 `;
-
-// Static bass configurations - moved outside component to prevent recreation
-const BASS_CONFIGS = [
-    { src: "/models/bass-1.glb" },
-    { src: "/models/bass-2.glb", scale: 1.28 },
-    { src: "/models/bass-3.glb", scale: 27.22 },
-    { src: "/models/bass-1.glb" }, // TODO: replace with a distinct fourth model
-];
 
 const BassGroup = memo(
     ({ proximityPosition }: { proximityPosition: PositionArray }) => {
@@ -207,36 +208,23 @@ const BassGroup = memo(
         );
         // #endif
 
+        // Memoize bass elements to prevent recreation on every render
         const bassElements = useMemo(
             () =>
-                Array.from({ length: NUM_BASSES }).map((_, i) => {
-                    const config = BASS_CONFIGS[i];
-                    const scale =
-                        config.scale !== undefined
-                            ? ([config.scale, config.scale, config.scale] as [
-                                  number,
-                                  number,
-                                  number,
-                              ])
-                            : ([bassScale, bassScale, bassScale] as [
-                                  number,
-                                  number,
-                                  number,
-                              ]);
-
-                    return (
-                        <Bass
-                            key={i}
-                            position={[
-                                (i - GROUP_CENTER_OFFSET) * bassSpacing,
-                                bassY,
-                                0,
-                            ]}
-                            scale={scale}
-                            modelPath={config.src}
-                        />
-                    );
-                }),
+                Array.from({ length: NUM_BASSES }).map((_, i) => (
+                    <Bass
+                        key={i}
+                        position={[
+                            (i - GROUP_CENTER_OFFSET) * bassSpacing,
+                            bassY,
+                            0,
+                        ]}
+                        scale={[bassScale, bassScale, bassScale]}
+                        modelPath={BASS_MODEL_PATH}
+                        bodyColor={BASS_FINISHES[i].body}
+                        pickguardColor={BASS_FINISHES[i].pickguard}
+                    />
+                )),
             [bassSpacing, bassY, bassScale]
         );
 
@@ -258,7 +246,5 @@ const BassGroup = memo(
 );
 BassGroup.displayName = "BassGroup";
 
-useGLTF.preload("/models/bass-1.glb");
-useGLTF.preload("/models/bass-2.glb");
-useGLTF.preload("/models/bass-3.glb");
+useGLTF.preload(BASS_MODEL_PATH);
 export default BassGroup;

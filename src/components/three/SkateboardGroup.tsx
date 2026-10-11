@@ -1,5 +1,5 @@
 import { memo, useCallback, useMemo, useRef } from "react";
-import { useGLTF } from "@react-three/drei";
+import { useGLTF, useTexture } from "@react-three/drei";
 // #if DEBUG
 import { useControls } from "leva";
 // #endif
@@ -25,7 +25,14 @@ type DeckControls = {
 };
 
 const NUM_DECKS = 4;
-const DECK_MODEL_PATH = "/models/skateboard_deck_2.glb";
+const DECK_MODEL_PATH = "/models/brew-crew-deck-configurable.glb";
+// One bottom graphic per deck, left to right
+const DECK_GRAPHIC_PATHS = [
+    "/textures/decks/bear-meditation.jpg",
+    "/textures/decks/duck-hunt.jpg",
+    "/textures/decks/sign-language.jpg",
+    "/textures/decks/starbucks.jpg",
+];
 // Subtracting 1.5 from i ensures the group of 4 decks is centered on deckX, not offset to one side.
 const GROUP_CENTER_OFFSET = (NUM_DECKS - 1) / 2;
 const SKATEBOARD_MESSAGE = `
@@ -213,6 +220,7 @@ const SkateboardGroup = memo(
                         ]}
                         scale={[deckScale, deckScale, deckScale]}
                         modelPath={DECK_MODEL_PATH}
+                        graphicPath={DECK_GRAPHIC_PATHS[i]}
                     />
                 )),
             [deckSpacing, deckY, deckScale]
@@ -241,4 +249,5 @@ const SkateboardGroup = memo(
 SkateboardGroup.displayName = "SkateboardGroup";
 
 useGLTF.preload(DECK_MODEL_PATH);
+useTexture.preload(DECK_GRAPHIC_PATHS);
 export default SkateboardGroup;

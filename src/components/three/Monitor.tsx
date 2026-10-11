@@ -17,6 +17,7 @@ type MonitorProps = {
 };
 
 type MonitorControls = {
+    monitorScale: number;
     monitorRotationY: number;
     monitorX: number;
     monitorY: number;
@@ -35,6 +36,9 @@ const MONITOR_CAMERA_DISTANCE = 3.25;
 const MONITOR_CAMERA_HEIGHT = 1.4;
 const MONITOR_LOOK_AT_HEIGHT = 0.9;
 const MONITOR_APPROACH_YAW_OFFSET = Math.PI / 4;
+// Height of the model in its own units. Normalizing to 1 lets `monitor.scale`
+// represent the monitor's height in scene units.
+const MODEL_HEIGHT = 1;
 
 const Monitor = memo(({ proximityPosition }: MonitorProps) => {
     const { monitor } = useScene();
@@ -59,7 +63,8 @@ const Monitor = memo(({ proximityPosition }: MonitorProps) => {
     const cameraPosition = useMemo(() => new Vector3(), []);
     const lookAtPosition = useMemo(() => new Vector3(), []);
 
-    let monitorX: number,
+    let monitorScale: number,
+        monitorX: number,
         monitorY: number,
         monitorZ: number,
         monitorRotationY: number;
@@ -77,6 +82,12 @@ const Monitor = memo(({ proximityPosition }: MonitorProps) => {
     const [monitorControls, setMonitorControls] = useControls(
         "Monitor",
         () => ({
+            monitorScale: {
+                value: monitor?.scale ?? 1,
+                min: 0.1,
+                max: 5,
+                step: 0.01,
+            },
             monitorRotationY: {
                 value: monitor?.rotation?.y ?? 0,
                 min: -5,
@@ -152,6 +163,7 @@ const Monitor = memo(({ proximityPosition }: MonitorProps) => {
         <T extends keyof MonitorControls>(path: T) => MonitorControls[T],
     ];
     ({
+        monitorScale,
         monitorRotationY,
         monitorX,
         monitorY,
@@ -178,6 +190,7 @@ const Monitor = memo(({ proximityPosition }: MonitorProps) => {
     // #endif
 
     // #if !DEBUG
+    monitorScale = monitor?.scale ?? 1;
     monitorRotationY = monitor?.rotation?.y ?? 0;
     monitorX = monitor?.position?.x ?? 0;
     monitorY = monitor?.position?.y ?? 0;
@@ -308,6 +321,7 @@ const Monitor = memo(({ proximityPosition }: MonitorProps) => {
                 object={monitorModel.scene}
                 position={[0, 0, 0]}
                 rotation={[0, 0, 0]}
+                scale={monitorScale / MODEL_HEIGHT}
             />
             <InteractiveBox
                 message={MONITOR_MESSAGE}

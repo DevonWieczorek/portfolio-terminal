@@ -2,6 +2,9 @@ import { memo, useRef, useEffect } from "react";
 import { useFrame } from "@react-three/fiber";
 import { useKeyboardControls } from "@react-three/drei";
 import * as THREE from "three";
+// #if DEBUG
+import { useControls } from "leva";
+// #endif
 import { useMovement } from "@/lib/stores/useMovement";
 import { useScene } from "@/lib/contexts/SceneContext";
 import { useExperience } from "@/lib/stores/useExperience";
@@ -16,6 +19,10 @@ enum Controls {
 }
 
 const POSITION_EPSILON = 1e-5;
+// The avatar's box geometry spans from the bottom of the legs (y = -1.3) to
+// the top of the head (y = 2.4) in local units.
+const MODEL_FEET_Y = -1.3;
+const MODEL_HEIGHT = 3.7;
 
 const Character = memo(() => {
     const characterRef = useRef<THREE.Group>(null);
@@ -23,7 +30,7 @@ const Character = memo(() => {
     // Subscribe only to the slices used by this component.
     const position = useMovement(state => state.position);
     const setPosition = useMovement(state => state.setPosition);
-    const { characterSpeed, characterBoundary, characterScale, roomSize } =
+    const { characterSpeed, characterBoundary, characterHeight, desk } =
         useScene();
     const { message, clearMessage } = useMessage();
     // Use individual selectors to prevent unnecessary rerenders
@@ -31,6 +38,33 @@ const Character = memo(() => {
     const isTransitioning = useExperience(state => state.isTransitioning);
 
     const allowMovement = mode === "scene" && !isTransitioning;
+
+    let height: number;
+
+    // #if DEBUG
+    ({ characterHeight: height } = useControls(
+        "Character",
+        {
+            characterHeight: {
+                value: characterHeight,
+                min: 1,
+                max: 12,
+                step: 0.01,
+            },
+        },
+        { collapsed: true }
+    ) as { characterHeight: number });
+    // #endif
+
+    // #if !DEBUG
+    height = characterHeight;
+    // #endif
+
+    // Scale the avatar to the configured height and lift it so its feet rest
+    // on the floor. The movement store's y is the reference height used by the
+    // camera and interaction boxes, so it isn't used to place the body.
+    const characterScale = height / MODEL_HEIGHT;
+    const bodyY = -MODEL_FEET_Y * characterScale;
 
     // Movement speed from context
     const speed = characterSpeed;
@@ -81,22 +115,24 @@ const Character = memo(() => {
     // #endif
 
     // Desk collision detection function
-    const checkDeskCollision = (x: number, z: number, roomSize: number) => {
-        const cornerX = -roomSize / 2 + 0.1;
-        const cornerZ = -roomSize / 2 + 0.1;
+    const checkDeskCollision = (x: number, z: number) => {
+        // The desk is anchored at its back-left corner
+        const cornerX = desk?.position?.x ?? 0;
+        const cornerZ = desk?.position?.z ?? 0;
+        const footprint = desk?.footprint;
         const characterRadius = 0.5; // Character collision radius
 
-        // Check collision with horizontal part of L-desk
+        // Check collision with the arm of the L-desk along the back wall
         const horizX1 = cornerX;
-        const horizX2 = cornerX + 5;
+        const horizX2 = cornerX + (footprint?.width ?? 0);
         const horizZ1 = cornerZ;
-        const horizZ2 = cornerZ + 2;
+        const horizZ2 = cornerZ + (footprint?.backArmDepth ?? 0);
 
-        // Check collision with vertical part of L-desk
+        // Check collision with the arm of the L-desk along the side wall
         const vertX1 = cornerX;
-        const vertX2 = cornerX + 2;
-        const vertZ1 = cornerZ + 2;
-        const vertZ2 = cornerZ + 5;
+        const vertX2 = cornerX + (footprint?.sideArmWidth ?? 0);
+        const vertZ1 = cornerZ;
+        const vertZ2 = cornerZ + (footprint?.depth ?? 0);
 
         // Check if character overlaps with horizontal desk section
         const horizCollision =
@@ -162,7 +198,7 @@ const Character = memo(() => {
         newPosition.z = Math.max(-boundary, Math.min(boundary, newPosition.z));
 
         // Check desk collision and revert if colliding
-        if (checkDeskCollision(newPosition.x, newPosition.z, roomSize)) {
+        if (checkDeskCollision(newPosition.x, newPosition.z)) {
             // If collision detected, don't move to new position
             newPosition.x = position.x;
             newPosition.z = position.z;
@@ -201,18 +237,14 @@ const Character = memo(() => {
             setPosition(newPosition);
         }
 
-        characterRef.current.position.set(
-            newPosition.x,
-            newPosition.y,
-            newPosition.z
-        );
+        characterRef.current.position.set(newPosition.x, bodyY, newPosition.z);
     });
 
     return (
         <group
             ref={characterRef}
             scale={[characterScale, characterScale, characterScale]}
-            position={[position.x, position.y, position.z]}
+            position={[position.x, bodyY, position.z]}
             castShadow
         >
             {/* Head */}

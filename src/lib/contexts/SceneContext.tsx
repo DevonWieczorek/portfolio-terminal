@@ -12,6 +12,15 @@ interface ObjectTraits {
     boxSize: Coordinates;
     boxAnchor: Coordinates;
     approachYawOffset: number;
+    footprint: Footprint;
+}
+
+// Floor footprint of an L-shaped object anchored at its back-left corner
+interface Footprint {
+    width: number; // along the back wall
+    depth: number; // along the side wall
+    backArmDepth: number; // depth of the arm against the back wall
+    sideArmWidth: number; // width of the arm against the side wall
 }
 
 interface RoomDimensions {
@@ -64,49 +73,58 @@ const scaledHeight = (feetValue: number) => feetValue * scaleFactorY;
 const feetFromCenter = (feetValue: number) => feetValue;
 const feetFromFloor = (feetValue: number) => feetValue;
 
-const feetFromWall = {
-    left: (feetValue: number) => -roomDimensions.interiorWidth / 2 + feetValue,
-    right: (feetValue: number) => roomDimensions.interiorWidth / 2 - feetValue,
-    back: (feetValue: number) => -roomDimensions.interiorDepth / 2 + feetValue,
-    front: (feetValue: number) => roomDimensions.interiorDepth / 2 - feetValue,
-};
-
-// Optional: Helpers for wall positioning
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
-const wallPositions = {
+// Interior faces of the walls, matching the wall geometry in Room.tsx
+// (walls are centered on the room edge, so half their thickness is inside)
+const wallFaces = {
     left: -ROOM_WIDTH / 2 + WALL_THICKNESS / 2,
     right: ROOM_WIDTH / 2 - WALL_THICKNESS / 2,
     back: -ROOM_DEPTH / 2 + WALL_THICKNESS / 2,
     front: ROOM_DEPTH / 2 - WALL_THICKNESS / 2,
-    floor: -WALL_THICKNESS / 2,
-    ceiling: ROOM_HEIGHT + WALL_THICKNESS / 2,
 };
 
+// Desk top height (a standard desk is ~30in tall)
+const DESK_HEIGHT: number = scaledHeight(2.5);
+// L-desk footprint as multiples of its top height, measured from l_shaped_desk.glb
+const DESK_PROPORTIONS: Footprint = {
+    width: 2.566,
+    depth: 2.258,
+    backArmDepth: 0.846,
+    sideArmWidth: 0.909,
+};
 const defaultDeskTraits: DeepPartial<ObjectTraits> = {
-    height: scaledFeet(4),
-    thickness: scaledFeet(0.5),
-    scale: scaledFeet(2),
+    scale: DESK_HEIGHT,
+    // The desk is anchored at its back-left corner, so this tucks it into the
+    // back-left corner of the room
     position: {
-        x: feetFromWall.left(2),
+        x: wallFaces.left,
         y: feetFromFloor(0),
-        z: feetFromWall.back(-4), // Pivot point in desk model isn't top left corener
+        z: wallFaces.back,
+    },
+    footprint: {
+        width: DESK_PROPORTIONS.width * DESK_HEIGHT,
+        depth: DESK_PROPORTIONS.depth * DESK_HEIGHT,
+        backArmDepth: DESK_PROPORTIONS.backArmDepth * DESK_HEIGHT,
+        sideArmWidth: DESK_PROPORTIONS.sideArmWidth * DESK_HEIGHT,
     },
 };
 
-// Monitor is Scaled/Positioned relative to the desk
+// Monitor height in feet
+const MONITOR_SCALE: number = scaledHeight(1.5);
+// Monitor is positioned relative to the desk's back-left corner
 const defaultMonitorTraits: DeepPartial<ObjectTraits> = {
+    scale: MONITOR_SCALE,
     position: {
-        x: scaledFeet(-0.5),
-        y: scaledFeet(1.5),
-        z: scaledFeet(2.6),
+        x: scaledFeet(2),
+        y: scaledHeight(3.2),
+        z: scaledFeet(1.4),
     },
     rotation: {
         y: -1,
     },
     boxSize: {
-        x: 5,
-        y: 2,
-        z: 3,
+        x: 10,
+        y: 6,
+        z: 6,
     },
     boxAnchor: {
         x: 0,
@@ -116,12 +134,13 @@ const defaultMonitorTraits: DeepPartial<ObjectTraits> = {
     approachYawOffset: Math.PI / 4,
 };
 
-const BASS_SCALE: number = scaledFeet(3.5);
+// Bass height (a full-scale bass is ~46in tall)
+const BASS_SCALE: number = scaledFeet(3.8);
 const defaultBassTraits: DeepPartial<ObjectTraits> = {
     position: {
         x: feetFromCenter(-1 * scaleFactorXZ),
         y: scaledHeight((ROOM_HEIGHT - BASS_SCALE) / 2),
-        z: feetFromWall.back(0),
+        z: wallFaces.back,
     },
     scale: BASS_SCALE,
     spacing: scaledFeet(5),
@@ -138,11 +157,14 @@ const defaultBassTraits: DeepPartial<ObjectTraits> = {
 };
 
 // const NUM_DECKS: number = 4;
-const DECK_SCALE: number = scaledFeet(3);
+// Deck length (a standard deck is ~32in long)
+const DECK_SCALE: number = scaledFeet(2.67);
 const defaultDeckTraits: DeepPartial<ObjectTraits> = {
     position: {
-        x: feetFromWall.right(0),
-        y: scaledHeight((ROOM_HEIGHT - DECK_SCALE) / 2),
+        x: wallFaces.right,
+        // Decks are centered on their origin, so this lines them up with the
+        // vertical center of the basses
+        y: scaledHeight(ROOM_HEIGHT / 2),
         z: feetFromCenter(-1 * scaleFactorXZ),
     },
     scale: DECK_SCALE,
@@ -169,7 +191,7 @@ interface SceneConfig {
     characterBoundary: number;
     cameraBuffer: number;
     characterSpeed: number;
-    characterScale: number;
+    characterHeight: number;
     cameraOffset: {
         x: number;
         y: number;
@@ -194,7 +216,7 @@ const defaultSceneConfig: SceneConfig = {
     wallColor: "#F5F5DC",
     wallHeight: ROOM_HEIGHT,
     wallThickness: WALL_THICKNESS,
-    characterScale: 1.75,
+    characterHeight: scaledHeight(6),
     characterBoundary: ROOM_SIZE - 2.25,
     cameraBuffer: 2,
     characterSpeed: 0.1,
