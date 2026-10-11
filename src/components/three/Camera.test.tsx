@@ -24,20 +24,38 @@ describe("Camera", () => {
         expect(mockCamera.lookAt).toHaveBeenCalled();
     });
 
-    it("pans the camera look target with WASD keys", () => {
+    const runFrames = (count: number) => {
+        for (let i = 0; i < count; i += 1) {
+            runFrameCallbacks();
+        }
+    };
+
+    it("pans the camera look target forward with W", () => {
         render(<Camera />);
         runFrameCallbacks();
         const [initialTarget] = mockCamera.lookAt.mock.calls.at(-1);
-        const initialX = initialTarget.x;
+        const initialZ = initialTarget.z;
 
-        keyboardState.panRight = true;
-        for (let i = 0; i < 20; i += 1) {
-            runFrameCallbacks();
-        }
-        keyboardState.panRight = false;
+        keyboardState.panForward = true;
+        runFrames(20);
 
         const [pannedTarget] = mockCamera.lookAt.mock.calls.at(-1);
-        expect(pannedTarget.x).toBeGreaterThan(initialX);
+        expect(pannedTarget.z).toBeLessThan(initialZ);
+    });
+
+    it("orbits the camera around the focus point with A and D", () => {
+        render(<Camera />);
+        runFrames(5);
+        const initialX = mockCamera.position.x;
+
+        keyboardState.rotateLeft = true;
+        runFrames(30);
+        expect(mockCamera.position.x).toBeGreaterThan(initialX);
+
+        keyboardState.rotateLeft = false;
+        keyboardState.rotateRight = true;
+        runFrames(90);
+        expect(mockCamera.position.x).toBeLessThan(initialX);
     });
 
     it("handles zoom input events", () => {

@@ -28,11 +28,11 @@ enum Controls {
     rightward = "rightward",
     panForward = "panForward",
     panBackward = "panBackward",
-    panLeft = "panLeft",
-    panRight = "panRight",
+    rotateLeft = "rotateLeft",
+    rotateRight = "rotateRight",
 }
 
-// Arrow keys move the character; WASD pans the camera.
+// Arrow keys move the character; W/S pan and A/D rotate the camera.
 const CONTROLS = [
     { name: Controls.forward, keys: ["ArrowUp"] },
     { name: Controls.backward, keys: ["ArrowDown"] },
@@ -40,8 +40,8 @@ const CONTROLS = [
     { name: Controls.rightward, keys: ["ArrowRight"] },
     { name: Controls.panForward, keys: ["KeyW"] },
     { name: Controls.panBackward, keys: ["KeyS"] },
-    { name: Controls.panLeft, keys: ["KeyA"] },
-    { name: Controls.panRight, keys: ["KeyD"] },
+    { name: Controls.rotateLeft, keys: ["KeyA"] },
+    { name: Controls.rotateRight, keys: ["KeyD"] },
 ];
 
 const R3FSceneContent = memo(() => {

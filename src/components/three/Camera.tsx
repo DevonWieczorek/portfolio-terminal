@@ -6,16 +6,18 @@ import { useScene } from "@/lib/contexts/SceneContext";
 import * as THREE from "three";
 import { useExperience } from "@/lib/stores/useExperience";
 
-enum PanControls {
+enum CameraControls {
     panForward = "panForward",
     panBackward = "panBackward",
-    panLeft = "panLeft",
-    panRight = "panRight",
+    rotateLeft = "rotateLeft",
+    rotateRight = "rotateRight",
 }
+
+const Y_AXIS = new THREE.Vector3(0, 1, 0);
 
 export default function Camera() {
     const { camera } = useThree();
-    const [, getKeys] = useKeyboardControls<PanControls>();
+    const [, getKeys] = useKeyboardControls<CameraControls>();
     // Keep subscription narrow to avoid rerenders from unrelated movement actions.
     const position = useMovement(state => state.position);
     const {
@@ -23,6 +25,7 @@ export default function Camera() {
         wallThickness,
         cameraBuffer,
         cameraPanSpeed,
+        cameraRotateSpeed,
         characterBoundary,
         cameraOffset: cameraOffsetConfig,
         zoomSettings,
@@ -64,8 +67,10 @@ export default function Camera() {
     const desiredPosition = useMemo(() => new THREE.Vector3(), []);
     const desiredLookAt = useMemo(() => new THREE.Vector3(), []);
     const modeRef = useRef(mode);
-    // WASD pan offset applied on top of the character-follow target (XZ plane).
+    // W/S pan offset applied on top of the character-follow target (XZ plane).
     const panOffset = useRef(new THREE.Vector2());
+    // A/D orbit angle (radians) around the vertical axis through the focus point.
+    const orbitAngle = useRef(0);
 
     useEffect(() => {
         modeRef.current = mode;
@@ -111,18 +116,27 @@ export default function Camera() {
 
     useFrame(() => {
         // Reuse the same vector instance to avoid per-frame allocations.
-        const cameraOffset = frameCameraOffset.current
-            .copy(baseCameraOffset)
-            .multiplyScalar(zoom);
-
-        // WASD camera panning, only while the player can move around the scene
+        // A/D orbit the camera; W/S pan along the direction it's facing.
+        // Only while the player can move around the scene.
         if (mode === "scene" && !isTransitioning) {
             const keys = getKeys();
-            if (keys.panForward) panOffset.current.y -= cameraPanSpeed;
-            if (keys.panBackward) panOffset.current.y += cameraPanSpeed;
-            if (keys.panLeft) panOffset.current.x -= cameraPanSpeed;
-            if (keys.panRight) panOffset.current.x += cameraPanSpeed;
+            if (keys.rotateLeft) orbitAngle.current += cameraRotateSpeed;
+            if (keys.rotateRight) orbitAngle.current -= cameraRotateSpeed;
+
+            const panDirection =
+                Number(Boolean(keys.panForward)) -
+                Number(Boolean(keys.panBackward));
+            if (panDirection !== 0) {
+                const step = panDirection * cameraPanSpeed;
+                panOffset.current.x -= Math.sin(orbitAngle.current) * step;
+                panOffset.current.y -= Math.cos(orbitAngle.current) * step;
+            }
         }
+
+        const cameraOffset = frameCameraOffset.current
+            .copy(baseCameraOffset)
+            .multiplyScalar(zoom)
+            .applyAxisAngle(Y_AXIS, orbitAngle.current);
 
         // Keep the panned focus point inside the room
         const focusLimit = characterBoundary / 2;

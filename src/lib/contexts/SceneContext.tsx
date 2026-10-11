@@ -193,6 +193,7 @@ interface SceneConfig {
     characterSpeed: number;
     characterHeight: number;
     cameraPanSpeed: number;
+    cameraRotateSpeed: number;
     cameraOffset: {
         x: number;
         y: number;
@@ -222,6 +223,7 @@ const defaultSceneConfig: SceneConfig = {
     cameraBuffer: 2,
     characterSpeed: 0.1,
     cameraPanSpeed: 0.2,
+    cameraRotateSpeed: 0.03,
     cameraOffset: {
         x: 0,
         y: 8,
