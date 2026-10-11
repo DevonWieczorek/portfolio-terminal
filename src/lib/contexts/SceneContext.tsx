@@ -123,9 +123,9 @@ const defaultBassTraits: DeepPartial<ObjectTraits> = {
         z: wallFaces.back,
     },
     scale: BASS_SCALE,
-    spacing: scaledFeet(3),
+    spacing: scaledFeet(5),
     boxSize: {
-        x: 13,
+        x: 15,
         y: 18,
         z: 5,
     },
@@ -148,9 +148,9 @@ const defaultDeckTraits: DeepPartial<ObjectTraits> = {
         z: feetFromCenter(-1 * scaleFactorXZ),
     },
     scale: DECK_SCALE,
-    spacing: scaledFeet(1.75),
+    spacing: scaledFeet(5),
     boxSize: {
-        x: 10,
+        x: 20,
         y: 12,
         z: 5,
     },
