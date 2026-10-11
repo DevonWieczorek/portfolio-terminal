@@ -26,4 +26,13 @@ const getModelDimensions = (src: string = "") => {
     });
 };
 
-export { getModelDimensions };
+// Distance from an object's origin to the back (-Z) of its bounding box.
+// Offsetting the object by this along +Z puts its back face at z = 0, so it
+// sits flush against whatever surface its parent is positioned on.
+const getBackOffset = (object: THREE.Object3D) => {
+    object.updateMatrixWorld(true);
+    const box = new THREE.Box3().setFromObject(object);
+    return box.isEmpty() ? 0 : -box.min.z;
+};
+
+export { getModelDimensions, getBackOffset };

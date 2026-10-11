@@ -153,6 +153,7 @@ jest.mock("@react-three/drei", () => ({
 
 jest.mock("@/utils/three", () => ({
     getModelDimensions: jest.fn(),
+    getBackOffset: jest.fn(() => 0),
 }));
 
 jest.mock("@/lib/contexts/SceneContext", () => ({

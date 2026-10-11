@@ -1,7 +1,7 @@
 import { memo, useEffect, useMemo } from "react";
 import { useGLTF } from "@react-three/drei";
 import * as THREE from "three";
-import { getModelDimensions } from "@/utils/three";
+import { getBackOffset, getModelDimensions } from "@/utils/three";
 
 interface BassProps {
     position: Coordinate;
@@ -15,6 +15,9 @@ const DEFAULT_MODEL = "/models/bass-guitar-configurable.glb";
 // Names of the materials in the configurable model that can be recolored
 const BODY_MATERIAL_NAME = "body_paint";
 const PICKGUARD_MATERIAL_NAME = "tortoise";
+// Height of the model in its own units. Normalizing to 1 lets the `scale` prop
+// represent the bass's height in scene units.
+const MODEL_HEIGHT = 1.147;
 
 const Bass = memo(
     ({
@@ -62,9 +65,23 @@ const Bass = memo(
             });
             return clone;
         }, [scene, bodyColor, pickguardColor]);
+        const backOffset = useMemo(
+            () => getBackOffset(clonedScene),
+            [clonedScene]
+        );
+        const normalizedScale = useMemo(
+            () => scale.map(s => s / MODEL_HEIGHT) as Coordinate,
+            [scale]
+        );
 
+        // Shift forward so the back of the bass sits on the parent's z = 0
+        const [x, y, z] = position;
         return (
-            <primitive object={clonedScene} position={position} scale={scale} />
+            <primitive
+                object={clonedScene}
+                position={[x, y, z + backOffset * normalizedScale[2]]}
+                scale={normalizedScale}
+            />
         );
     }
 );

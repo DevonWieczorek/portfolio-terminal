@@ -1,6 +1,7 @@
 import { memo, useMemo } from "react";
 import { useGLTF, useTexture } from "@react-three/drei";
 import * as THREE from "three";
+import { getBackOffset } from "@/utils/three";
 
 interface SkateboardProps {
     position: Coordinate;
@@ -41,6 +42,7 @@ const Skateboard = memo(
             graphicTexture.needsUpdate = true;
 
             const clone = scene.clone(true);
+            clone.rotation.set(...MODEL_ROTATION);
             let graphicMaterial: THREE.MeshStandardMaterial | undefined;
             clone.traverse(child => {
                 if (!(child instanceof THREE.Mesh)) return;
@@ -57,16 +59,21 @@ const Skateboard = memo(
             });
             return clone;
         }, [scene, graphicTexture]);
+        const backOffset = useMemo(
+            () => getBackOffset(clonedScene),
+            [clonedScene]
+        );
         const normalizedScale = useMemo(
             () => scale.map(s => s / MODEL_LENGTH) as Coordinate,
             [scale]
         );
 
+        // Shift forward so the grip side sits on the parent's z = 0
+        const [x, y, z] = position;
         return (
             <primitive
                 object={clonedScene}
-                position={position}
-                rotation={MODEL_ROTATION}
+                position={[x, y, z + backOffset * normalizedScale[2]]}
                 scale={normalizedScale}
             />
         );

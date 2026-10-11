@@ -71,15 +71,13 @@ const feetFromWall = {
     front: (feetValue: number) => roomDimensions.interiorDepth / 2 - feetValue,
 };
 
-// Optional: Helpers for wall positioning
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
-const wallPositions = {
+// Interior faces of the walls, matching the wall geometry in Room.tsx
+// (walls are centered on the room edge, so half their thickness is inside)
+const wallFaces = {
     left: -ROOM_WIDTH / 2 + WALL_THICKNESS / 2,
     right: ROOM_WIDTH / 2 - WALL_THICKNESS / 2,
     back: -ROOM_DEPTH / 2 + WALL_THICKNESS / 2,
     front: ROOM_DEPTH / 2 - WALL_THICKNESS / 2,
-    floor: -WALL_THICKNESS / 2,
-    ceiling: ROOM_HEIGHT + WALL_THICKNESS / 2,
 };
 
 const defaultDeskTraits: DeepPartial<ObjectTraits> = {
@@ -116,17 +114,18 @@ const defaultMonitorTraits: DeepPartial<ObjectTraits> = {
     approachYawOffset: Math.PI / 4,
 };
 
-const BASS_SCALE: number = scaledFeet(3.5);
+// Bass height (a full-scale bass is ~46in tall)
+const BASS_SCALE: number = scaledFeet(3.8);
 const defaultBassTraits: DeepPartial<ObjectTraits> = {
     position: {
         x: feetFromCenter(-1 * scaleFactorXZ),
         y: scaledHeight((ROOM_HEIGHT - BASS_SCALE) / 2),
-        z: feetFromWall.back(0),
+        z: wallFaces.back,
     },
     scale: BASS_SCALE,
-    spacing: scaledFeet(5),
+    spacing: scaledFeet(3),
     boxSize: {
-        x: 15,
+        x: 13,
         y: 18,
         z: 5,
     },
@@ -138,17 +137,20 @@ const defaultBassTraits: DeepPartial<ObjectTraits> = {
 };
 
 // const NUM_DECKS: number = 4;
-const DECK_SCALE: number = scaledFeet(3);
+// Deck length (a standard deck is ~32in long)
+const DECK_SCALE: number = scaledFeet(2.67);
 const defaultDeckTraits: DeepPartial<ObjectTraits> = {
     position: {
-        x: feetFromWall.right(0),
-        y: scaledHeight((ROOM_HEIGHT - DECK_SCALE) / 2),
+        x: wallFaces.right,
+        // Decks are centered on their origin, so this lines them up with the
+        // vertical center of the basses
+        y: scaledHeight(ROOM_HEIGHT / 2),
         z: feetFromCenter(-1 * scaleFactorXZ),
     },
     scale: DECK_SCALE,
-    spacing: scaledFeet(5),
+    spacing: scaledFeet(1.75),
     boxSize: {
-        x: 20,
+        x: 10,
         y: 12,
         z: 5,
     },
