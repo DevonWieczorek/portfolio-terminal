@@ -72,6 +72,12 @@ Use functional components whenever possible.
 Use the project's existing coding style and conventions.
 Use existing ESLint and Prettier rules when making updates.
 
+## Scene Dimensions & Positions
+
+Use `SceneContext` (`src/lib/contexts/SceneContext.tsx`) as the single source of truth when making updates to dimensions, positions, rotations, or scale of objects in the 3D scene.
+Do not hardcode these values in components; read them via `useScene()` and use the existing helpers (e.g. `scaledFeet`, `feetFromWall`, `wallFaces`) where applicable.
+Any new adjustable prop added to `SceneContext` must also have a corresponding Leva control in debug mode, following the existing `// #if DEBUG` / `// #if !DEBUG` pattern (see `Desk.tsx`): `useControls` seeded from the context value under `#if DEBUG`, and a fallback to the plain context value under `#if !DEBUG`.
+
 # Current Task for Agent
 
 Update the hosting for this project from Heroku to Vercel.
