@@ -20,7 +20,8 @@ export interface Line {
 
 interface PdfFont {
     name: string;
-    widths?: (number | null)[];
+    // An array for simple fonts, an object keyed by char code otherwise.
+    widths?: Record<number, number | null>;
     toUnicode?: { _map?: (string | undefined)[] };
 }
 
@@ -42,11 +43,11 @@ const getUnmappedGlyphs = (font: PdfFont) => {
     const map = font.toUnicode?._map;
     if (!map || !font.widths) return unmapped;
 
-    font.widths.forEach((width, code) => {
-        if (width != null && !map[code]) {
-            unmapped.set(String.fromCharCode(code), width);
+    for (const [code, width] of Object.entries(font.widths)) {
+        if (width != null && !map[Number(code)]) {
+            unmapped.set(String.fromCharCode(Number(code)), width);
         }
-    });
+    }
     return unmapped;
 };
 
