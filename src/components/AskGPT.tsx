@@ -62,7 +62,10 @@ const AskGPT: FC<{ onShowResponse: () => void }> = ({ onShowResponse }) => {
                 body: JSON.stringify({ query }),
             });
 
-            const data = await res.json().catch(() => ({}));
+            // Error bodies may not be JSON; only tolerate that when !res.ok.
+            const data = res.ok
+                ? await res.json()
+                : await res.json().catch(() => ({}));
             if (!res.ok && !data.error) {
                 throw new Error("Failed to fetch response");
             }

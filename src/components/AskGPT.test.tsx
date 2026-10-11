@@ -15,7 +15,7 @@ beforeEach(() => {
 });
 
 afterEach(() => {
-    jest.clearAllMocks();
+    jest.restoreAllMocks();
 });
 
 describe("AskGPT", () => {
@@ -81,6 +81,44 @@ describe("AskGPT", () => {
         await waitFor(() =>
             expect(
                 screen.getByText(/devon-gpt is temporarily unavailable/i)
+            ).toBeInTheDocument()
+        );
+    });
+
+    it("shows the generic error when a successful response is not JSON", async () => {
+        (global.fetch as jest.Mock).mockResolvedValueOnce({
+            ok: true,
+            json: () => Promise.reject(new SyntaxError("Unexpected end")),
+        });
+        jest.spyOn(console, "error").mockImplementation(() => {});
+        render(<AskGPT onShowResponse={jest.fn()} />);
+        const input = screen.getByPlaceholderText(
+            /ask a question to devon-gpt/i
+        );
+        fireEvent.change(input, { target: { value: "Bad body test" } });
+        fireEvent.keyDown(input, { key: "Enter", code: "Enter" });
+        await waitFor(() =>
+            expect(
+                screen.getByText(/an error occurred while processing/i)
+            ).toBeInTheDocument()
+        );
+    });
+
+    it("shows the generic error when an error response is not JSON", async () => {
+        (global.fetch as jest.Mock).mockResolvedValueOnce({
+            ok: false,
+            json: () => Promise.reject(new SyntaxError("Unexpected token")),
+        });
+        jest.spyOn(console, "error").mockImplementation(() => {});
+        render(<AskGPT onShowResponse={jest.fn()} />);
+        const input = screen.getByPlaceholderText(
+            /ask a question to devon-gpt/i
+        );
+        fireEvent.change(input, { target: { value: "Bad error body" } });
+        fireEvent.keyDown(input, { key: "Enter", code: "Enter" });
+        await waitFor(() =>
+            expect(
+                screen.getByText(/an error occurred while processing/i)
             ).toBeInTheDocument()
         );
     });
