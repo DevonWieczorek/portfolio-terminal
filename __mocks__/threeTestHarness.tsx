@@ -32,6 +32,12 @@ export const useTextureMock = jest.fn((_: string) => ({
     needsUpdate: false,
 }));
 
+export const useTexturePreloadMock = jest.fn();
+const useTextureModuleMock = Object.assign(
+    (path: string) => useTextureMock(path),
+    { preload: useTexturePreloadMock }
+);
+
 export const keyboardState = {
     forward: false,
     backward: false,
@@ -138,7 +144,7 @@ jest.mock("@react-three/fiber", () => ({
 jest.mock("@react-three/drei", () => ({
     __esModule: true,
     useGLTF: useGLTFModuleMock,
-    useTexture: (path: string) => useTextureMock(path),
+    useTexture: useTextureModuleMock,
     useKeyboardControls: () => [subscribeMock, getKeysMock],
     KeyboardControls: ({ children }: { children: React.ReactNode }) => (
         <>{children}</>
