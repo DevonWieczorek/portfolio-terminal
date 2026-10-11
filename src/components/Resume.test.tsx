@@ -8,7 +8,7 @@ describe("Resume", () => {
         render(<Resume />);
         expect(screen.getByText(/devon wieczorek/i)).toBeInTheDocument();
         expect(
-            screen.getAllByText(/senior software engineer/i).length
+            screen.getAllByText(/senior full-stack engineer/i).length
         ).toBeGreaterThan(0);
         expect(
             screen.getByText(/devon.wieczorek@icloud.com/i)
@@ -23,7 +23,9 @@ describe("Resume", () => {
 
     it("renders professional summary, skills, and experience sections", () => {
         render(<Resume />);
-        expect(screen.getByText(/professional summary/i)).toBeInTheDocument();
+        expect(
+            screen.getByRole("heading", { name: /^summary$/i })
+        ).toBeInTheDocument();
         expect(screen.getByText(/skills/i)).toBeInTheDocument();
         expect(
             screen.getByText(/professional experience/i)

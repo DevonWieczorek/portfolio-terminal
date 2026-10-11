@@ -1,59 +1,84 @@
 # Devon Wieczorek
 
-### Senior Software Engineer
+### Senior Full-Stack Engineer
 
-## Tel: (201) 527-7400
+New Jersey | Devon.Wieczorek@iCloud.com | (201) 527-7500
 
-## Email: Devon.Wieczorek@iCloud.com
+Devon.Codes | GitHub.com/DevonWieczorek | LinkedIn.com/in/DevonWieczorek
 
-## LinkedIn: LinkedIn.com/in/DevonWieczorek
+## Summary
 
-## Github: Github.com/DevonWieczorek
-
-## Professional Summary
-
-Seasoned Senior So+ware Engineer with over 8 years of experience driving the success of diverse projects across the so+ware development lifecycle. Known for adeptly transla>ng stakeholder needs into ac>onable plans, mentoring emerging talent, and remaining at the forefront of cuBngedge technologies. Passionate about leveraging innova>ve solu>ons to op>mize developer workflows and consumer experiences, ensuring the delivery of excep>onal outcomes.
+Senior full-stack engineer with 8 years of experience building production web platforms, grounded in deep React and front-end expertise and now shipping end-to-end systems: Node and Postgres services, data pipelines, and third-party API integrations (Meta, Google Ads, TikTok, Amazon, Shopify, Bill.com). Backs every system with automated tests, CI, and documented architecture decisions. Uses AI coding agents to ship faster without lowering the bar for review, reliability, or security.
 
 ## Skills
 
-**Languages:** JavaScript/TypeScript, HTML, CSS, PHP, Python, Bash, Ruby **Technologies:** React, React Router, Jest, Playwright, Tina CMS, NPM, Yarn, Node.js, Express.js, ES6+, Redux, LESS, SCSS, PostCSS, Material UI, Grommet, Bootstrap, WordPress, React Na>ve, jQuery, GrapesJS, SurveyJS, HTML Emails, Selenium **Database:** GraphQL, MySQL, Firebase, MongoDB **Build Tools/Environments:** Webpack, Docker, Create React App, Jenkins, Gitlab, Grunt, Gulp, Babel, AWS **Development Tools:** VSCode, Chrome/React DevTools, GitHub Ac>ons, Sequel Pro, GraphiQL **Design Tools:** Figma, Adobe Photoshop, Adobe XD **Source Control:** Git, GitHub, Perforce, GitLab **Development Lifecycle:** Agile/Scrum, Monday, GitHub Documenta>on, Confluence, Asana, Jira **OperaBng Systems:** Mac, Linux, Windows
+- **Languages:** TypeScript, JavaScript, SQL, Python, HTML, CSS/SCSS/LESS, PHP, Bash
+- **Front End:** React, Next.js, React Native/Expo, Redux, Zustand, Tailwind CSS, React Three Fiber, AG Grid
+- **Back End and Data:** Node.js, Express, PostgreSQL, Supabase, Airbyte, REST/GraphQL APIs, webhooks, OAuth
+- **Build and Infrastructure:** Vercel, DigitalOcean, Docker, GitHub Actions CI/CD, Webpack, Vite, systemd
+- **Testing and Quality:** Vitest, Jest, React Testing Library, Playwright, ESLint/Prettier, code review, ADRs
+- **AI Tooling:** Claude Code, Model Context Protocol (MCP) servers, OpenAI API, LLM-assisted development workflows
+- **Practices:** Agile/Scrum, technical documentation, mentorship and onboarding, accessibility (a11y), i18n, A/B testing
 
 ## Professional Experience
 
-**Senior Front End Engineer** _Rockstar Games, New York City Metropolitan Area_ January 2023 – Present
+**AI Developer** | _Wired2Scale, Remote_ | June 2026 – Present
 
-- Built and released the website for Circoloco Records, showcasing advanced React capabili>es.
+CPG growth and media-buying agency. Own the agency's reporting and billing platforms end to end and build internal automation for a team managing paid media for 30+ consumer brands.
 
-- Assisted in conver>ng the legacy Red Dead Redemp>on 2 site to React, improving performance and maintainability.
+- Built and own an automated reporting platform (TypeScript/Node, Supabase, Playwright, Slack API) that pulls spend and revenue from 11 ad and commerce APIs, including Meta, Google Ads, TikTok, Shopify, Amazon SP-API, and Northbeam, and posts per-client KPI report cards on schedule, replacing ~3–5 hours a day of manual reporting.
+- Brought reported metrics to parity with client source-of-truth sheets, cutting one revenue gap from ~30% to within ±2.5% and taking a daily ad-cost metric from 0% to 100% agreement over 37 days; backed by 440+ automated tests, CI, and ~100 documented architecture decisions.
+- Built a full-stack invoicing platform (Next.js, Postgres/Supabase, Vercel) that ingests ad spend from 6 platforms via Airbyte, applies tiered and subscription fee logic, and pushes invoices to Bill.com through its API and webhooks; automated the twice-monthly spend pull, saving ~8 hours of manual work a month.
+- Data audits surfaced ~$900K+ of ad spend under accounts unmapped in the billing system, and restored ~$140K of spend history previously judged unrecoverable by fixing an ingestion lookback window.
+- Shipped v1 of an ad-launch tool in the company's internal AI platform that parses copy docs, applies naming conventions, and builds ad drafts through a third-party launcher API; led its migration into the platform: schema, background jobs, API, and UI.
+- Resolved a production database outage (disk full, read-only state), wrote the incident report, and authored a disaster-recovery plan covering all three production systems; provisioned the production host on DigitalOcean and migrated engineering to a GitHub organization.
+- Built a Claude Code plugin marketplace for the team (planner, builder, and auditor agents with a human merge gate), added automated AI pull-request review to CI, and launched an internal knowledge assistant red-teamed for prompt injection.
+- Led the evaluation that approved a 1Password rollout, moved team credentials out of Slack, and designed SSO and access-control architecture (Google Workspace identity, Supabase authorization) for ~35 staff; onboarded two engineers with setup and system docs.
 
-- Contributed to the migra>on from scacered repositories to a monolith codebase, streamlining the development process.
+**Professional Development | Career Break** | _Self-directed_ | March 2025 – June 2026
 
-- Developed Jest tests for new components and converted legacy components to TypeScript, enhancing code quality.
+- Expanded from front-end into back-end and data engineering through the four certifications below, and built personal projects in React, Next.js, and TypeScript, including the 3D portfolio and a browser roguelike game.
 
-- Provided con>nuous assistance and training for newer team members, serving as a knowledge resource.
+**Senior Front-End Engineer** | _Rockstar Games, New York, NY_ | January 2023 – March 2025
 
-- Dis>lled requests from internal stakeholders into concrete project requirements.
+- Led the migration of a legacy React codebase to TypeScript and added Jest test coverage, improving type safety and maintainability across shared components.
+- Helped consolidate scattered repositories into a single codebase, simplifying builds, dependency management, and releases.
+- Built and launched the Circoloco Records website in React, and converted the legacy Red Dead Redemption 2 website to React.
+- Built internal tools that automated team workflows, turned stakeholder requests into technical requirements, and onboarded and mentored new engineers through hands-on pairing and documentation.
 
-**Digital MarkeBng Developer** _Rockstar Games, New York City Metropolitan Area_ August 2020 – May 2023
+**Digital Marketing Developer** | _Rockstar Games, New York, NY_ | August 2020 – December 2022
 
-- Developed and maintained a custom CMS that powers most content across web proper>es, increasing content management efficiency.
+- Designed and maintained the custom CMS behind most content across Rockstar's web properties (~6M visits a month), used by ~15 designers, content managers, and engineers.
+- Built and released the Grand Theft Auto: The Trilogy website, migrated the legacy GTA V and GTA Online websites, and created CLI tools that automated common build and deployment tasks.
+- Led documentation standards across the codebase and interviewed engineering candidates.
 
-- Built and released the Grand The+^ Auto Trilogy website and migrated legacy Grand The+ Auto V/Online websites.
+**Software Developer II** | _Fluent, Inc., New York, NY_ | May 2019 – August 2020
 
-- Led documenta>on efforts across the codebase and interviewed poten>al candidates. **SoFware Developer II** _Fluent, Inc., Greater New York City Area_ May 2019 – August 2020
+- Built a React WYSIWYG editor and marketing-funnel builder that boosted productivity for non-technical teams.
+- Built a Node.js CLI to bootstrap, develop, and deploy microsites, plus reusable React component and SASS libraries shared across projects.
+- Interviewed stakeholders to find workflow bottlenecks, then designed and built automated solutions.
 
-- Collaborated on a React-based WYSIWYG editor and marke>ng funnel builder, freeing up development resources.
+**Front-End Developer** | _Fluent, Inc., New York, NY_ | August 2017 – May 2019
 
-- Developed reusable React components, u>lity func>ons, and SASS libraries for use across mul>ple projects.
+- Led development of scalable consumer-facing sites, including TheSmartWallet.com and FindDreamJobs.com; built custom CI/CD pipelines and introduced git workflows that sped up the release cycle.
 
-- Created a Node-based CLI for bootstrapping, developing, and deploying microsites. **Front End Developer** _Fluent, Inc., Greater New York City Area_ August 2017 – May 2019
+## Selected Projects
 
-- Architected custom CI/CD solu>ons for faster, more efficient development.
+**Portfolio Terminal (Devon.Codes)** | _Next.js 15, React 19, TypeScript, React Three Fiber, OpenAI API_
 
-- Implemented git workflows in exis>ng web projects.
+- Interactive 3D office scene with a terminal-mode portfolio and an AI "ask" command served by a server-side OpenAI route with file search; Zustand state, Jest/RTL test suite, and CI/CD to Vercel via GitHub Actions.
 
-- Led development on consumer content sites such as TheSmartWallet.com and FindDreamJobs.com.
+**React-WordPress Microsite Framework** | _React, headless WordPress, Node.js CLI_
 
-## EducaBon
+- Headless WordPress and React framework with a plugin system and a CLI scaffolder (React-WP-CLI) for spinning up new microsites.
 
-**Bachelor’s Degree, CommunicaBon and Media Studies** _Ramapo College of New Jersey, May 2016_
+## Certifications
+
+- React Native & Expo, Meta (April 2026)
+- Intro to Supabase, Scrimba (February 2026)
+- Database Design and Basic SQL in PostgreSQL, University of Michigan (December 2025)
+- Developing Back-End Apps with Node.js and Express, IBM (December 2025)
+
+## Education
+
+**B.A., Communication and Media Studies** | _Ramapo College of New Jersey_
