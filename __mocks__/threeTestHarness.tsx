@@ -87,6 +87,11 @@ export const sceneState = {
         roughness: 0.9,
         normalScale: 0.6,
     },
+    ceilingSurface: {
+        color: "#F7F6F2",
+        roughness: 0.9,
+        bounce: 0.35,
+    },
     characterBoundary: 28,
     cameraBuffer: 2,
     characterSpeed: 0.1,

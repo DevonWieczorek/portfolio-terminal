@@ -18,6 +18,8 @@ type LightingControls = {
 const AMBIENT_INTENSITY = 0.6;
 const KEY_INTENSITY = 0.8;
 const FIXTURE_INTENSITY = 30;
+// Softens the edge of the fixtures' cone where it meets the top of the walls
+const FIXTURE_PENUMBRA = 0.03;
 // Light bounced back up off the wood floor
 const FLOOR_BOUNCE_COLOR = "#3d3833";
 // Renders have no camera white balance, so a pure black-body color tints the
@@ -39,15 +41,17 @@ type FixtureLightProps = {
     position: [number, number, number];
     color: Color;
     intensity: number;
+    angle: number;
 };
 
-// A downlight that lights the whole hemisphere below it, matching a point
-// light there, but leaves the ceiling just above it unlit instead of
-// blowing it out. The soft edge fades the light out near the tops of the
-// walls instead of cutting it off.
-const FIXTURE_PENUMBRA = 0.1;
-
-const FixtureLight = ({ position, color, intensity }: FixtureLightProps) => {
+// A downlight that lights everything a point light there would, except the
+// ceiling just above it, which a point light this close would blow out
+const FixtureLight = ({
+    position,
+    color,
+    intensity,
+    angle,
+}: FixtureLightProps) => {
     const target = useMemo(() => new Object3D(), []);
     const [x, , z] = position;
 
@@ -58,7 +62,7 @@ const FixtureLight = ({ position, color, intensity }: FixtureLightProps) => {
                 target={target}
                 color={color}
                 intensity={intensity}
-                angle={Math.PI / 2}
+                angle={angle}
                 penumbra={FIXTURE_PENUMBRA}
                 decay={2}
             />
@@ -70,7 +74,7 @@ const FixtureLight = ({ position, color, intensity }: FixtureLightProps) => {
 };
 
 const Lights = memo(() => {
-    const { lighting, wallHeight, roomSize } = useScene();
+    const { lighting, wallHeight, wallThickness, roomSize } = useScene();
     const shadowExtent = roomSize / 2 + SHADOW_MARGIN;
 
     let brightness: number, temperature: number, environmentIntensity: number;
@@ -143,15 +147,28 @@ const Lights = memo(() => {
                 shadow-normalBias={0.02}
             />
 
-            {/* Ceiling fixtures */}
-            {lighting.fixtures.map(({ x, y, z }) => (
-                <FixtureLight
-                    key={`${x},${z}`}
-                    position={[x, y, z]}
-                    color={color}
-                    intensity={FIXTURE_INTENSITY * brightness}
-                />
-            ))}
+            {/* Ceiling fixtures. Each cone opens just past horizontal so it
+                reaches the top of the nearest wall; the ceiling only falls
+                inside it beyond that distance, where the light just grazes it. */}
+            {lighting.fixtures.map(({ x, y, z }) => {
+                const wallFace = (roomSize - wallThickness) / 2;
+                const wallDistance = Math.min(
+                    wallFace - Math.abs(x),
+                    wallFace - Math.abs(z)
+                );
+                const angle =
+                    Math.PI / 2 + Math.atan((wallHeight - y) / wallDistance);
+
+                return (
+                    <FixtureLight
+                        key={`${x},${z}`}
+                        position={[x, y, z]}
+                        color={color}
+                        intensity={FIXTURE_INTENSITY * brightness}
+                        angle={angle}
+                    />
+                );
+            })}
 
             {/* Rendered once into a cube map, so remount it when the color
                 changes to rebake the reflections */}

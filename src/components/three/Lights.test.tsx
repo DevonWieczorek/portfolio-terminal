@@ -15,7 +15,7 @@ describe("Lights", () => {
 
         expect(container.querySelectorAll("hemispherelight")).toHaveLength(1);
         expect(container.querySelectorAll("directionallight")).toHaveLength(1);
-        expect(container.querySelectorAll("pointlight")).toHaveLength(4);
+        expect(container.querySelectorAll("spotlight")).toHaveLength(4);
     });
 
     it("bakes a panel per fixture plus two rims into the environment", () => {

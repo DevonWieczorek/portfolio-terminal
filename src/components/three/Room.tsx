@@ -23,6 +23,9 @@ type SurfaceControls = {
     wallTileSize: number;
     wallRoughness: number;
     wallNormalScale: number;
+    ceilingColor: string;
+    ceilingRoughness: number;
+    ceilingBounce: number;
 };
 
 interface RoomProps {
@@ -37,6 +40,7 @@ const Room = memo(({ onReady }: RoomProps) => {
         wallThickness,
         floorSurface,
         wallSurface,
+        ceilingSurface,
     } = useScene();
     const { setMessage } = useMessage();
 
@@ -45,7 +49,10 @@ const Room = memo(({ onReady }: RoomProps) => {
         floorNormalScale: number,
         wallTileSize: number,
         wallRoughness: number,
-        wallNormalScale: number;
+        wallNormalScale: number,
+        ceilingColor: string,
+        ceilingRoughness: number,
+        ceilingBounce: number;
 
     // #if DEBUG
     ({
@@ -55,6 +62,9 @@ const Room = memo(({ onReady }: RoomProps) => {
         wallTileSize,
         wallRoughness,
         wallNormalScale,
+        ceilingColor,
+        ceilingRoughness,
+        ceilingBounce,
     } = useControls(
         "Surfaces",
         {
@@ -94,6 +104,19 @@ const Room = memo(({ onReady }: RoomProps) => {
                 max: 2,
                 step: 0.05,
             },
+            ceilingColor: ceilingSurface.color,
+            ceilingRoughness: {
+                value: ceilingSurface.roughness,
+                min: 0,
+                max: 1,
+                step: 0.05,
+            },
+            ceilingBounce: {
+                value: ceilingSurface.bounce,
+                min: 0,
+                max: 1,
+                step: 0.01,
+            },
         },
         { collapsed: true }
     ) as SurfaceControls);
@@ -106,6 +129,9 @@ const Room = memo(({ onReady }: RoomProps) => {
     wallTileSize = wallSurface.tileSize;
     wallRoughness = wallSurface.roughness;
     wallNormalScale = wallSurface.normalScale;
+    ceilingColor = ceilingSurface.color;
+    ceilingRoughness = ceilingSurface.roughness;
+    ceilingBounce = ceilingSurface.bounce;
     // #endif
 
     // Box UVs span each face once, so the repeat count is the face size over
@@ -196,6 +222,19 @@ const Room = memo(({ onReady }: RoomProps) => {
                     roughness={wallRoughness}
                     normalScale={wallNormalScale}
                     color={wallColor}
+                />
+            </mesh>
+
+            {/* Ceiling: a single-sided plane facing down, so it's culled
+                whenever the camera rises above it. It doesn't cast shadows,
+                which would block the overhead key light. */}
+            <mesh position={[0, wallHeight, 0]} rotation={[Math.PI / 2, 0, 0]}>
+                <planeGeometry args={[roomSize, roomSize]} />
+                <meshStandardMaterial
+                    color={ceilingColor}
+                    roughness={ceilingRoughness}
+                    emissive={ceilingColor}
+                    emissiveIntensity={ceilingBounce}
                 />
             </mesh>
         </group>

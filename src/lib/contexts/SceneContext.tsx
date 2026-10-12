@@ -75,6 +75,14 @@ interface SurfaceTraits {
     normalScale: number;
 }
 
+// Flat-painted ceiling with no texture. It sits above every light, so
+// `bounce` self-illuminates it to stand in for light reflected up off the room.
+interface CeilingTraits {
+    color: string;
+    roughness: number;
+    bounce: number;
+}
+
 interface Rotations {
     clockwise: number;
     counterclockwise: number;
@@ -303,6 +311,7 @@ interface SceneConfig {
     wallThickness: number;
     floorSurface: SurfaceTraits;
     wallSurface: SurfaceTraits;
+    ceilingSurface: CeilingTraits;
     characterBoundary: number;
     cameraBuffer: number;
     characterSpeed: number;
@@ -338,6 +347,11 @@ const defaultSceneConfig: SceneConfig = {
     wallThickness: WALL_THICKNESS,
     floorSurface: defaultFloorSurface,
     wallSurface: defaultWallSurface,
+    ceilingSurface: {
+        color: "#F7F6F2",
+        roughness: 0.9,
+        bounce: 0.4,
+    },
     characterHeight: scaledHeight(6),
     characterAppearance: {
         skinColor: "#fccfaf",
