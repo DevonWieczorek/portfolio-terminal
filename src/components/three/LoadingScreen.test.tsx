@@ -9,6 +9,7 @@ import {
 } from "../../../__mocks__/threeTestHarness";
 import LoadingScreen, {
     labelForAsset,
+    LINE_STAGGER_MS,
     REVEAL_DURATION_MS,
 } from "./LoadingScreen";
 
@@ -40,8 +41,38 @@ describe("LoadingScreen", () => {
 
         act(() => setProgress({ item: "/img/duck-hunt-deck.jpg" }));
         act(() => setProgress({ item: "/img/manson-deck.png" }));
+        act(() => {
+            jest.advanceTimersByTime(LINE_STAGGER_MS * 2);
+        });
 
         expect(screen.getAllByText(/waxing skate decks/)).toHaveLength(1);
+    });
+
+    it("prints lines that load together one at a time", () => {
+        const { rerender } = render(<LoadingScreen isReady={false} />);
+
+        act(() => setProgress({ item: "/models/l_shaped_desk.glb" }));
+        act(() => setProgress({ item: "/models/monitor.glb" }));
+        rerender(<LoadingScreen isReady />);
+
+        expect(screen.queryByText(/assembling desk/)).not.toBeInTheDocument();
+
+        act(() => {
+            jest.advanceTimersByTime(LINE_STAGGER_MS);
+        });
+
+        expect(screen.getByText(/assembling desk/)).toBeInTheDocument();
+        expect(
+            screen.queryByText(/plugging in monitor/)
+        ).not.toBeInTheDocument();
+        expect(screen.queryByText(/welcome in/)).not.toBeInTheDocument();
+
+        act(() => {
+            jest.advanceTimersByTime(LINE_STAGGER_MS);
+        });
+
+        expect(screen.getByText(/plugging in monitor/)).toBeInTheDocument();
+        expect(screen.getByText(/welcome in/)).toBeInTheDocument();
     });
 
     it("holds progress below 100 until the room is ready", () => {
