@@ -1,4 +1,5 @@
 import { memo } from "react";
+import { RoundedBox } from "@react-three/drei";
 // #if DEBUG
 import { useControls } from "leva";
 // #endif
@@ -45,7 +46,10 @@ const Baseboards = memo(() => {
                 >
                     {/* Offset so the run rests on the floor with its back
                         flush against the wall */}
-                    <mesh
+                    <RoundedBox
+                        args={[length, baseboardHeight, baseboard.thickness]}
+                        radius={baseboard.bevelRadius}
+                        smoothness={2}
                         position={[
                             0,
                             baseboardHeight / 2,
@@ -53,18 +57,11 @@ const Baseboards = memo(() => {
                         ]}
                         receiveShadow
                     >
-                        <boxGeometry
-                            args={[
-                                length,
-                                baseboardHeight,
-                                baseboard.thickness,
-                            ]}
-                        />
                         <meshStandardMaterial
                             color={baseboardColor}
                             roughness={0.5}
                         />
-                    </mesh>
+                    </RoundedBox>
                 </group>
             ))}
         </group>

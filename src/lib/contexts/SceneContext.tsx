@@ -85,6 +85,7 @@ interface BaseboardTraits {
     runs: WallRun[];
     height: number;
     thickness: number;
+    bevelRadius: number;
     color: string;
 }
 
@@ -262,6 +263,7 @@ const defaultBaseboardTraits: BaseboardTraits = {
     ],
     height: BASEBOARD_HEIGHT,
     thickness: BASEBOARD_THICKNESS,
+    bevelRadius: BASEBOARD_THICKNESS * 0.25,
     color: "#FFFDF7",
 };
 

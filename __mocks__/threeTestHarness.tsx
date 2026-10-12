@@ -137,6 +137,7 @@ export const sceneState = {
         ],
         height: 0.6,
         thickness: 0.15,
+        bevelRadius: 0.04,
         color: "#FFFDF7",
     },
     rug: {
