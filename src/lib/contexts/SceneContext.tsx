@@ -20,6 +20,12 @@ interface GlowTraits {
     intensity: number; // HDR multiplier; values above the bloom threshold glow
 }
 
+interface LightingSettings {
+    brightness: number; // multiplier applied to every light in the room
+    temperature: number; // color temperature in Kelvin; lower is warmer
+    fixtures: Coordinates[]; // ceiling-mounted light positions
+}
+
 interface EffectsSettings {
     bloomIntensity: number;
     bloomThreshold: number;
@@ -164,6 +170,22 @@ const defaultMonitorScreenTraits: DeepPartial<ObjectTraits & GlowTraits> = {
     intensity: 1.6,
 };
 
+// Overhead lighting: a 2x2 grid of ceiling fixtures, each centered in a
+// quadrant of the room, at a warm-white residential color temperature
+const FIXTURE_Y: number = scaledHeight(ROOM_HEIGHT - 0.5);
+const FIXTURE_SPREAD: number = scaledFeet(7);
+const defaultLightingSettings: LightingSettings = {
+    brightness: 1.35,
+    temperature: 5000,
+    fixtures: [-1, 1].flatMap(x =>
+        [-1, 1].map(z => ({
+            x: x * FIXTURE_SPREAD,
+            y: FIXTURE_Y,
+            z: z * FIXTURE_SPREAD,
+        }))
+    ),
+};
+
 // Only HDR colors (LEDs, screens) should exceed the threshold, so regular lit
 // surfaces never bloom
 const defaultEffectsSettings: EffectsSettings = {
@@ -244,6 +266,7 @@ interface SceneConfig {
     desk: DeepPartial<ObjectTraits>;
     monitor: DeepPartial<ObjectTraits>;
     monitorScreen: DeepPartial<ObjectTraits & GlowTraits>;
+    lighting: LightingSettings;
     effects: EffectsSettings;
     bass: DeepPartial<ObjectTraits>;
     deck: DeepPartial<ObjectTraits>;
@@ -274,6 +297,7 @@ const defaultSceneConfig: SceneConfig = {
     desk: defaultDeskTraits,
     monitor: defaultMonitorTraits,
     monitorScreen: defaultMonitorScreenTraits,
+    lighting: defaultLightingSettings,
     effects: defaultEffectsSettings,
     bass: defaultBassTraits,
     deck: defaultDeckTraits,

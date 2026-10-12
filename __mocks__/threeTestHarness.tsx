@@ -88,6 +88,16 @@ export const sceneState = {
         color: "#00ff00",
         intensity: 1.6,
     },
+    lighting: {
+        brightness: 1,
+        temperature: 3000,
+        fixtures: [
+            { x: -7, y: 11.5, z: -7 },
+            { x: -7, y: 11.5, z: 7 },
+            { x: 7, y: 11.5, z: -7 },
+            { x: 7, y: 11.5, z: 7 },
+        ],
+    },
     effects: {
         bloomIntensity: 1.2,
         bloomThreshold: 1,
