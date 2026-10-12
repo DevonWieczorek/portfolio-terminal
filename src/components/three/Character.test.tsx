@@ -58,4 +58,13 @@ describe("Character", () => {
             })
         );
     });
+
+    it("ignores movement keys while input is disabled", () => {
+        renderWithTransforms(<Character inputEnabled={false} />);
+        keyboardState.forward = true;
+
+        runFrameCallbacks(0, 1 / 60);
+
+        expect(movementState.setPosition).not.toHaveBeenCalled();
+    });
 });

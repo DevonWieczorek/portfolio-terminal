@@ -42,9 +42,10 @@ type Phase = "loading" | "revealing" | "done";
 
 interface LoadingScreenProps {
     isReady: boolean;
+    onReveal?: () => void;
 }
 
-const LoadingScreen = memo(({ isReady }: LoadingScreenProps) => {
+const LoadingScreen = memo(({ isReady, onReveal }: LoadingScreenProps) => {
     const { loaderMinDuration } = useScene();
     const { progress, item } = useProgress();
     const mountedAt = useRef(0);
@@ -84,10 +85,10 @@ const LoadingScreen = memo(({ isReady }: LoadingScreenProps) => {
         }
         const elapsed = performance.now() - mountedAt.current;
         const wait = Math.max(0, loaderMinDuration - elapsed);
-        const revealTimeout = window.setTimeout(
-            () => setPhase("revealing"),
-            wait
-        );
+        const revealTimeout = window.setTimeout(() => {
+            setPhase("revealing");
+            onReveal?.();
+        }, wait);
         const doneTimeout = window.setTimeout(
             () => setPhase("done"),
             wait + REVEAL_DURATION_MS
@@ -96,7 +97,7 @@ const LoadingScreen = memo(({ isReady }: LoadingScreenProps) => {
             window.clearTimeout(revealTimeout);
             window.clearTimeout(doneTimeout);
         };
-    }, [isLogDone, loaderMinDuration]);
+    }, [isLogDone, loaderMinDuration, onReveal]);
 
     if (phase === "done") {
         return null;

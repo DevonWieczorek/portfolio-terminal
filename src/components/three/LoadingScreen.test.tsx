@@ -127,4 +127,21 @@ describe("LoadingScreen", () => {
 
         expect(screen.getByRole("status")).toHaveClass("revealing");
     });
+
+    it("notifies when the reveal starts", () => {
+        const onReveal = jest.fn();
+        render(<LoadingScreen isReady onReveal={onReveal} />);
+
+        act(() => {
+            jest.advanceTimersByTime(sceneState.loaderMinDuration - 1);
+        });
+
+        expect(onReveal).not.toHaveBeenCalled();
+
+        act(() => {
+            jest.advanceTimersByTime(1);
+        });
+
+        expect(onReveal).toHaveBeenCalledTimes(1);
+    });
 });

@@ -105,7 +105,12 @@ const BodyPart = ({ size, position, color, roughness }: BodyPartProps) => (
     </RoundedBox>
 );
 
-const Character = memo(() => {
+interface CharacterProps {
+    // False while the loading screen still covers the room
+    inputEnabled?: boolean;
+}
+
+const Character = memo(({ inputEnabled = true }: CharacterProps) => {
     const characterRef = useRef<THREE.Group>(null);
     const [subscribe, getKeys] = useKeyboardControls<Controls>();
     // Subscribe only to the slices used by this component.
@@ -125,7 +130,7 @@ const Character = memo(() => {
     const mode = useExperience(state => state.mode);
     const isTransitioning = useExperience(state => state.isTransitioning);
 
-    const allowMovement = mode === "scene" && !isTransitioning;
+    const allowMovement = inputEnabled && mode === "scene" && !isTransitioning;
 
     let height: number,
         speed: number,
