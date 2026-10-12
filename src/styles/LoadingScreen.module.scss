@@ -1,0 +1,278 @@
+$backdrop: #f3eee6;
+$backdrop-edge: #e4dccf;
+$shell: #6fb3b8;
+$shell-dark: #4f8f94;
+$screen: #1b1f1d;
+$phosphor: #8ef0a6;
+$ink: #3a3631;
+$segment-empty: #e2dacd;
+$bounce: cubic-bezier(0.34, 1.56, 0.64, 1);
+$flash: #e9fff0;
+
+.overlay {
+    position: absolute;
+    inset: 0;
+    // Above the scene message banner so it's uncovered by the reveal.
+    z-index: 1001;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    gap: 1.5rem;
+    background: radial-gradient(
+        circle at 50% 40%,
+        $backdrop 55%,
+        $backdrop-edge
+    );
+    color: $ink;
+    font-family: "Courier New", Courier, monospace;
+    pointer-events: none;
+    will-change: opacity;
+}
+
+// Zoom and idle bob live on separate elements so the reveal composes with
+// the bob instead of snapping out of it. Only transform/opacity animate, so
+// everything stays on the compositor.
+.toy {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    // Centre of the screen, so the zoom flies straight through it
+    transform-origin: 50% 42%;
+    will-change: transform;
+}
+
+.body {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    animation: bob 1.6s ease-in-out infinite;
+}
+
+.monitor {
+    width: min(22rem, 80vw);
+    padding: 1rem;
+    border-radius: 1.5rem;
+    background: $shell;
+    box-shadow:
+        inset 0 0.35rem 0 rgba(255, 255, 255, 0.35),
+        inset 0 -0.5rem 0 $shell-dark,
+        0 0.75rem 1.5rem rgba(58, 54, 49, 0.18);
+}
+
+.screen {
+    position: relative;
+    height: 9.5rem;
+    padding: 0.75rem 0.9rem;
+    border-radius: 0.9rem;
+    background: $screen;
+    color: $phosphor;
+    font-size: 0.8rem;
+    line-height: 1.5;
+    overflow: hidden;
+    text-shadow: 0 0 0.4rem rgba(142, 240, 166, 0.45);
+    box-shadow: inset 0 0 1.25rem rgba(0, 0, 0, 0.6);
+}
+
+.line {
+    display: flex;
+    justify-content: space-between;
+    gap: 1ch;
+    margin: 0;
+    white-space: nowrap;
+    animation: typeIn 0.25s ease-out both;
+
+    > :first-child {
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+}
+
+.flash {
+    position: absolute;
+    inset: 0;
+    background: $flash;
+    opacity: 0;
+}
+
+.status {
+    flex-shrink: 0;
+    opacity: 0.7;
+}
+
+.cursor {
+    display: inline-block;
+    width: 0.55em;
+    height: 1em;
+    background: $phosphor;
+    animation: blink 1s steps(1) infinite;
+}
+
+.stand {
+    width: 4rem;
+    height: 1.25rem;
+    background: $shell-dark;
+    border-radius: 0 0 0.6rem 0.6rem;
+}
+
+.shadow {
+    position: absolute;
+    bottom: -1.25rem;
+    width: 70%;
+    height: 1rem;
+    background: radial-gradient(
+        closest-side,
+        rgba(58, 54, 49, 0.22),
+        rgba(58, 54, 49, 0)
+    );
+    animation: shadowPulse 1.6s ease-in-out infinite;
+}
+
+.progress {
+    display: flex;
+    gap: 0.4rem;
+    margin-top: 1.5rem;
+}
+
+.segment {
+    width: 1.4rem;
+    height: 0.9rem;
+    border-radius: 0.45rem;
+    background: $segment-empty;
+    box-shadow: inset 0 -0.15rem 0 rgba(58, 54, 49, 0.08);
+    transition: background-color 0.2s ease;
+}
+
+.filled {
+    background: $shell;
+    box-shadow: inset 0 -0.2rem 0 $shell-dark;
+    animation: pop 0.35s $bounce;
+}
+
+.percent {
+    margin: 0;
+    font-size: 0.85rem;
+    letter-spacing: 0.1em;
+    opacity: 0.7;
+}
+
+// Fly out through the monitor screen into the room.
+.revealing {
+    animation: overlayFade var(--reveal-duration) linear forwards;
+
+    .toy {
+        animation: zoomThrough var(--reveal-duration) forwards;
+    }
+
+    .flash {
+        animation: flashOn var(--reveal-duration) linear forwards;
+    }
+
+    .shadow,
+    .progress,
+    .percent {
+        animation: dropAway calc(var(--reveal-duration) / 3) ease-in forwards;
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .body,
+    .shadow,
+    .line,
+    .filled,
+    .cursor {
+        animation: none;
+    }
+
+    .revealing .toy,
+    .revealing .flash {
+        animation: none;
+    }
+}
+
+@keyframes bob {
+    0%,
+    100% {
+        transform: translateY(0) scale(1, 1);
+    }
+    50% {
+        transform: translateY(-0.4rem) scale(0.985, 1.015);
+    }
+}
+
+@keyframes shadowPulse {
+    0%,
+    100% {
+        transform: scaleX(1);
+        opacity: 1;
+    }
+    50% {
+        transform: scaleX(0.85);
+        opacity: 0.7;
+    }
+}
+
+@keyframes typeIn {
+    from {
+        opacity: 0;
+        transform: translateX(-0.4rem);
+    }
+}
+
+@keyframes blink {
+    50% {
+        opacity: 0;
+    }
+}
+
+@keyframes pop {
+    from {
+        transform: scale(0.6);
+    }
+}
+
+// A small anticipation dip, then an accelerating push into the screen.
+@keyframes zoomThrough {
+    0% {
+        transform: scale(1);
+        animation-timing-function: cubic-bezier(0.33, 0, 0.67, 1);
+    }
+    16% {
+        transform: scale(0.95);
+        animation-timing-function: cubic-bezier(0.5, 0, 0.75, 0);
+    }
+    100% {
+        transform: scale(10);
+    }
+}
+
+@keyframes flashOn {
+    0%,
+    15% {
+        opacity: 0;
+        animation-timing-function: ease-in;
+    }
+    55%,
+    100% {
+        opacity: 1;
+    }
+}
+
+@keyframes overlayFade {
+    0%,
+    40% {
+        opacity: 1;
+        animation-timing-function: cubic-bezier(0.45, 0, 0.55, 1);
+    }
+    100% {
+        opacity: 0;
+    }
+}
+
+@keyframes dropAway {
+    to {
+        opacity: 0;
+        transform: translateY(0.5rem);
+    }
+}

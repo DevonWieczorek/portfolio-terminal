@@ -78,6 +78,44 @@ Use `SceneContext` (`src/lib/contexts/SceneContext.tsx`) as the single source of
 Do not hardcode these values in components; read them via `useScene()` and use the existing helpers (e.g. `scaledFeet`, `feetFromWall`, `wallFaces`) where applicable.
 Any new adjustable prop added to `SceneContext` must also have a corresponding Leva control in debug mode, following the existing `// #if DEBUG` / `// #if !DEBUG` pattern (see `Desk.tsx`): `useControls` seeded from the context value under `#if DEBUG`, and a fallback to the plain context value under `#if !DEBUG`.
 
+## Visual Style & Art Direction
+
+The scene should feel like a **fun, cartoony, toy-like room**: playful and inviting, but cohesive and grounded. Nothing should look like a debug primitive or a sticker pasted on top of the scene.
+
+### Overall feel
+- Think "stylized diorama" or "toy box". Simple chunky shapes and friendly proportions, lit by believable soft light.
+- Stylization comes from **shape, color and motion**, not from mixing rendering styles. Every object shares one lighting model, so things feel like they belong together.
+- The room should feel lived-in and cozy. Avoid sterile, clinical or overly bright looks, and avoid heavy orange/yellow warmth.
+
+### Lighting & color
+- Light is **slightly warm, close to neutral** (~5600K, blended toward white). It should never read as blue, and never as heavy amber.
+- Surfaces are off-white and soft (warm off-white walls rather than yellow beige, wood floor).
+- Accent colors (character clothing, instruments, decks) can be bright and saturated for fun. They should still be lit by the room's lights, so they pick up its shading and warmth.
+- Avoid pure black (`#000`) and pure white on lit surfaces unless intentional. Soft near-blacks and off-whites sit better in the scene.
+- Glow/bloom is reserved for genuine light sources (screens, LEDs). Ordinary lit surfaces should never bloom.
+- Reflections are subtle. Pastel rim highlights from the environment map give rounded edges a cartoon-style two-tone sheen.
+
+### Materials & geometry
+- Use `meshStandardMaterial` (PBR) for everything visible. Don't use Lambert/Phong/Basic for lit objects. Mismatched shading models are the #1 cause of things looking out of place.
+- Prefer fairly matte surfaces (roughness ~0.7–0.9) for a soft, painted-toy feel.
+- Give hard-edged primitives a slight bevel (e.g. drei `RoundedBox`) so edges catch highlights like the GLTF models do.
+- Keep silhouettes simple and blocky/chunky. Detail comes from color and light, not from geometric complexity.
+
+### Grounding
+- Objects should cast **and** receive shadows where appropriate, so parts shade each other.
+- Characters and props that touch the floor need contact grounding (shadow or blob shadow), so they never look like they're floating.
+- Screen-space ambient occlusion (N8AO) adds soft corner/contact darkening. Don't fight it.
+
+### Motion
+- Movement should feel bouncy and alive, never rigid or sliding. Examples: procedural walk cycles with limb swing and a small bob, idle breathing, eased starts and stops.
+- Keep animation subtle enough not to be distracting. It should be cheap too: procedural, in `useFrame`, with no per-frame allocations.
+
+### Avoid
+- Applying toon shading or outlines to a single object. Stylization like that must be scene-wide or not at all.
+- Flat, unlit colors on objects that sit in the lit room.
+- Saturated "UI" colors on large surfaces (walls, floor, ceiling).
+- Lights placed or shaped so they blow out nearby surfaces (e.g. point lights right under the ceiling).
+
 # Current Task for Agent
 
 Update the hosting for this project from Heroku to Vercel.

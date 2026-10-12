@@ -1,6 +1,6 @@
-import { memo, useRef, useEffect } from "react";
+import { memo, useRef, useEffect, useMemo } from "react";
 import { useFrame } from "@react-three/fiber";
-import { useKeyboardControls } from "@react-three/drei";
+import { RoundedBox, useKeyboardControls } from "@react-three/drei";
 import * as THREE from "three";
 // #if DEBUG
 import { useControls } from "leva";
@@ -23,6 +23,81 @@ const POSITION_EPSILON = 1e-5;
 // the top of the head (y = 2.4) in local units.
 const MODEL_FEET_Y = -1.3;
 const MODEL_HEIGHT = 3.7;
+// Limbs hang from these joints so they swing from the shoulder and hip
+const SHOULDER_Y = 1.1;
+const HIP_Y = -0.3;
+const ARM_LENGTH = 1.2;
+const LEG_LENGTH = 1;
+// Slight bevel so edges catch highlights like the room's models do
+const EDGE_RADIUS = 0.06;
+
+// Walk cycle, in radians per second and local model units
+const STRIDE_FREQUENCY = 10;
+const MAX_LIMB_SWING = 0.6;
+const BOB_HEIGHT = 0.1;
+const WALK_BLEND_RATE = 10;
+const BREATH_FREQUENCY = 2;
+// Idle swell, as a fraction of body height. The walking squash and stretch
+// amount comes from SceneContext.
+const BREATH_SQUASH = 0.025;
+
+const BLOB_SHADOW_RADIUS = 1;
+const BLOB_SHADOW_OPACITY = 0.35;
+const BLOB_SHADOW_VERTEX = /* glsl */ `
+    varying vec2 vUv;
+    void main() {
+        vUv = uv;
+        gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
+    }
+`;
+const BLOB_SHADOW_FRAGMENT = /* glsl */ `
+    uniform float uOpacity;
+    varying vec2 vUv;
+    void main() {
+        float falloff = 1.0 - smoothstep(0.0, 1.0, length(vUv - 0.5) * 2.0);
+        gl_FragColor = vec4(0.0, 0.0, 0.0, falloff * uOpacity);
+    }
+`;
+
+type Vec3 = [number, number, number];
+
+// Eyes and mouth, set just proud of the head's front face
+const FACE_FEATURES: { position: Vec3; size: Vec3 }[] = [
+    { position: [-0.15, 2.1, -0.41], size: [0.1, 0.1, 0.02] },
+    { position: [0.15, 2.1, -0.41], size: [0.1, 0.1, 0.02] },
+    { position: [0, 1.9, -0.41], size: [0.2, 0.05, 0.02] },
+];
+
+type CharacterControls = {
+    characterHeight: number;
+    characterSpeed: number;
+    stepSquash: number;
+    skinColor: string;
+    shirtColor: string;
+    pantsColor: string;
+    featureColor: string;
+    roughness: number;
+};
+
+type BodyPartProps = {
+    size: Vec3;
+    position: Vec3;
+    color: string;
+    roughness: number;
+};
+
+const BodyPart = ({ size, position, color, roughness }: BodyPartProps) => (
+    <RoundedBox
+        args={size}
+        radius={EDGE_RADIUS}
+        smoothness={3}
+        position={position}
+        castShadow
+        receiveShadow
+    >
+        <meshStandardMaterial color={color} roughness={roughness} />
+    </RoundedBox>
+);
 
 const Character = memo(() => {
     const characterRef = useRef<THREE.Group>(null);
@@ -30,8 +105,14 @@ const Character = memo(() => {
     // Subscribe only to the slices used by this component.
     const position = useMovement(state => state.position);
     const setPosition = useMovement(state => state.setPosition);
-    const { characterSpeed, characterBoundary, characterHeight, desk } =
-        useScene();
+    const {
+        characterSpeed,
+        characterStepSquash,
+        characterBoundary,
+        characterHeight,
+        characterAppearance,
+        desk,
+    } = useScene();
     const { message, clearMessage } = useMessage();
     // Use individual selectors to prevent unnecessary rerenders
     const mode = useExperience(state => state.mode);
@@ -39,10 +120,26 @@ const Character = memo(() => {
 
     const allowMovement = mode === "scene" && !isTransitioning;
 
-    let height: number;
+    let height: number,
+        speed: number,
+        stepSquash: number,
+        skinColor: string,
+        shirtColor: string,
+        pantsColor: string,
+        featureColor: string,
+        roughness: number;
 
     // #if DEBUG
-    ({ characterHeight: height } = useControls(
+    ({
+        characterHeight: height,
+        characterSpeed: speed,
+        stepSquash,
+        skinColor,
+        shirtColor,
+        pantsColor,
+        featureColor,
+        roughness,
+    } = useControls(
         "Character",
         {
             characterHeight: {
@@ -51,13 +148,39 @@ const Character = memo(() => {
                 max: 12,
                 step: 0.01,
             },
+            characterSpeed: {
+                value: characterSpeed,
+                min: 0.01,
+                max: 1,
+                step: 0.01,
+            },
+            stepSquash: {
+                value: characterStepSquash,
+                min: 0,
+                max: 0.2,
+                step: 0.005,
+            },
+            skinColor: characterAppearance.skinColor,
+            shirtColor: characterAppearance.shirtColor,
+            pantsColor: characterAppearance.pantsColor,
+            featureColor: characterAppearance.featureColor,
+            roughness: {
+                value: characterAppearance.roughness,
+                min: 0,
+                max: 1,
+                step: 0.05,
+            },
         },
         { collapsed: true }
-    ) as { characterHeight: number });
+    ) as CharacterControls);
     // #endif
 
     // #if !DEBUG
     height = characterHeight;
+    speed = characterSpeed;
+    stepSquash = characterStepSquash;
+    ({ skinColor, shirtColor, pantsColor, featureColor, roughness } =
+        characterAppearance);
     // #endif
 
     // Scale the avatar to the configured height and lift it so its feet rest
@@ -66,9 +189,6 @@ const Character = memo(() => {
     const characterScale = height / MODEL_HEIGHT;
     const bodyY = -MODEL_FEET_Y * characterScale;
 
-    // Movement speed from context
-    const speed = characterSpeed;
-
     // Room boundaries from context
     const boundary = characterBoundary / 2;
 
@@ -76,6 +196,20 @@ const Character = memo(() => {
     const targetRotation = useRef(0);
     const currentRotation = useRef(0);
     const hasClearedIntro = useRef(false);
+
+    const bodyRef = useRef<THREE.Group>(null);
+    const leftArmRef = useRef<THREE.Group>(null);
+    const rightArmRef = useRef<THREE.Group>(null);
+    const leftLegRef = useRef<THREE.Group>(null);
+    const rightLegRef = useRef<THREE.Group>(null);
+    const stridePhase = useRef(0);
+    // 0 when standing still, 1 at full stride, eased between the two
+    const walkBlend = useRef(0);
+
+    const blobShadowUniforms = useMemo(
+        () => ({ uOpacity: { value: BLOB_SHADOW_OPACITY } }),
+        []
+    );
 
     useEffect(() => {
         const initialRotation = Math.PI;
@@ -151,9 +285,54 @@ const Character = memo(() => {
         return horizCollision || vertCollision;
     };
 
+    // Animates the limbs: a walk cycle while moving that eases into an idle
+    // breathing loop when standing still
+    const animateBody = (isMoving: boolean, elapsed: number, delta: number) => {
+        walkBlend.current = THREE.MathUtils.damp(
+            walkBlend.current,
+            isMoving ? 1 : 0,
+            WALK_BLEND_RATE,
+            delta
+        );
+        if (isMoving) {
+            stridePhase.current += STRIDE_FREQUENCY * delta;
+        }
+
+        const blend = walkBlend.current;
+        const swing = Math.sin(stridePhase.current) * MAX_LIMB_SWING * blend;
+        const stepHeight = Math.abs(Math.sin(stridePhase.current));
+        const bob = stepHeight * BOB_HEIGHT;
+        // Compress as a foot lands, stretch at the top of the step
+        const stepStretch = (stepHeight * 2 - 1) * stepSquash;
+        const breathStretch =
+            Math.sin(elapsed * BREATH_FREQUENCY) * BREATH_SQUASH;
+        const stretch = stepStretch * blend + breathStretch * (1 - blend);
+
+        if (leftArmRef.current) leftArmRef.current.rotation.x = swing;
+        if (rightArmRef.current) rightArmRef.current.rotation.x = -swing;
+        if (leftLegRef.current) leftLegRef.current.rotation.x = -swing;
+        if (rightLegRef.current) rightLegRef.current.rotation.x = swing;
+        if (bodyRef.current) {
+            // Thin out as it stretches so the volume reads as constant
+            bodyRef.current.scale.set(
+                1 - stretch / 2,
+                1 + stretch,
+                1 - stretch / 2
+            );
+            // Scaling pivots on the body's origin, so shift it to keep the
+            // feet planted
+            bodyRef.current.position.y = bob * blend - MODEL_FEET_Y * stretch;
+        }
+    };
+
     // Movement and collision detection
-    useFrame(() => {
-        if (!characterRef.current || !allowMovement) return;
+    useFrame((state, delta) => {
+        if (!characterRef.current) return;
+
+        if (!allowMovement) {
+            animateBody(false, state.clock.elapsedTime, delta);
+            return;
+        }
 
         const keys = getKeys();
         // Reuse position object to avoid creating new object every frame
@@ -238,6 +417,7 @@ const Character = memo(() => {
         }
 
         characterRef.current.position.set(newPosition.x, bodyY, newPosition.z);
+        animateBody(isMoving, state.clock.elapsedTime, delta);
     });
 
     return (
@@ -245,61 +425,89 @@ const Character = memo(() => {
             ref={characterRef}
             scale={[characterScale, characterScale, characterScale]}
             position={[position.x, bodyY, position.z]}
-            castShadow
         >
-            {/* Head */}
-            <mesh position={[0, 2, 0]} castShadow>
-                <boxGeometry args={[0.8, 0.8, 0.8]} />
-                <meshLambertMaterial color="#fdbcb4" />
+            {/* Soft contact shadow so the feet read as planted on the floor;
+                it sits outside the body group so it doesn't bob */}
+            <mesh
+                position={[0, MODEL_FEET_Y + 0.02, 0]}
+                rotation={[-Math.PI / 2, 0, 0]}
+                renderOrder={1}
+            >
+                <planeGeometry
+                    args={[BLOB_SHADOW_RADIUS * 2, BLOB_SHADOW_RADIUS * 2]}
+                />
+                <shaderMaterial
+                    uniforms={blobShadowUniforms}
+                    vertexShader={BLOB_SHADOW_VERTEX}
+                    fragmentShader={BLOB_SHADOW_FRAGMENT}
+                    transparent
+                    depthWrite={false}
+                />
             </mesh>
 
-            {/* Left Eye */}
-            <mesh position={[-0.15, 2.1, -0.41]} castShadow>
-                <boxGeometry args={[0.1, 0.1, 0.02]} />
-                <meshLambertMaterial color="#000000" />
-            </mesh>
+            <group ref={bodyRef}>
+                <BodyPart
+                    size={[0.8, 0.8, 0.8]}
+                    position={[0, 2, 0]}
+                    color={skinColor}
+                    roughness={roughness}
+                />
 
-            {/* Right Eye */}
-            <mesh position={[0.15, 2.1, -0.41]} castShadow>
-                <boxGeometry args={[0.1, 0.1, 0.02]} />
-                <meshLambertMaterial color="#000000" />
-            </mesh>
+                {FACE_FEATURES.map(({ position: featurePosition, size }) => (
+                    <mesh
+                        key={featurePosition.join(",")}
+                        position={featurePosition}
+                        receiveShadow
+                    >
+                        <boxGeometry args={size} />
+                        <meshStandardMaterial
+                            color={featureColor}
+                            roughness={roughness}
+                        />
+                    </mesh>
+                ))}
 
-            {/* Mouth */}
-            <mesh position={[0, 1.9, -0.41]} castShadow>
-                <boxGeometry args={[0.2, 0.05, 0.02]} />
-                <meshLambertMaterial color="#000000" />
-            </mesh>
+                <BodyPart
+                    size={[1, 1.5, 0.5]}
+                    position={[0, 0.5, 0]}
+                    color={shirtColor}
+                    roughness={roughness}
+                />
 
-            {/* Body */}
-            <mesh position={[0, 0.5, 0]} castShadow>
-                <boxGeometry args={[1, 1.5, 0.5]} />
-                <meshLambertMaterial color="#4a90e2" />
-            </mesh>
+                <group ref={leftArmRef} position={[-0.8, SHOULDER_Y, 0]}>
+                    <BodyPart
+                        size={[0.3, ARM_LENGTH, 0.3]}
+                        position={[0, -ARM_LENGTH / 2, 0]}
+                        color={skinColor}
+                        roughness={roughness}
+                    />
+                </group>
+                <group ref={rightArmRef} position={[0.8, SHOULDER_Y, 0]}>
+                    <BodyPart
+                        size={[0.3, ARM_LENGTH, 0.3]}
+                        position={[0, -ARM_LENGTH / 2, 0]}
+                        color={skinColor}
+                        roughness={roughness}
+                    />
+                </group>
 
-            {/* Left Arm */}
-            <mesh position={[-0.8, 0.5, 0]} castShadow>
-                <boxGeometry args={[0.3, 1.2, 0.3]} />
-                <meshLambertMaterial color="#fdbcb4" />
-            </mesh>
-
-            {/* Right Arm */}
-            <mesh position={[0.8, 0.5, 0]} castShadow>
-                <boxGeometry args={[0.3, 1.2, 0.3]} />
-                <meshLambertMaterial color="#fdbcb4" />
-            </mesh>
-
-            {/* Left Leg */}
-            <mesh position={[-0.3, -0.8, 0]} castShadow>
-                <boxGeometry args={[0.3, 1, 0.3]} />
-                <meshLambertMaterial color="#2c3e50" />
-            </mesh>
-
-            {/* Right Leg */}
-            <mesh position={[0.3, -0.8, 0]} castShadow>
-                <boxGeometry args={[0.3, 1, 0.3]} />
-                <meshLambertMaterial color="#2c3e50" />
-            </mesh>
+                <group ref={leftLegRef} position={[-0.3, HIP_Y, 0]}>
+                    <BodyPart
+                        size={[0.3, LEG_LENGTH, 0.3]}
+                        position={[0, -LEG_LENGTH / 2, 0]}
+                        color={pantsColor}
+                        roughness={roughness}
+                    />
+                </group>
+                <group ref={rightLegRef} position={[0.3, HIP_Y, 0]}>
+                    <BodyPart
+                        size={[0.3, LEG_LENGTH, 0.3]}
+                        position={[0, -LEG_LENGTH / 2, 0]}
+                        color={pantsColor}
+                        roughness={roughness}
+                    />
+                </group>
+            </group>
         </group>
     );
 });

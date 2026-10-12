@@ -58,4 +58,12 @@ const getBackOffset = (object: THREE.Object3D) => {
     return bounds.isEmpty() ? 0 : -bounds.min.z;
 };
 
-export { getModelDimensions, getModelBounds, getBackOffset };
+const enableShadows = (object: THREE.Object3D) => {
+    object.traverse(child => {
+        if (!(child instanceof THREE.Mesh)) return;
+        child.castShadow = true;
+        child.receiveShadow = true;
+    });
+};
+
+export { getModelDimensions, getModelBounds, getBackOffset, enableShadows };

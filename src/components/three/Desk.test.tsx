@@ -16,7 +16,7 @@ describe("Desk", () => {
     it("renders desk and monitor models", () => {
         const { container } = render(<Desk proximityPosition={[0, 0, 0]} />);
 
-        expect(useGLTFMock).toHaveBeenCalledWith("/models/l_shaped_desk.glb");
+        expect(useGLTFMock).toHaveBeenCalledWith("/models/cartoon_desk.glb");
         expect(
             container.querySelectorAll("primitive").length
         ).toBeGreaterThanOrEqual(2);

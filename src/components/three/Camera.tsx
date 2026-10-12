@@ -1,9 +1,18 @@
 import { useRef, useEffect, useState, useMemo } from "react";
 import { useFrame, useThree } from "@react-three/fiber";
+// #if DEBUG
+import { useControls } from "leva";
+// #endif
 import { useMovement } from "@/lib/stores/useMovement";
 import { useScene } from "@/lib/contexts/SceneContext";
 import * as THREE from "three";
 import { useExperience } from "@/lib/stores/useExperience";
+
+type CameraControls = {
+    cameraHeight: number;
+    cameraDistance: number;
+    lookAtHeight: number;
+};
 
 export default function Camera() {
     const { camera } = useThree();
@@ -14,6 +23,7 @@ export default function Camera() {
         wallThickness,
         cameraBuffer,
         cameraOffset: cameraOffsetConfig,
+        cameraLookAtHeight,
         zoomSettings,
     } = useScene();
     // Use individual selectors to prevent unnecessary rerenders
@@ -31,17 +41,55 @@ export default function Camera() {
     const maxZoom = zoomSettings.max;
     const zoomSpeed = zoomSettings.speed;
 
+    let cameraHeight: number, cameraDistance: number, lookAtHeight: number;
+
+    // #if DEBUG
+    ({ cameraHeight, cameraDistance, lookAtHeight } = useControls(
+        "Camera",
+        {
+            cameraHeight: {
+                value: cameraOffsetConfig.y,
+                min: 0,
+                max: 20,
+                step: 0.1,
+            },
+            cameraDistance: {
+                value: cameraOffsetConfig.z,
+                min: 2,
+                max: 30,
+                step: 0.1,
+            },
+            lookAtHeight: {
+                value: cameraLookAtHeight,
+                min: 0,
+                max: 10,
+                step: 0.1,
+            },
+        },
+        { collapsed: true }
+    ) as CameraControls);
+    // #endif
+
+    // #if !DEBUG
+    cameraHeight = cameraOffsetConfig.y;
+    cameraDistance = cameraOffsetConfig.z;
+    lookAtHeight = cameraLookAtHeight;
+    // #endif
+
     // Camera follow settings from context
     const baseCameraOffset = useMemo(
         () =>
             new THREE.Vector3(
                 cameraOffsetConfig.x,
-                cameraOffsetConfig.y,
-                cameraOffsetConfig.z
+                cameraHeight,
+                cameraDistance
             ),
-        [cameraOffsetConfig.x, cameraOffsetConfig.y, cameraOffsetConfig.z]
+        [cameraOffsetConfig.x, cameraHeight, cameraDistance]
     );
-    const lookAtOffset = useMemo(() => new THREE.Vector3(0, 2, 0), []);
+    const lookAtOffset = useMemo(
+        () => new THREE.Vector3(0, lookAtHeight, 0),
+        [lookAtHeight]
+    );
 
     // Smooth camera movement
     const frameCameraOffset = useRef(new THREE.Vector3());

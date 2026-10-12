@@ -24,6 +24,8 @@ const Message = memo(({ text = "", className }: MessageProps) => {
             aria-live="polite"
         >
             <span
+                // Remount on new text so the pop-in animation replays
+                key={trimmedText}
                 className={styles.messageContent}
                 // Messages are defined in source and treated as trusted content.
                 dangerouslySetInnerHTML={{ __html: trimmedText }}

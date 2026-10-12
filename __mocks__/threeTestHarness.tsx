@@ -54,6 +54,21 @@ const useTextureModuleMock = Object.assign(
     { preload: useTexturePreloadMock }
 );
 
+// Mirrors drei's zustand-backed progress store so subscribers rerender
+let progressState = { progress: 0, item: "" };
+const progressListeners = new Set<() => void>();
+const subscribeProgress = (listener: () => void) => {
+    progressListeners.add(listener);
+    return () => progressListeners.delete(listener);
+};
+export const setProgress = (next: Partial<typeof progressState>) => {
+    progressState = { ...progressState, ...next };
+    progressListeners.forEach(listener => listener());
+};
+export const useProgressMock = jest.fn(() =>
+    React.useSyncExternalStore(subscribeProgress, () => progressState)
+);
+
 export const keyboardState = {
     forward: false,
     backward: false,
@@ -87,11 +102,57 @@ export const sceneState = {
         roughness: 0.9,
         normalScale: 0.6,
     },
+    ceilingSurface: {
+        color: "#F7F6F2",
+        roughness: 0.9,
+        bounce: 0.35,
+    },
+    baseboard: {
+        runs: [
+            { position: { x: 0, y: 0, z: -14.5 }, length: 29, rotationY: 0 },
+            {
+                position: { x: 0, y: 0, z: 14.5 },
+                length: 29,
+                rotationY: Math.PI,
+            },
+            {
+                position: { x: -14.5, y: 0, z: 0 },
+                length: 29,
+                rotationY: Math.PI / 2,
+            },
+            {
+                position: { x: 14.5, y: 0, z: 0 },
+                length: 29,
+                rotationY: -Math.PI / 2,
+            },
+        ],
+        height: 0.6,
+        thickness: 0.15,
+        color: "#FFFDF7",
+    },
+    rug: {
+        position: { x: 0, z: 0 },
+        width: 10,
+        depth: 7,
+        borderWidth: 0.6,
+        color: "#6FA3A0",
+        borderColor: "#34506B",
+    },
     characterBoundary: 28,
     cameraBuffer: 2,
     characterSpeed: 0.1,
+    characterStepSquash: 0.04,
     characterHeight: 6,
-    cameraOffset: { x: 0, y: 8, z: 18 },
+    characterAppearance: {
+        skinColor: "#f7d0b4",
+        shirtColor: "#6593c6",
+        pantsColor: "#3b4252",
+        featureColor: "#2b2623",
+        roughness: 0.75,
+    },
+    cameraOffset: { x: 0, y: 5, z: 18 },
+    cameraLookAtHeight: 3.5,
+    loaderMinDuration: 5000,
     zoomSettings: { min: 0.5, max: 2, speed: 0.1, default: 1 },
     desk: {
         scale: 2.5,
@@ -106,22 +167,23 @@ export const sceneState = {
     monitor: {
         scale: 1.2,
         position: { x: -0.5, y: 1.5, z: 2.6 },
-        rotation: { y: -1 },
+        rotation: { y: 0.57 },
         boxSize: { x: 5, y: 2, z: 3 },
-        boxAnchor: { x: 0, y: 0, z: 0 },
-        approachYawOffset: Math.PI / 4,
+        boxAnchor: { x: 0, y: 0.12, z: 0.51 },
+        approachYawOffset: 0,
     },
     monitorScreen: {
-        width: 0.6,
-        height: 0.5,
-        position: { x: 0.39, y: 0.105, z: 0 },
-        rotation: { x: -0.1, y: Math.PI / 2 },
+        width: 0.7,
+        height: 0.54,
+        position: { x: 0, y: 0.1, z: 0.427 },
+        rotation: { x: 0, y: 0 },
         color: "#00ff00",
         intensity: 1.6,
     },
     lighting: {
         brightness: 1,
         temperature: 3000,
+        environmentIntensity: 0.2,
         fixtures: [
             { x: -7, y: 11.5, z: -7 },
             { x: -7, y: 11.5, z: 7 },
@@ -133,6 +195,10 @@ export const sceneState = {
         bloomIntensity: 1.2,
         bloomThreshold: 1,
         bloomSmoothing: 0.3,
+        aoIntensity: 3,
+        aoRadius: 2,
+        vignetteOffset: 0.3,
+        vignetteDarkness: 0.45,
     },
     bass: {
         position: { x: -1, y: 4, z: -14 },
@@ -209,6 +275,16 @@ jest.mock("@react-three/drei", () => ({
     useGLTF: useGLTFModuleMock,
     useTexture: useTextureModuleMock,
     useKeyboardControls: () => [subscribeMock, getKeysMock],
+    useProgress: () => useProgressMock(),
+    Environment: ({ children }: { children?: React.ReactNode }) => (
+        <div data-testid="environment">{children}</div>
+    ),
+    Lightformer: (props: Record<string, unknown>) => (
+        <div data-testid="lightformer" data-color={String(props.color)} />
+    ),
+    RoundedBox: ({ children }: { children?: React.ReactNode }) => (
+        <mesh>{children}</mesh>
+    ),
     KeyboardControls: ({ children }: { children: React.ReactNode }) => (
         <>{children}</>
     ),
@@ -219,11 +295,25 @@ jest.mock("@react-three/postprocessing", () => ({
     EffectComposer: ({ children }: { children: React.ReactNode }) => (
         <div data-testid="effect-composer">{children}</div>
     ),
+    N8AO: (props: Record<string, unknown>) => (
+        <div
+            data-testid="n8ao"
+            data-intensity={String(props.intensity)}
+            data-radius={String(props.aoRadius)}
+        />
+    ),
     Bloom: (props: Record<string, unknown>) => (
         <div
             data-testid="bloom"
             data-intensity={String(props.intensity)}
             data-threshold={String(props.luminanceThreshold)}
+        />
+    ),
+    Vignette: (props: Record<string, unknown>) => (
+        <div
+            data-testid="vignette"
+            data-offset={String(props.offset)}
+            data-darkness={String(props.darkness)}
         />
     ),
     ToneMapping: ({ mode }: { mode: number }) => (
@@ -240,6 +330,7 @@ jest.mock("@/utils/three", () => ({
     getModelDimensions: jest.fn(),
     getBackOffset: jest.fn(() => 0),
     getModelBounds: jest.fn(() => new THREE.Box3()),
+    enableShadows: jest.fn(),
 }));
 
 jest.mock("@/lib/contexts/SceneContext", () => ({
@@ -307,6 +398,7 @@ export function resetThreeTestState() {
     messageState.message = "";
     messageState.interaction = null;
     movementState.position = { x: 0, y: 1, z: 0 };
+    progressState = { progress: 0, item: "" };
 }
 
 export function runFrameCallbacks(elapsedTime = 0, delta = 1 / 60) {

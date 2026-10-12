@@ -47,5 +47,7 @@ Thumbs.db
 .yarnrc.yml
 
 # Archived unused assets
+unused-models/
 unused-models.zip
+unused-textures/
 unused-textures.zip
