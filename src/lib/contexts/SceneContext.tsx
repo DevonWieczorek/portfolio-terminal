@@ -97,8 +97,8 @@ const defaultFloorSurface: SurfaceTraits = {
     textures: {
         map: "/textures/floor_albedo.jpg",
     },
-    tileSize: 2 * METER,
-    roughness: 0.7,
+    tileSize: 1.5 * METER,
+    roughness: 0.35,
     normalScale: 1,
 };
 
@@ -109,8 +109,8 @@ const defaultWallSurface: SurfaceTraits = {
         map: "/textures/wall_albedo.jpg",
     },
     tileSize: METER,
-    roughness: 0.9,
-    normalScale: 0.6,
+    roughness: 0.35,
+    normalScale: 1,
 };
 
 // Scale factor based on INTERIOR room size vs standard interior (28x28x12)
