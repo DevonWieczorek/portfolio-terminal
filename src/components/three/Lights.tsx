@@ -17,7 +17,7 @@ const AMBIENT_INTENSITY = 0.6;
 const KEY_INTENSITY = 0.8;
 const FIXTURE_INTENSITY = 30;
 // Light bounced back up off the wood floor
-const FLOOR_BOUNCE_COLOR = "#403830";
+const FLOOR_BOUNCE_COLOR = "#3d3833";
 // Renders have no camera white balance, so a pure black-body color tints the
 // whole room; blending toward white keeps the warmth subtle
 const WARMTH_STRENGTH = 0.5;

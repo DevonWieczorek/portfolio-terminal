@@ -211,12 +211,12 @@ const defaultMonitorScreenTraits: DeepPartial<ObjectTraits & GlowTraits> = {
 };
 
 // Overhead lighting: a 2x2 grid of ceiling fixtures, each centered in a
-// quadrant of the room, at a warm-white residential color temperature
+// quadrant of the room, at a soft warm-white color temperature
 const FIXTURE_Y: number = scaledHeight(ROOM_HEIGHT - 0.5);
 const FIXTURE_SPREAD: number = scaledFeet(7);
 const defaultLightingSettings: LightingSettings = {
     brightness: 1.35,
-    temperature: 5000,
+    temperature: 5600,
     fixtures: [-1, 1].flatMap(x =>
         [-1, 1].map(z => ({
             x: x * FIXTURE_SPREAD,
@@ -321,7 +321,7 @@ interface SceneConfig {
 const defaultSceneConfig: SceneConfig = {
     rotations: rotationY,
     roomSize: ROOM_SIZE,
-    wallColor: "#F5F5DC",
+    wallColor: "#F2F0E8",
     wallHeight: ROOM_HEIGHT,
     wallThickness: WALL_THICKNESS,
     floorSurface: defaultFloorSurface,
