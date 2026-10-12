@@ -26,6 +26,14 @@ describe("Effects", () => {
         expect(ao).toHaveAttribute("data-radius", "2");
     });
 
+    it("renders a vignette from the scene settings", () => {
+        render(<Effects />);
+
+        const vignette = screen.getByTestId("vignette");
+        expect(vignette).toHaveAttribute("data-offset", "0.3");
+        expect(vignette).toHaveAttribute("data-darkness", "0.45");
+    });
+
     it("restores ACES tone mapping as the final pass", () => {
         render(<Effects />);
 

@@ -37,7 +37,10 @@ const MAX_LIMB_SWING = 0.6;
 const BOB_HEIGHT = 0.1;
 const WALK_BLEND_RATE = 10;
 const BREATH_FREQUENCY = 2;
-const BREATH_HEIGHT = 0.02;
+// Cartoon squash and stretch, as a fraction of body height: compress as each
+// foot lands, stretch at the top of the step, and swell gently when idle
+const STEP_SQUASH = 0.08;
+const BREATH_SQUASH = 0.025;
 
 const BLOB_SHADOW_RADIUS = 1;
 const BLOB_SHADOW_OPACITY = 0.35;
@@ -287,15 +290,28 @@ const Character = memo(() => {
 
         const blend = walkBlend.current;
         const swing = Math.sin(stridePhase.current) * MAX_LIMB_SWING * blend;
-        const bob = Math.abs(Math.sin(stridePhase.current)) * BOB_HEIGHT;
-        const breath = Math.sin(elapsed * BREATH_FREQUENCY) * BREATH_HEIGHT;
+        const stepHeight = Math.abs(Math.sin(stridePhase.current));
+        const bob = stepHeight * BOB_HEIGHT;
+        // -1 as a foot lands, +1 at the top of the step
+        const stepStretch = (stepHeight * 2 - 1) * STEP_SQUASH;
+        const breathStretch =
+            Math.sin(elapsed * BREATH_FREQUENCY) * BREATH_SQUASH;
+        const stretch = stepStretch * blend + breathStretch * (1 - blend);
 
         if (leftArmRef.current) leftArmRef.current.rotation.x = swing;
         if (rightArmRef.current) rightArmRef.current.rotation.x = -swing;
         if (leftLegRef.current) leftLegRef.current.rotation.x = -swing;
         if (rightLegRef.current) rightLegRef.current.rotation.x = swing;
         if (bodyRef.current) {
-            bodyRef.current.position.y = bob * blend + breath * (1 - blend);
+            // Thin out as it stretches so the volume reads as constant
+            bodyRef.current.scale.set(
+                1 - stretch / 2,
+                1 + stretch,
+                1 - stretch / 2
+            );
+            // Scaling pivots on the body's origin, so shift it to keep the
+            // feet planted
+            bodyRef.current.position.y = bob * blend - MODEL_FEET_Y * stretch;
         }
     };
 

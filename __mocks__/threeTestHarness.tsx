@@ -92,6 +92,36 @@ export const sceneState = {
         roughness: 0.9,
         bounce: 0.35,
     },
+    baseboard: {
+        runs: [
+            { position: { x: 0, y: 0, z: -14.5 }, length: 29, rotationY: 0 },
+            {
+                position: { x: 0, y: 0, z: 14.5 },
+                length: 29,
+                rotationY: Math.PI,
+            },
+            {
+                position: { x: -14.5, y: 0, z: 0 },
+                length: 29,
+                rotationY: Math.PI / 2,
+            },
+            {
+                position: { x: 14.5, y: 0, z: 0 },
+                length: 29,
+                rotationY: -Math.PI / 2,
+            },
+        ],
+        height: 0.6,
+        thickness: 0.15,
+        color: "#FFFDF7",
+    },
+    rug: {
+        position: { x: 0, z: 0 },
+        radius: 5,
+        borderWidth: 0.6,
+        color: "#F2B84B",
+        borderColor: "#E8735A",
+    },
     characterBoundary: 28,
     cameraBuffer: 2,
     characterSpeed: 0.1,
@@ -149,6 +179,8 @@ export const sceneState = {
         bloomSmoothing: 0.3,
         aoIntensity: 3,
         aoRadius: 2,
+        vignetteOffset: 0.3,
+        vignetteDarkness: 0.45,
     },
     bass: {
         position: { x: -1, y: 4, z: -14 },
@@ -256,6 +288,13 @@ jest.mock("@react-three/postprocessing", () => ({
             data-testid="bloom"
             data-intensity={String(props.intensity)}
             data-threshold={String(props.luminanceThreshold)}
+        />
+    ),
+    Vignette: (props: Record<string, unknown>) => (
+        <div
+            data-testid="vignette"
+            data-offset={String(props.offset)}
+            data-darkness={String(props.darkness)}
         />
     ),
     ToneMapping: ({ mode }: { mode: number }) => (
