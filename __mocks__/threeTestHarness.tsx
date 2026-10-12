@@ -4,14 +4,17 @@ import * as THREE from "three";
 const originalConsoleError = console.error;
 const originalConsoleWarn = console.warn;
 
-export const frameCallbacks: Array<() => void> = [];
+type FrameState = { clock: { elapsedTime: number } };
+type FrameCallback = (state: FrameState, delta: number) => void;
+
+export const frameCallbacks: FrameCallback[] = [];
 
 export const mockCamera = {
     position: new THREE.Vector3(0, 0, 0),
     lookAt: jest.fn(),
 };
 
-export const useFrameMock = jest.fn((cb: () => void) => {
+export const useFrameMock = jest.fn((cb: FrameCallback) => {
     frameCallbacks.push(cb);
 });
 
@@ -108,6 +111,29 @@ export const sceneState = {
         boxAnchor: { x: 0, y: 0, z: 0 },
         approachYawOffset: Math.PI / 4,
     },
+    monitorScreen: {
+        width: 0.6,
+        height: 0.5,
+        position: { x: 0.39, y: 0.105, z: 0 },
+        rotation: { x: -0.1, y: Math.PI / 2 },
+        color: "#00ff00",
+        intensity: 1.6,
+    },
+    lighting: {
+        brightness: 1,
+        temperature: 3000,
+        fixtures: [
+            { x: -7, y: 11.5, z: -7 },
+            { x: -7, y: 11.5, z: 7 },
+            { x: 7, y: 11.5, z: -7 },
+            { x: 7, y: 11.5, z: 7 },
+        ],
+    },
+    effects: {
+        bloomIntensity: 1.2,
+        bloomThreshold: 1,
+        bloomSmoothing: 0.3,
+    },
     bass: {
         position: { x: -1, y: 4, z: -14 },
         scale: 3.5,
@@ -174,7 +200,7 @@ jest.mock("@react-three/fiber", () => ({
     Canvas: ({ children }: { children: React.ReactNode }) => (
         <div data-testid="canvas">{children}</div>
     ),
-    useFrame: (cb: () => void) => useFrameMock(cb),
+    useFrame: (cb: FrameCallback) => useFrameMock(cb),
     useThree: () => useThreeMock(),
 }));
 
@@ -186,6 +212,28 @@ jest.mock("@react-three/drei", () => ({
     KeyboardControls: ({ children }: { children: React.ReactNode }) => (
         <>{children}</>
     ),
+}));
+
+jest.mock("@react-three/postprocessing", () => ({
+    __esModule: true,
+    EffectComposer: ({ children }: { children: React.ReactNode }) => (
+        <div data-testid="effect-composer">{children}</div>
+    ),
+    Bloom: (props: Record<string, unknown>) => (
+        <div
+            data-testid="bloom"
+            data-intensity={String(props.intensity)}
+            data-threshold={String(props.luminanceThreshold)}
+        />
+    ),
+    ToneMapping: ({ mode }: { mode: number }) => (
+        <div data-testid="tone-mapping" data-mode={String(mode)} />
+    ),
+}));
+
+jest.mock("postprocessing", () => ({
+    __esModule: true,
+    ToneMappingMode: { ACES_FILMIC: 6 },
 }));
 
 jest.mock("@/utils/three", () => ({
@@ -261,6 +309,6 @@ export function resetThreeTestState() {
     movementState.position = { x: 0, y: 1, z: 0 };
 }
 
-export function runFrameCallbacks() {
-    frameCallbacks.forEach(cb => cb());
+export function runFrameCallbacks(elapsedTime = 0, delta = 1 / 60) {
+    frameCallbacks.forEach(cb => cb({ clock: { elapsedTime } }, delta));
 }
