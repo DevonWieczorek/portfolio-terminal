@@ -24,6 +24,7 @@ interface LightingSettings {
     brightness: number; // multiplier applied to every light in the room
     temperature: number; // color temperature in Kelvin; lower is warmer
     fixtures: Coordinates[]; // ceiling-mounted light positions
+    environmentIntensity: number; // strength of reflections on PBR materials
 }
 
 // Cartoon avatar palette, shaded with the same PBR lighting as the room
@@ -226,6 +227,7 @@ const FIXTURE_SPREAD: number = scaledFeet(7);
 const defaultLightingSettings: LightingSettings = {
     brightness: 1.35,
     temperature: 5600,
+    environmentIntensity: 0.2,
     fixtures: [-1, 1].flatMap(x =>
         [-1, 1].map(z => ({
             x: x * FIXTURE_SPREAD,

@@ -1,5 +1,6 @@
 import { memo, useMemo } from "react";
 import { Color } from "three";
+import { Environment, Lightformer } from "@react-three/drei";
 // #if DEBUG
 import { useControls } from "leva";
 // #endif
@@ -9,6 +10,7 @@ import { kelvinToColor } from "@/utils/color";
 type LightingControls = {
     brightness: number;
     temperature: number;
+    environmentIntensity: number;
 };
 
 // Base intensities at brightness 1, balanced so the room center reads well lit
@@ -22,14 +24,21 @@ const FLOOR_BOUNCE_COLOR = "#3d3833";
 // whole room; blending toward white keeps the warmth subtle
 const WARMTH_STRENGTH = 0.5;
 const WHITE = new Color("#ffffff");
+// Reflection-only light panels baked into the environment map. Pastel rims
+// from either side give rounded edges a cartoon-style two-tone highlight.
+const ENV_PANEL_INTENSITY = 2;
+const ENV_PANEL_SIZE = 4;
+const ENV_RIM_INTENSITY = 0.8;
+const ENV_RIM_COLORS = ["#ffb38a", "#7fd6e0"];
+const ENV_RESOLUTION = 256;
 
 const Lights = memo(() => {
-    const { lighting, wallHeight } = useScene();
+    const { lighting, wallHeight, roomSize } = useScene();
 
-    let brightness: number, temperature: number;
+    let brightness: number, temperature: number, environmentIntensity: number;
 
     // #if DEBUG
-    ({ brightness, temperature } = useControls(
+    ({ brightness, temperature, environmentIntensity } = useControls(
         "Lighting",
         {
             brightness: {
@@ -45,6 +54,13 @@ const Lights = memo(() => {
                 step: 50,
                 label: "warmth (K)",
             },
+            environmentIntensity: {
+                value: lighting.environmentIntensity,
+                min: 0,
+                max: 2,
+                step: 0.05,
+                label: "reflections",
+            },
         },
         { collapsed: true }
     ) as LightingControls);
@@ -53,6 +69,7 @@ const Lights = memo(() => {
     // #if !DEBUG
     brightness = lighting.brightness;
     temperature = lighting.temperature;
+    environmentIntensity = lighting.environmentIntensity;
     // #endif
 
     const color = useMemo(
@@ -94,6 +111,44 @@ const Lights = memo(() => {
                     decay={2}
                 />
             ))}
+
+            {/* Rendered once into a cube map, so remount it when the color
+                changes to rebake the reflections */}
+            <Environment
+                key={temperature}
+                resolution={ENV_RESOLUTION}
+                environmentIntensity={environmentIntensity * brightness}
+            >
+                {lighting.fixtures.map(({ x, y, z }) => (
+                    <Lightformer
+                        key={`${x},${z}`}
+                        form="rect"
+                        color={color}
+                        intensity={ENV_PANEL_INTENSITY}
+                        position={[x, y, z]}
+                        rotation-x={Math.PI / 2}
+                        scale={ENV_PANEL_SIZE}
+                    />
+                ))}
+                {ENV_RIM_COLORS.map((rimColor, i) => {
+                    const side = i === 0 ? -1 : 1;
+                    return (
+                        <Lightformer
+                            key={rimColor}
+                            form="rect"
+                            color={rimColor}
+                            intensity={ENV_RIM_INTENSITY}
+                            position={[
+                                (side * roomSize) / 2,
+                                wallHeight / 2,
+                                0,
+                            ]}
+                            rotation-y={(-side * Math.PI) / 2}
+                            scale={[roomSize, wallHeight / 2, 1]}
+                        />
+                    );
+                })}
+            </Environment>
         </>
     );
 });

@@ -130,6 +130,7 @@ export const sceneState = {
     lighting: {
         brightness: 1,
         temperature: 3000,
+        environmentIntensity: 0.2,
         fixtures: [
             { x: -7, y: 11.5, z: -7 },
             { x: -7, y: 11.5, z: 7 },
@@ -219,6 +220,12 @@ jest.mock("@react-three/drei", () => ({
     useGLTF: useGLTFModuleMock,
     useTexture: useTextureModuleMock,
     useKeyboardControls: () => [subscribeMock, getKeysMock],
+    Environment: ({ children }: { children?: React.ReactNode }) => (
+        <div data-testid="environment">{children}</div>
+    ),
+    Lightformer: (props: Record<string, unknown>) => (
+        <div data-testid="lightformer" data-color={String(props.color)} />
+    ),
     RoundedBox: ({ children }: { children?: React.ReactNode }) => (
         <mesh>{children}</mesh>
     ),
