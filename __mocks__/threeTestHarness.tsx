@@ -167,16 +167,16 @@ export const sceneState = {
     monitor: {
         scale: 1.2,
         position: { x: -0.5, y: 1.5, z: 2.6 },
-        rotation: { y: -1 },
+        rotation: { y: 0.57 },
         boxSize: { x: 5, y: 2, z: 3 },
-        boxAnchor: { x: 0, y: 0, z: 0 },
-        approachYawOffset: Math.PI / 4,
+        boxAnchor: { x: 0, y: 0.12, z: 0.51 },
+        approachYawOffset: 0,
     },
     monitorScreen: {
-        width: 0.6,
-        height: 0.5,
-        position: { x: 0.39, y: 0.105, z: 0 },
-        rotation: { x: -0.1, y: Math.PI / 2 },
+        width: 0.7,
+        height: 0.54,
+        position: { x: 0, y: 0.1, z: 0.427 },
+        rotation: { x: 0, y: 0 },
         color: "#00ff00",
         intensity: 1.6,
     },
@@ -330,6 +330,7 @@ jest.mock("@/utils/three", () => ({
     getModelDimensions: jest.fn(),
     getBackOffset: jest.fn(() => 0),
     getModelBounds: jest.fn(() => new THREE.Box3()),
+    enableShadows: jest.fn(),
 }));
 
 jest.mock("@/lib/contexts/SceneContext", () => ({
