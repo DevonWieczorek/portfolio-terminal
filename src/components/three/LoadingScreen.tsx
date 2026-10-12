@@ -5,7 +5,7 @@ import { useProgress } from "@react-three/drei";
 import { useScene } from "@/lib/contexts/SceneContext";
 import styles from "@/styles/LoadingScreen.module.scss";
 
-export const REVEAL_DURATION_MS = 900;
+export const REVEAL_DURATION_MS = 1200;
 const SEGMENT_COUNT = 10;
 const VISIBLE_LINES = 4;
 
@@ -105,29 +105,33 @@ const LoadingScreen = memo(({ isReady }: LoadingScreenProps) => {
             aria-label="Loading room"
         >
             <div className={styles.toy}>
-                <div className={styles.monitor}>
-                    <div className={styles.screen}>
-                        <p className={styles.line}>&gt; booting room.exe</p>
-                        {visibleLines.map((line, index) => {
-                            const isCurrent =
-                                !isReady && index === visibleLines.length - 1;
-                            return (
-                                <p key={line} className={styles.line}>
-                                    <span>&gt; {line}</span>
-                                    <span className={styles.status}>
-                                        {isCurrent ? "..." : "ok"}
-                                    </span>
-                                </p>
-                            );
-                        })}
-                        {isReady ? (
-                            <p className={styles.line}>&gt; welcome in!</p>
-                        ) : (
-                            <span className={styles.cursor} />
-                        )}
+                <div className={styles.body}>
+                    <div className={styles.monitor}>
+                        <div className={styles.screen}>
+                            <p className={styles.line}>&gt; booting room.exe</p>
+                            {visibleLines.map((line, index) => {
+                                const isCurrent =
+                                    !isReady &&
+                                    index === visibleLines.length - 1;
+                                return (
+                                    <p key={line} className={styles.line}>
+                                        <span>&gt; {line}</span>
+                                        <span className={styles.status}>
+                                            {isCurrent ? "..." : "ok"}
+                                        </span>
+                                    </p>
+                                );
+                            })}
+                            {isReady ? (
+                                <p className={styles.line}>&gt; welcome in!</p>
+                            ) : (
+                                <span className={styles.cursor} />
+                            )}
+                            <div className={styles.flash} />
+                        </div>
                     </div>
+                    <div className={styles.stand} />
                 </div>
-                <div className={styles.stand} />
                 <div className={styles.shadow} />
             </div>
 
