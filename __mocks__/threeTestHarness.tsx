@@ -74,6 +74,10 @@ export const keyboardState = {
     backward: false,
     leftward: false,
     rightward: false,
+    panForward: false,
+    panBackward: false,
+    rotateLeft: false,
+    rotateRight: false,
 };
 
 export const subscribeMock = jest.fn(() => jest.fn());
@@ -143,6 +147,8 @@ export const sceneState = {
     characterSpeed: 0.1,
     characterStepSquash: 0.04,
     characterHeight: 6,
+    cameraPanSpeed: 0.2,
+    cameraRotateSpeed: 0.03,
     characterAppearance: {
         skinColor: "#f7d0b4",
         shirtColor: "#6593c6",
@@ -229,7 +235,9 @@ export const messageState = {
 
 export const movementState = {
     position: { x: 0, y: 1, z: 0 },
+    cameraYaw: 0,
     setPosition: jest.fn(),
+    setCameraYaw: jest.fn(),
     resetPosition: jest.fn(),
 };
 
@@ -390,6 +398,10 @@ export function resetThreeTestState() {
     keyboardState.backward = false;
     keyboardState.leftward = false;
     keyboardState.rightward = false;
+    keyboardState.panForward = false;
+    keyboardState.panBackward = false;
+    keyboardState.rotateLeft = false;
+    keyboardState.rotateRight = false;
     experienceState.mode = "scene";
     experienceState.targetMode = "scene";
     experienceState.isTransitioning = false;
@@ -398,6 +410,7 @@ export function resetThreeTestState() {
     messageState.message = "";
     messageState.interaction = null;
     movementState.position = { x: 0, y: 1, z: 0 };
+    movementState.cameraYaw = 0;
     progressState = { progress: 0, item: "" };
 }
 

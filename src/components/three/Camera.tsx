@@ -1,5 +1,6 @@
 import { useRef, useEffect, useState, useMemo } from "react";
 import { useFrame, useThree } from "@react-three/fiber";
+import { useKeyboardControls } from "@react-three/drei";
 // #if DEBUG
 import { useControls } from "leva";
 // #endif
@@ -8,7 +9,16 @@ import { useScene } from "@/lib/contexts/SceneContext";
 import * as THREE from "three";
 import { useExperience } from "@/lib/stores/useExperience";
 
-type CameraControls = {
+enum CameraControls {
+    panForward = "panForward",
+    panBackward = "panBackward",
+    rotateLeft = "rotateLeft",
+    rotateRight = "rotateRight",
+}
+
+const Y_AXIS = new THREE.Vector3(0, 1, 0);
+
+type CameraViewControls = {
     cameraHeight: number;
     cameraDistance: number;
     lookAtHeight: number;
@@ -16,12 +26,17 @@ type CameraControls = {
 
 export default function Camera() {
     const { camera } = useThree();
+    const [, getKeys] = useKeyboardControls<CameraControls>();
     // Keep subscription narrow to avoid rerenders from unrelated movement actions.
     const position = useMovement(state => state.position);
+    const setCameraYaw = useMovement(state => state.setCameraYaw);
     const {
         roomSize,
         wallThickness,
         cameraBuffer,
+        cameraPanSpeed,
+        cameraRotateSpeed,
+        characterBoundary,
         cameraOffset: cameraOffsetConfig,
         cameraLookAtHeight,
         zoomSettings,
@@ -67,7 +82,7 @@ export default function Camera() {
             },
         },
         { collapsed: true }
-    ) as CameraControls);
+    ) as CameraViewControls);
     // #endif
 
     // #if !DEBUG
@@ -101,6 +116,10 @@ export default function Camera() {
     const desiredPosition = useMemo(() => new THREE.Vector3(), []);
     const desiredLookAt = useMemo(() => new THREE.Vector3(), []);
     const modeRef = useRef(mode);
+    // W/S pan offset applied on top of the character-follow target (XZ plane).
+    const panOffset = useRef(new THREE.Vector2());
+    // A/D orbit angle (radians) around the vertical axis through the focus point.
+    const orbitAngle = useRef(0);
 
     useEffect(() => {
         modeRef.current = mode;
@@ -146,9 +165,44 @@ export default function Camera() {
 
     useFrame(() => {
         // Reuse the same vector instance to avoid per-frame allocations.
+        // A/D orbit the camera; W/S pan along the direction it's facing.
+        // Only while the player can move around the scene.
+        if (mode === "scene" && !isTransitioning) {
+            const keys = getKeys();
+            const rotateDirection =
+                Number(Boolean(keys.rotateLeft)) -
+                Number(Boolean(keys.rotateRight));
+            if (rotateDirection !== 0) {
+                orbitAngle.current += rotateDirection * cameraRotateSpeed;
+                setCameraYaw(orbitAngle.current);
+            }
+
+            const panDirection =
+                Number(Boolean(keys.panForward)) -
+                Number(Boolean(keys.panBackward));
+            if (panDirection !== 0) {
+                const step = panDirection * cameraPanSpeed;
+                panOffset.current.x -= Math.sin(orbitAngle.current) * step;
+                panOffset.current.y -= Math.cos(orbitAngle.current) * step;
+            }
+        }
+
         const cameraOffset = frameCameraOffset.current
             .copy(baseCameraOffset)
-            .multiplyScalar(zoom);
+            .multiplyScalar(zoom)
+            .applyAxisAngle(Y_AXIS, orbitAngle.current);
+
+        // Keep the panned focus point inside the room
+        const focusLimit = characterBoundary / 2;
+        const focusX = Math.max(
+            -focusLimit,
+            Math.min(focusLimit, position.x + panOffset.current.x)
+        );
+        const focusZ = Math.max(
+            -focusLimit,
+            Math.min(focusLimit, position.z + panOffset.current.y)
+        );
+        panOffset.current.set(focusX - position.x, focusZ - position.z);
 
         // Room boundary limits
         const maxX = roomSize / 2 - wallThickness - cameraBuffer;
@@ -157,8 +211,8 @@ export default function Camera() {
         const minZ = -roomSize / 2 + wallThickness + cameraBuffer;
 
         // Calculate ideal camera position
-        const idealCameraX = position.x + cameraOffset.x;
-        const idealCameraZ = position.z + cameraOffset.z;
+        const idealCameraX = focusX + cameraOffset.x;
+        const idealCameraZ = focusZ + cameraOffset.z;
 
         // Check if we need to adjust camera position due to wall proximity
         let adjustedCameraX = idealCameraX;
@@ -199,9 +253,9 @@ export default function Camera() {
         );
 
         targetLookAt.current.set(
-            position.x + lookAtOffset.x,
+            focusX + lookAtOffset.x,
             position.y + lookAtOffset.y,
-            position.z + lookAtOffset.z
+            focusZ + lookAtOffset.z
         );
 
         // Ensure camera stays at reasonable height

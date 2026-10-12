@@ -406,6 +406,8 @@ interface SceneConfig {
     characterSpeed: number;
     characterStepSquash: number; // squash and stretch per step, as a fraction of body height
     characterHeight: number;
+    cameraPanSpeed: number;
+    cameraRotateSpeed: number;
     characterAppearance: CharacterAppearance;
     cameraOffset: {
         x: number;
@@ -458,6 +460,8 @@ const defaultSceneConfig: SceneConfig = {
     cameraBuffer: 2,
     characterSpeed: 0.15,
     characterStepSquash: 0.04,
+    cameraPanSpeed: 0.2,
+    cameraRotateSpeed: 0.03,
     // Low and aimed above the character so the far wall (and the basses on
     // it) stays in frame instead of the camera looking down at the floor
     cameraOffset: {

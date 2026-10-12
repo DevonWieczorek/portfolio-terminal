@@ -8,7 +8,10 @@ interface Position {
 
 interface MovementState {
     position: Position;
+    // Camera orbit angle (radians around Y) so movement can be camera-relative.
+    cameraYaw: number;
     setPosition: (position: Position) => void;
+    setCameraYaw: (cameraYaw: number) => void;
     resetPosition: () => void;
 }
 
@@ -24,11 +27,14 @@ const hasPositionChanged = (current: Position, next: Position) =>
 
 export const useMovement = create<MovementState>(set => ({
     position: initialPosition,
+    cameraYaw: 0,
 
     setPosition: position =>
         set(state =>
             hasPositionChanged(state.position, position) ? { position } : state
         ),
+
+    setCameraYaw: cameraYaw => set({ cameraYaw }),
 
     resetPosition: () => set({ position: initialPosition }),
 }));

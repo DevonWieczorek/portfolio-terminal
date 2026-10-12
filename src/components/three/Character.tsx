@@ -10,6 +10,7 @@ import { useScene } from "@/lib/contexts/SceneContext";
 import { useExperience } from "@/lib/stores/useExperience";
 import { useMessage } from "@/lib/contexts/MessageContext";
 import { INTRO_MESSAGE } from "@/lib/constants/sceneMessages";
+import { getFacingRotation, toCameraRelative } from "@/utils/movement";
 
 enum Controls {
     forward = "forward",
@@ -337,39 +338,24 @@ const Character = memo(() => {
         const keys = getKeys();
         // Reuse position object to avoid creating new object every frame
         const newPosition = { x: position.x, y: position.y, z: position.z };
-        let isMoving = false;
 
-        // Calculate movement and determine rotation
-        if (keys.forward) {
-            newPosition.z -= speed;
-            targetRotation.current = 0; // Face forward
-            isMoving = true;
-        }
-        if (keys.backward) {
-            newPosition.z += speed;
-            targetRotation.current = Math.PI; // Face backward
-            isMoving = true;
-        }
-        if (keys.leftward) {
-            newPosition.x -= speed;
-            targetRotation.current = Math.PI / 2; // Face left
-            isMoving = true;
-        }
-        if (keys.rightward) {
-            newPosition.x += speed;
-            targetRotation.current = -Math.PI / 2; // Face right
-            isMoving = true;
-        }
+        // Input in camera space: -z is "into the screen", +x is screen right
+        const inputX = Number(keys.rightward) - Number(keys.leftward);
+        const inputZ = Number(keys.backward) - Number(keys.forward);
+        const isMoving = inputX !== 0 || inputZ !== 0;
 
-        // Handle diagonal movement
-        if (keys.forward && keys.leftward) {
-            targetRotation.current = Math.PI / 4; // Northeast
-        } else if (keys.forward && keys.rightward) {
-            targetRotation.current = -Math.PI / 4; // Northwest
-        } else if (keys.backward && keys.leftward) {
-            targetRotation.current = (3 * Math.PI) / 4; // Southeast
-        } else if (keys.backward && keys.rightward) {
-            targetRotation.current = (-3 * Math.PI) / 4; // Southwest
+        if (isMoving) {
+            // Rotate input by the camera's orbit so controls follow the view.
+            // Read via getState to avoid rerendering on every camera turn.
+            const move = toCameraRelative(
+                inputX,
+                inputZ,
+                useMovement.getState().cameraYaw
+            );
+
+            newPosition.x += move.x * speed;
+            newPosition.z += move.z * speed;
+            targetRotation.current = getFacingRotation(move);
         }
 
         // Collision detection - keep character within room boundaries
@@ -403,6 +389,11 @@ const Character = memo(() => {
             }
 
             currentRotation.current += shortestDiff * 0.1; // Smooth rotation
+            // Keep within [-PI, PI] so the shortest-path check stays valid
+            currentRotation.current = Math.atan2(
+                Math.sin(currentRotation.current),
+                Math.cos(currentRotation.current)
+            );
             characterRef.current.rotation.y = currentRotation.current;
         }
 
