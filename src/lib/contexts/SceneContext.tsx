@@ -310,6 +310,8 @@ interface SceneConfig {
     effects: EffectsSettings;
     bass: DeepPartial<ObjectTraits>;
     deck: DeepPartial<ObjectTraits>;
+    // Milliseconds the loading screen stays up, even if the room is ready
+    loaderMinDuration: number;
 }
 
 // Default scene configuration
@@ -343,6 +345,7 @@ const defaultSceneConfig: SceneConfig = {
     effects: defaultEffectsSettings,
     bass: defaultBassTraits,
     deck: defaultDeckTraits,
+    loaderMinDuration: 3000,
 };
 
 // Context

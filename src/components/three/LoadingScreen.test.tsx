@@ -4,6 +4,7 @@ import "@testing-library/jest-dom";
 import "../../../__mocks__/threeTestHarness";
 import {
     resetThreeTestState,
+    sceneState,
     setProgress,
 } from "../../../__mocks__/threeTestHarness";
 import LoadingScreen, {
@@ -60,15 +61,39 @@ describe("LoadingScreen", () => {
         );
     });
 
-    it("unmounts after the reveal animation", () => {
+    it("stays up for the minimum duration, then reveals and unmounts", () => {
         render(<LoadingScreen isReady />);
 
-        expect(screen.getByRole("status")).toBeInTheDocument();
+        act(() => {
+            jest.advanceTimersByTime(sceneState.loaderMinDuration - 1);
+        });
+
+        expect(screen.getByRole("status")).not.toHaveClass("revealing");
+
+        act(() => {
+            jest.advanceTimersByTime(1);
+        });
+
+        expect(screen.getByRole("status")).toHaveClass("revealing");
 
         act(() => {
             jest.advanceTimersByTime(REVEAL_DURATION_MS);
         });
 
         expect(screen.queryByRole("status")).not.toBeInTheDocument();
+    });
+
+    it("reveals right away when loading outlasts the minimum duration", () => {
+        const { rerender } = render(<LoadingScreen isReady={false} />);
+
+        act(() => {
+            jest.advanceTimersByTime(sceneState.loaderMinDuration + 500);
+        });
+        rerender(<LoadingScreen isReady />);
+        act(() => {
+            jest.advanceTimersByTime(0);
+        });
+
+        expect(screen.getByRole("status")).toHaveClass("revealing");
     });
 });

@@ -1,7 +1,8 @@
 "use client";
 
-import { memo, useEffect, useState, type CSSProperties } from "react";
+import { memo, useEffect, useRef, useState, type CSSProperties } from "react";
 import { useProgress } from "@react-three/drei";
+import { useScene } from "@/lib/contexts/SceneContext";
 import styles from "@/styles/LoadingScreen.module.scss";
 
 export const REVEAL_DURATION_MS = 900;
@@ -40,7 +41,9 @@ interface LoadingScreenProps {
 }
 
 const LoadingScreen = memo(({ isReady }: LoadingScreenProps) => {
+    const { loaderMinDuration } = useScene();
     const { progress, item } = useProgress();
+    const mountedAt = useRef(0);
     const [lines, setLines] = useState<string[]>([]);
     const [phase, setPhase] = useState<Phase>("loading");
 
@@ -53,16 +56,28 @@ const LoadingScreen = memo(({ isReady }: LoadingScreenProps) => {
     }, [item]);
 
     useEffect(() => {
+        mountedAt.current = performance.now();
+    }, []);
+
+    useEffect(() => {
         if (!isReady) {
             return;
         }
-        setPhase("revealing");
-        const timeout = window.setTimeout(
-            () => setPhase("done"),
-            REVEAL_DURATION_MS
+        const elapsed = performance.now() - mountedAt.current;
+        const wait = Math.max(0, loaderMinDuration - elapsed);
+        const revealTimeout = window.setTimeout(
+            () => setPhase("revealing"),
+            wait
         );
-        return () => window.clearTimeout(timeout);
-    }, [isReady]);
+        const doneTimeout = window.setTimeout(
+            () => setPhase("done"),
+            wait + REVEAL_DURATION_MS
+        );
+        return () => {
+            window.clearTimeout(revealTimeout);
+            window.clearTimeout(doneTimeout);
+        };
+    }, [isReady, loaderMinDuration]);
 
     if (phase === "done") {
         return null;
