@@ -149,7 +149,7 @@ export const sceneState = {
     },
     characterBoundary: 28,
     cameraBuffer: 2,
-    characterSpeed: 0.1,
+    characterSpeed: 6,
     characterStepSquash: 0.04,
     characterHeight: 6,
     cameraPanSpeed: 0.2,

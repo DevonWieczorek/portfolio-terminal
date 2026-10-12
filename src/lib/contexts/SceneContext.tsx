@@ -493,7 +493,7 @@ interface SceneConfig {
     rug: RugTraits;
     characterBoundary: number;
     cameraBuffer: number;
-    characterSpeed: number;
+    characterSpeed: number; // world units per second
     characterStepSquash: number; // squash and stretch per step, as a fraction of body height
     characterHeight: number;
     cameraPanSpeed: number;
@@ -552,7 +552,7 @@ const defaultSceneConfig: SceneConfig = {
     },
     characterBoundary: ROOM_SIZE - 2.25,
     cameraBuffer: 2,
-    characterSpeed: 0.15,
+    characterSpeed: 9,
     characterStepSquash: 0.04,
     cameraPanSpeed: 0.2,
     cameraRotateSpeed: 0.03,
