@@ -251,8 +251,8 @@ const defaultEffectsSettings: EffectsSettings = {
     bloomIntensity: 1.2,
     bloomThreshold: 0.65,
     bloomSmoothing: 0.3,
-    aoIntensity: 3,
-    aoRadius: 2,
+    aoIntensity: 1.5,
+    aoRadius: 1.25,
 };
 
 // Bass height (a full-scale bass is ~46in tall)
