@@ -297,6 +297,7 @@ interface SceneConfig {
         y: number;
         z: number;
     };
+    cameraLookAtHeight: number; // how far above the character the camera aims
     zoomSettings: {
         min: number;
         max: number;
@@ -325,11 +326,14 @@ const defaultSceneConfig: SceneConfig = {
     characterBoundary: ROOM_SIZE - 2.25,
     cameraBuffer: 2,
     characterSpeed: 0.1,
+    // Low and aimed above the character so the far wall (and the basses on
+    // it) stays in frame instead of the camera looking down at the floor
     cameraOffset: {
         x: 0,
-        y: 8,
+        y: 5,
         z: 18,
     },
+    cameraLookAtHeight: 3.5,
     zoomSettings: {
         min: 0.5,
         max: 2,

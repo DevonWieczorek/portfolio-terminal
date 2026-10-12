@@ -91,7 +91,8 @@ export const sceneState = {
     cameraBuffer: 2,
     characterSpeed: 0.1,
     characterHeight: 6,
-    cameraOffset: { x: 0, y: 8, z: 18 },
+    cameraOffset: { x: 0, y: 5, z: 18 },
+    cameraLookAtHeight: 3.5,
     zoomSettings: { min: 0.5, max: 2, speed: 0.1, default: 1 },
     desk: {
         scale: 2.5,
