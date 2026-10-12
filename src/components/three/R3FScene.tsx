@@ -14,6 +14,7 @@ import Room from "@/components/three/Room";
 import Character from "@/components/three/Character";
 import Lights from "@/components/three/Lights";
 import Camera from "@/components/three/Camera";
+import Effects from "@/components/three/Effects";
 import { SceneProvider } from "@/lib/contexts/SceneContext";
 import { MessageProvider, useMessage } from "@/lib/contexts/MessageContext";
 import Message from "@/components/three/Message";
@@ -165,6 +166,9 @@ const R3FSceneContent = memo(() => {
                                 {/* Camera controller */}
                                 <Camera />
                             </Suspense>
+
+                            {/* Postprocessing */}
+                            <Effects />
                         </Canvas>
                     </KeyboardControls>
                 )}
