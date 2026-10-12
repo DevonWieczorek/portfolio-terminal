@@ -220,8 +220,8 @@ const defaultBaseboardTraits: BaseboardTraits = {
 // Centered under the character's starting spot
 const defaultRugTraits: RugTraits = {
     position: { x: 0, z: 0 },
-    width: scaledFeet(10),
-    depth: scaledFeet(7),
+    width: scaledFeet(15),
+    depth: scaledFeet(10),
     borderWidth: scaledFeet(0.6),
     // Muted sage-teal with a slate border: cool against the warm wood floor
     // without competing with the character's saturated clothing
