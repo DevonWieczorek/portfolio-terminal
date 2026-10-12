@@ -16,7 +16,7 @@ describe("Monitor", () => {
     it("renders and loads the monitor model", () => {
         const { container } = render(<Monitor proximityPosition={[0, 0, 0]} />);
 
-        expect(useGLTFMock).toHaveBeenCalledWith("/models/monitor.glb");
+        expect(useGLTFMock).toHaveBeenCalledWith("/models/cartoon_monitor.glb");
         expect(container.querySelector("primitive")).toBeInTheDocument();
     });
 });

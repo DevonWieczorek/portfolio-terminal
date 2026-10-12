@@ -24,12 +24,26 @@ interface LightingSettings {
     brightness: number; // multiplier applied to every light in the room
     temperature: number; // color temperature in Kelvin; lower is warmer
     fixtures: Coordinates[]; // ceiling-mounted light positions
+    environmentIntensity: number; // strength of reflections on PBR materials
+}
+
+// Cartoon avatar palette, shaded with the same PBR lighting as the room
+interface CharacterAppearance {
+    skinColor: string;
+    shirtColor: string;
+    pantsColor: string;
+    featureColor: string; // eyes and mouth
+    roughness: number;
 }
 
 interface EffectsSettings {
     bloomIntensity: number;
     bloomThreshold: number;
     bloomSmoothing: number;
+    aoIntensity: number;
+    aoRadius: number; // world-space reach of the contact shadowing
+    vignetteOffset: number; // how far in from the edges the darkening starts
+    vignetteDarkness: number;
 }
 
 // Floor footprint of an L-shaped object anchored at its back-left corner
@@ -52,6 +66,30 @@ interface RoomDimensions {
 // Texture set and tiling for a room surface (floor, walls). Normal and
 // roughness maps are optional; without a roughness map, `roughness` applies
 // evenly across the surface.
+// One straight run of trim along a wall's interior face
+interface WallRun {
+    position: Coordinates;
+    length: number;
+    rotationY: number; // turns the run's local +Z to face into the room
+}
+
+interface BaseboardTraits {
+    runs: WallRun[];
+    height: number;
+    thickness: number;
+    color: string;
+}
+
+// Rectangular rug lying on the floor, with a contrasting border
+interface RugTraits {
+    position: { x: number; z: number };
+    width: number; // along the x axis
+    depth: number; // along the z axis
+    borderWidth: number;
+    color: string;
+    borderColor: string;
+}
+
 interface SurfaceTraits {
     textures: {
         map: string;
@@ -61,6 +99,14 @@ interface SurfaceTraits {
     tileSize: number; // feet covered by one repeat of the texture
     roughness: number;
     normalScale: number;
+}
+
+// Flat-painted ceiling with no texture. It sits above every light, so
+// `bounce` self-illuminates it to stand in for light reflected up off the room.
+interface CeilingTraits {
+    color: string;
+    roughness: number;
+    bounce: number;
 }
 
 interface Rotations {
@@ -137,9 +183,56 @@ const wallFaces = {
     front: ROOM_DEPTH / 2 - WALL_THICKNESS / 2,
 };
 
+// Chunky, oversized trim along every wall for a cartoon look. Each run spans
+// its wall's full interior length and sits flush against the wall face.
+const BASEBOARD_HEIGHT: number = scaledHeight(0.6);
+const BASEBOARD_THICKNESS: number = scaledFeet(0.15);
+const RUN_X: number = wallFaces.right - wallFaces.left;
+const RUN_Z: number = wallFaces.front - wallFaces.back;
+const defaultBaseboardTraits: BaseboardTraits = {
+    runs: [
+        {
+            position: { x: 0, y: 0, z: wallFaces.back },
+            length: RUN_X,
+            rotationY: 0,
+        },
+        {
+            position: { x: 0, y: 0, z: wallFaces.front },
+            length: RUN_X,
+            rotationY: Math.PI,
+        },
+        {
+            position: { x: wallFaces.left, y: 0, z: 0 },
+            length: RUN_Z,
+            rotationY: rotationY.counterclockwise,
+        },
+        {
+            position: { x: wallFaces.right, y: 0, z: 0 },
+            length: RUN_Z,
+            rotationY: rotationY.clockwise,
+        },
+    ],
+    height: BASEBOARD_HEIGHT,
+    thickness: BASEBOARD_THICKNESS,
+    color: "#FFFDF7",
+};
+
+// Centered under the character's starting spot
+const defaultRugTraits: RugTraits = {
+    position: { x: 0, z: 0 },
+    width: scaledFeet(15),
+    depth: scaledFeet(10),
+    borderWidth: scaledFeet(0.6),
+    // Muted sage-teal with a slate border: cool against the warm wood floor
+    // without competing with the character's saturated clothing
+    color: "#6FA3A0",
+    borderColor: "#34506B",
+};
+
 // Desk top height (a standard desk is ~30in tall)
 const DESK_HEIGHT: number = scaledHeight(2.5);
-// L-desk footprint as multiples of its top height, measured from l_shaped_desk.glb
+// L-desk footprint as multiples of its top height. Must match DESK in
+// .bin/generate-scene-models.mts, which builds cartoon_desk.glb.
 const DESK_PROPORTIONS: Footprint = {
     width: 2.566,
     depth: 2.258,
@@ -149,11 +242,12 @@ const DESK_PROPORTIONS: Footprint = {
 const defaultDeskTraits: DeepPartial<ObjectTraits> = {
     scale: DESK_HEIGHT,
     // The desk is anchored at its back-left corner, so this tucks it into the
-    // back-left corner of the room
+    // back-left corner of the room, pressed against the baseboards rather than
+    // the walls so its legs don't sink into the trim
     position: {
-        x: wallFaces.left,
+        x: wallFaces.left + BASEBOARD_THICKNESS,
         y: feetFromFloor(0),
-        z: wallFaces.back,
+        z: wallFaces.back + BASEBOARD_THICKNESS,
     },
     footprint: {
         width: DESK_PROPORTIONS.width * DESK_HEIGHT,
@@ -165,56 +259,68 @@ const defaultDeskTraits: DeepPartial<ObjectTraits> = {
 
 // Monitor height in feet
 const MONITOR_SCALE: number = scaledHeight(1.5);
-// Monitor is positioned relative to the desk's back-left corner
+// Screen glass in the monitor model's own units (1 unit tall, centered, facing
+// +Z). Must match MONITOR_SCREEN in .bin/generate-scene-models.mts.
+const MONITOR_GLASS = {
+    centerY: 0.1,
+    width: 0.74,
+    height: 0.58,
+    frontZ: 0.425,
+};
+// Monitor is positioned relative to the desk's back-left corner; the model is
+// centered, so lifting it by half its height stands it on the desk top
 const defaultMonitorTraits: DeepPartial<ObjectTraits> = {
     scale: MONITOR_SCALE,
     position: {
         x: scaledFeet(2),
-        y: scaledHeight(3.2),
+        y: DESK_HEIGHT + MONITOR_SCALE / 2,
         z: scaledFeet(1.4),
     },
     rotation: {
-        y: -1,
+        // Angled out of the corner toward the middle of the room
+        y: 0.57,
     },
     boxSize: {
         x: 10,
         y: 6,
         z: 6,
     },
+    // The camera flies in toward this point, so it's the center of the glass
     boxAnchor: {
         x: 0,
-        y: 0,
-        z: 0,
+        y: MONITOR_GLASS.centerY * MONITOR_SCALE,
+        z: MONITOR_GLASS.frontZ * MONITOR_SCALE,
     },
-    approachYawOffset: Math.PI / 4,
+    approachYawOffset: 0,
 };
 
-// Screen overlay in the monitor model's own units (the model is normalized to
-// 1 unit tall). The CRT faces the model's local +X and its glass tilts back
-// slightly, measured from monitor.glb.
+// Screen overlay in the monitor model's own units, sitting just in front of the
+// glass and inset so its square corners stay inside the glass's rounded ones
+const SCREEN_INSET = 0.02;
 const defaultMonitorScreenTraits: DeepPartial<ObjectTraits & GlowTraits> = {
-    width: 0.6,
-    height: 0.5,
+    width: MONITOR_GLASS.width - SCREEN_INSET * 2,
+    height: MONITOR_GLASS.height - SCREEN_INSET * 2,
     position: {
-        x: 0.39,
-        y: 0.105,
-        z: 0,
+        x: 0,
+        y: MONITOR_GLASS.centerY,
+        z: MONITOR_GLASS.frontZ + 0.002,
     },
     rotation: {
-        x: -0.1,
-        y: Math.PI / 2,
+        x: 0,
+        y: 0,
     },
     color: "#00ff00",
     intensity: 1.6,
 };
 
 // Overhead lighting: a 2x2 grid of ceiling fixtures, each centered in a
-// quadrant of the room, at a warm-white residential color temperature
+// quadrant of the room, at a soft warm-white color temperature
 const FIXTURE_Y: number = scaledHeight(ROOM_HEIGHT - 0.5);
 const FIXTURE_SPREAD: number = scaledFeet(7);
 const defaultLightingSettings: LightingSettings = {
     brightness: 1.35,
-    temperature: 5000,
+    temperature: 5600,
+    environmentIntensity: 0.2,
     fixtures: [-1, 1].flatMap(x =>
         [-1, 1].map(z => ({
             x: x * FIXTURE_SPREAD,
@@ -230,6 +336,10 @@ const defaultEffectsSettings: EffectsSettings = {
     bloomIntensity: 1.2,
     bloomThreshold: 0.65,
     bloomSmoothing: 0.3,
+    aoIntensity: 1.5,
+    aoRadius: 1.25,
+    vignetteOffset: 0.3,
+    vignetteDarkness: 0.45,
 };
 
 // Bass height (a full-scale bass is ~46in tall)
@@ -288,17 +398,23 @@ interface SceneConfig {
     wallThickness: number;
     floorSurface: SurfaceTraits;
     wallSurface: SurfaceTraits;
+    ceilingSurface: CeilingTraits;
+    baseboard: BaseboardTraits;
+    rug: RugTraits;
     characterBoundary: number;
     cameraBuffer: number;
     characterSpeed: number;
+    characterStepSquash: number; // squash and stretch per step, as a fraction of body height
     characterHeight: number;
     cameraPanSpeed: number;
     cameraRotateSpeed: number;
+    characterAppearance: CharacterAppearance;
     cameraOffset: {
         x: number;
         y: number;
         z: number;
     };
+    cameraLookAtHeight: number; // how far above the character the camera aims
     zoomSettings: {
         min: number;
         max: number;
@@ -312,28 +428,48 @@ interface SceneConfig {
     effects: EffectsSettings;
     bass: DeepPartial<ObjectTraits>;
     deck: DeepPartial<ObjectTraits>;
+    // Milliseconds the loading screen stays up, even if the room is ready
+    loaderMinDuration: number;
 }
 
 // Default scene configuration
 const defaultSceneConfig: SceneConfig = {
     rotations: rotationY,
     roomSize: ROOM_SIZE,
-    wallColor: "#F5F5DC",
+    wallColor: "#F2F0E8",
     wallHeight: ROOM_HEIGHT,
     wallThickness: WALL_THICKNESS,
     floorSurface: defaultFloorSurface,
     wallSurface: defaultWallSurface,
+    ceilingSurface: {
+        color: "#F7F6F2",
+        roughness: 0.9,
+        bounce: 0.4,
+    },
+    baseboard: defaultBaseboardTraits,
+    rug: defaultRugTraits,
     characterHeight: scaledHeight(6),
+    characterAppearance: {
+        skinColor: "#fccfaf",
+        shirtColor: "#269dff",
+        pantsColor: "#091634",
+        featureColor: "#000",
+        roughness: 0.75,
+    },
     characterBoundary: ROOM_SIZE - 2.25,
     cameraBuffer: 2,
-    characterSpeed: 0.1,
+    characterSpeed: 0.15,
+    characterStepSquash: 0.04,
     cameraPanSpeed: 0.2,
     cameraRotateSpeed: 0.03,
+    // Low and aimed above the character so the far wall (and the basses on
+    // it) stays in frame instead of the camera looking down at the floor
     cameraOffset: {
         x: 0,
-        y: 8,
+        y: 5,
         z: 18,
     },
+    cameraLookAtHeight: 3.5,
     zoomSettings: {
         min: 0.5,
         max: 2,
@@ -347,6 +483,7 @@ const defaultSceneConfig: SceneConfig = {
     effects: defaultEffectsSettings,
     bass: defaultBassTraits,
     deck: defaultDeckTraits,
+    loaderMinDuration: 5000,
 };
 
 // Context

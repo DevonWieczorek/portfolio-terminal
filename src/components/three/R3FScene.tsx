@@ -18,6 +18,7 @@ import Effects from "@/components/three/Effects";
 import { SceneProvider } from "@/lib/contexts/SceneContext";
 import { MessageProvider, useMessage } from "@/lib/contexts/MessageContext";
 import Message from "@/components/three/Message";
+import LoadingScreen from "@/components/three/LoadingScreen";
 import Terminal from "@/components/Terminal";
 import { useExperience } from "@/lib/stores/useExperience";
 import styles from "@/styles/R3FScene.module.scss";
@@ -135,20 +136,14 @@ const R3FSceneContent = memo(() => {
 
     return (
         <div className={styles.sceneContainer}>
-            {!isRoomReady && (
-                <div className={styles.loadingOverlay}>
-                    <div
-                        className={styles.spinner}
-                        aria-label="Loading room"
-                        role="status"
-                    />
-                </div>
-            )}
+            <LoadingScreen isReady={isRoomReady} />
             <div className={canvasClassName}>
                 {showCanvas && (
                     <KeyboardControls map={CONTROLS}>
                         <Canvas
-                            shadows
+                            // PCF soft shadows: blurred edges suit the
+                            // cartoon look better than hard pixel steps
+                            shadows="soft"
                             camera={{
                                 position: [0, 5, 10],
                                 fov: 45,
@@ -198,7 +193,7 @@ const R3FSceneContent = memo(() => {
                     isBlackout ? styles.blackoutVisible : "",
                 ].join(" ")}
             />
-            <Message text={message} />
+            <Message text={isRoomReady ? message : ""} />
         </div>
     );
 });

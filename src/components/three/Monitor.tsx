@@ -1,4 +1,4 @@
-import { memo, useCallback, useMemo, useRef } from "react";
+import { memo, useCallback, useEffect, useMemo, useRef } from "react";
 import { Vector3, type Group, type Quaternion } from "three";
 import { useGLTF } from "@react-three/drei";
 // #if DEBUG
@@ -11,6 +11,7 @@ import MonitorScreen from "@/components/three/MonitorScreen";
 import type { InteractiveBounds } from "@/components/three/InteractiveBox";
 // #endif
 import { useExperience } from "@/lib/stores/useExperience";
+import { enableShadows } from "@/utils/three";
 import type { CameraTarget } from "@/lib/stores/useExperience";
 
 type MonitorProps = {
@@ -36,14 +37,16 @@ const MONITOR_MESSAGE = "Press ENTER to use the computer.";
 const MONITOR_CAMERA_DISTANCE = 3.25;
 const MONITOR_CAMERA_HEIGHT = 1.4;
 const MONITOR_LOOK_AT_HEIGHT = 0.9;
-const MONITOR_APPROACH_YAW_OFFSET = Math.PI / 4;
-// Height of the model in its own units. Normalizing to 1 lets `monitor.scale`
-// represent the monitor's height in scene units.
-const MODEL_HEIGHT = 1;
+const MONITOR_APPROACH_YAW_OFFSET = 0;
+const MONITOR_MODEL_PATH = "/models/cartoon_monitor.glb";
 
 const Monitor = memo(({ proximityPosition }: MonitorProps) => {
     const { monitor } = useScene();
-    const monitorModel = useGLTF("/models/monitor.glb");
+    const monitorModel = useGLTF(MONITOR_MODEL_PATH);
+
+    useEffect(() => {
+        enableShadows(monitorModel.scene);
+    }, [monitorModel.scene]);
     const enterTerminal = useExperience(state => state.enterTerminal);
     // #if DEBUG
     const shouldSeedBoxControlsRef = useRef(true);
@@ -250,9 +253,8 @@ const Monitor = memo(({ proximityPosition }: MonitorProps) => {
                 .applyQuaternion(worldQuaternion)
                 .normalize();
             upWorld.copy(upBase).applyQuaternion(worldQuaternion).normalize();
-            // The monitor interaction anchor is biased to the left of the
-            // visible screen center, so we apply a configurable yaw offset
-            // to keep the terminal transition visually centered on display.
+            // Optional yaw so the approach can come in at an angle rather
+            // than straight down the screen normal.
             adjustedForward
                 .copy(forwardWorld)
                 .applyAxisAngle(upWorld, monitorApproachYawOffset)
@@ -318,8 +320,8 @@ const Monitor = memo(({ proximityPosition }: MonitorProps) => {
             position={[monitorX, monitorY, monitorZ]}
             rotation={[0, monitorRotationY, 0]}
         >
-            {/* Scale the screen with the model so it stays in model units */}
-            <group scale={monitorScale / MODEL_HEIGHT}>
+            {/* The model is 1 unit tall, so the screen stays in model units */}
+            <group scale={monitorScale}>
                 <primitive
                     object={monitorModel.scene}
                     position={[0, 0, 0]}
@@ -343,6 +345,6 @@ const Monitor = memo(({ proximityPosition }: MonitorProps) => {
 });
 Monitor.displayName = "Monitor";
 
-useGLTF.preload("/models/monitor.glb");
+useGLTF.preload(MONITOR_MODEL_PATH);
 
 export default Monitor;
