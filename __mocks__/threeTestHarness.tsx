@@ -144,6 +144,8 @@ export const sceneState = {
         width: 10,
         depth: 7,
         borderWidth: 0.6,
+        borderHeight: 0.01,
+        centerHeight: 0.015,
         color: "#6FA3A0",
         borderColor: "#34506B",
     },

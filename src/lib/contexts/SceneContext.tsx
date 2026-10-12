@@ -94,6 +94,9 @@ interface RugTraits {
     width: number; // along the x axis
     depth: number; // along the z axis
     borderWidth: number;
+    // Kept paper-thin so the character's blob shadow still sits above it
+    borderHeight: number;
+    centerHeight: number;
     color: string;
     borderColor: string;
 }
@@ -268,6 +271,8 @@ const defaultRugTraits: RugTraits = {
     width: scaledFeet(15),
     depth: scaledFeet(10),
     borderWidth: scaledFeet(0.6),
+    borderHeight: 0.01,
+    centerHeight: 0.015,
     // Muted sage-teal with a slate border: cool against the warm wood floor
     // without competing with the character's saturated clothing
     color: "#6FA3A0",
