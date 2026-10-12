@@ -362,7 +362,7 @@ const defaultSceneConfig: SceneConfig = {
     },
     characterBoundary: ROOM_SIZE - 2.25,
     cameraBuffer: 2,
-    characterSpeed: 0.1,
+    characterSpeed: 0.15,
     // Low and aimed above the character so the far wall (and the basses on
     // it) stays in frame instead of the camera looking down at the floor
     cameraOffset: {
