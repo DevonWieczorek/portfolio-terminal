@@ -54,6 +54,21 @@ const useTextureModuleMock = Object.assign(
     { preload: useTexturePreloadMock }
 );
 
+// Mirrors drei's zustand-backed progress store so subscribers rerender
+let progressState = { progress: 0, item: "" };
+const progressListeners = new Set<() => void>();
+const subscribeProgress = (listener: () => void) => {
+    progressListeners.add(listener);
+    return () => progressListeners.delete(listener);
+};
+export const setProgress = (next: Partial<typeof progressState>) => {
+    progressState = { ...progressState, ...next };
+    progressListeners.forEach(listener => listener());
+};
+export const useProgressMock = jest.fn(() =>
+    React.useSyncExternalStore(subscribeProgress, () => progressState)
+);
+
 export const keyboardState = {
     forward: false,
     backward: false,
@@ -137,6 +152,7 @@ export const sceneState = {
     },
     cameraOffset: { x: 0, y: 5, z: 18 },
     cameraLookAtHeight: 3.5,
+    loaderMinDuration: 3000,
     zoomSettings: { min: 0.5, max: 2, speed: 0.1, default: 1 },
     desk: {
         scale: 2.5,
@@ -259,6 +275,7 @@ jest.mock("@react-three/drei", () => ({
     useGLTF: useGLTFModuleMock,
     useTexture: useTextureModuleMock,
     useKeyboardControls: () => [subscribeMock, getKeysMock],
+    useProgress: () => useProgressMock(),
     Environment: ({ children }: { children?: React.ReactNode }) => (
         <div data-testid="environment">{children}</div>
     ),
@@ -380,6 +397,7 @@ export function resetThreeTestState() {
     messageState.message = "";
     messageState.interaction = null;
     movementState.position = { x: 0, y: 1, z: 0 };
+    progressState = { progress: 0, item: "" };
 }
 
 export function runFrameCallbacks(elapsedTime = 0, delta = 1 / 60) {
