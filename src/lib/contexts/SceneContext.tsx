@@ -241,11 +241,12 @@ const DESK_PROPORTIONS: Footprint = {
 const defaultDeskTraits: DeepPartial<ObjectTraits> = {
     scale: DESK_HEIGHT,
     // The desk is anchored at its back-left corner, so this tucks it into the
-    // back-left corner of the room
+    // back-left corner of the room, pressed against the baseboards rather than
+    // the walls so its legs don't sink into the trim
     position: {
-        x: wallFaces.left,
+        x: wallFaces.left + BASEBOARD_THICKNESS,
         y: feetFromFloor(0),
-        z: wallFaces.back,
+        z: wallFaces.back + BASEBOARD_THICKNESS,
     },
     footprint: {
         width: DESK_PROPORTIONS.width * DESK_HEIGHT,
