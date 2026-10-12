@@ -64,6 +64,29 @@ interface RoomDimensions {
 // Texture set and tiling for a room surface (floor, walls). Normal and
 // roughness maps are optional; without a roughness map, `roughness` applies
 // evenly across the surface.
+// One straight run of trim along a wall's interior face
+interface WallRun {
+    position: Coordinates;
+    length: number;
+    rotationY: number; // turns the run's local +Z to face into the room
+}
+
+interface BaseboardTraits {
+    runs: WallRun[];
+    height: number;
+    thickness: number;
+    color: string;
+}
+
+// Round rug lying on the floor, with a contrasting border ring
+interface RugTraits {
+    position: { x: number; z: number };
+    radius: number;
+    borderWidth: number;
+    color: string;
+    borderColor: string;
+}
+
 interface SurfaceTraits {
     textures: {
         map: string;
@@ -147,6 +170,49 @@ const wallFaces = {
     right: ROOM_WIDTH / 2 - WALL_THICKNESS / 2,
     back: -ROOM_DEPTH / 2 + WALL_THICKNESS / 2,
     front: ROOM_DEPTH / 2 - WALL_THICKNESS / 2,
+};
+
+// Chunky, oversized trim along every wall for a cartoon look. Each run spans
+// its wall's full interior length and sits flush against the wall face.
+const BASEBOARD_HEIGHT: number = scaledHeight(0.6);
+const BASEBOARD_THICKNESS: number = scaledFeet(0.15);
+const RUN_X: number = wallFaces.right - wallFaces.left;
+const RUN_Z: number = wallFaces.front - wallFaces.back;
+const defaultBaseboardTraits: BaseboardTraits = {
+    runs: [
+        {
+            position: { x: 0, y: 0, z: wallFaces.back },
+            length: RUN_X,
+            rotationY: 0,
+        },
+        {
+            position: { x: 0, y: 0, z: wallFaces.front },
+            length: RUN_X,
+            rotationY: Math.PI,
+        },
+        {
+            position: { x: wallFaces.left, y: 0, z: 0 },
+            length: RUN_Z,
+            rotationY: rotationY.counterclockwise,
+        },
+        {
+            position: { x: wallFaces.right, y: 0, z: 0 },
+            length: RUN_Z,
+            rotationY: rotationY.clockwise,
+        },
+    ],
+    height: BASEBOARD_HEIGHT,
+    thickness: BASEBOARD_THICKNESS,
+    color: "#FFFDF7",
+};
+
+// Centered under the character's starting spot
+const defaultRugTraits: RugTraits = {
+    position: { x: 0, z: 0 },
+    radius: scaledFeet(5),
+    borderWidth: scaledFeet(0.6),
+    color: "#F2B84B",
+    borderColor: "#E8735A",
 };
 
 // Desk top height (a standard desk is ~30in tall)
@@ -303,6 +369,8 @@ interface SceneConfig {
     wallThickness: number;
     floorSurface: SurfaceTraits;
     wallSurface: SurfaceTraits;
+    baseboard: BaseboardTraits;
+    rug: RugTraits;
     characterBoundary: number;
     cameraBuffer: number;
     characterSpeed: number;
@@ -338,6 +406,8 @@ const defaultSceneConfig: SceneConfig = {
     wallThickness: WALL_THICKNESS,
     floorSurface: defaultFloorSurface,
     wallSurface: defaultWallSurface,
+    baseboard: defaultBaseboardTraits,
+    rug: defaultRugTraits,
     characterHeight: scaledHeight(6),
     characterAppearance: {
         skinColor: "#fccfaf",

@@ -10,6 +10,8 @@ import { useMessage } from "@/lib/contexts/MessageContext";
 import Desk from "@/components/three/Desk";
 import BassGroup from "@/components/three/BassGroup";
 import SkateboardGroup from "@/components/three/SkateboardGroup";
+import Baseboards from "@/components/three/Baseboards";
+import Rug from "@/components/three/Rug";
 import { INTRO_MESSAGE } from "@/lib/constants/sceneMessages";
 import {
     useSurfaceTextures,
@@ -158,6 +160,9 @@ const Room = memo(({ onReady }: RoomProps) => {
                     color={wallColor}
                 />
             </mesh>
+
+            <Rug />
+            <Baseboards />
 
             <BassGroup proximityPosition={proximityPositionRef.current} />
 

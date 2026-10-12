@@ -87,6 +87,36 @@ export const sceneState = {
         roughness: 0.9,
         normalScale: 0.6,
     },
+    baseboard: {
+        runs: [
+            { position: { x: 0, y: 0, z: -14.5 }, length: 29, rotationY: 0 },
+            {
+                position: { x: 0, y: 0, z: 14.5 },
+                length: 29,
+                rotationY: Math.PI,
+            },
+            {
+                position: { x: -14.5, y: 0, z: 0 },
+                length: 29,
+                rotationY: Math.PI / 2,
+            },
+            {
+                position: { x: 14.5, y: 0, z: 0 },
+                length: 29,
+                rotationY: -Math.PI / 2,
+            },
+        ],
+        height: 0.6,
+        thickness: 0.15,
+        color: "#FFFDF7",
+    },
+    rug: {
+        position: { x: 0, z: 0 },
+        radius: 5,
+        borderWidth: 0.6,
+        color: "#F2B84B",
+        borderColor: "#E8735A",
+    },
     characterBoundary: 28,
     cameraBuffer: 2,
     characterSpeed: 0.1,
