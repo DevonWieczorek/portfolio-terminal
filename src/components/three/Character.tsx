@@ -68,6 +68,7 @@ const FACE_FEATURES: { position: Vec3; size: Vec3 }[] = [
 
 type CharacterControls = {
     characterHeight: number;
+    characterSpeed: number;
     skinColor: string;
     shirtColor: string;
     pantsColor: string;
@@ -116,6 +117,7 @@ const Character = memo(() => {
     const allowMovement = mode === "scene" && !isTransitioning;
 
     let height: number,
+        speed: number,
         skinColor: string,
         shirtColor: string,
         pantsColor: string,
@@ -125,6 +127,7 @@ const Character = memo(() => {
     // #if DEBUG
     ({
         characterHeight: height,
+        characterSpeed: speed,
         skinColor,
         shirtColor,
         pantsColor,
@@ -137,6 +140,12 @@ const Character = memo(() => {
                 value: characterHeight,
                 min: 1,
                 max: 12,
+                step: 0.01,
+            },
+            characterSpeed: {
+                value: characterSpeed,
+                min: 0.01,
+                max: 1,
                 step: 0.01,
             },
             skinColor: characterAppearance.skinColor,
@@ -156,6 +165,7 @@ const Character = memo(() => {
 
     // #if !DEBUG
     height = characterHeight;
+    speed = characterSpeed;
     ({ skinColor, shirtColor, pantsColor, featureColor, roughness } =
         characterAppearance);
     // #endif
@@ -165,9 +175,6 @@ const Character = memo(() => {
     // camera and interaction boxes, so it isn't used to place the body.
     const characterScale = height / MODEL_HEIGHT;
     const bodyY = -MODEL_FEET_Y * characterScale;
-
-    // Movement speed from context
-    const speed = characterSpeed;
 
     // Room boundaries from context
     const boundary = characterBoundary / 2;
