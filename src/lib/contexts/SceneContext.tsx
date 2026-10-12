@@ -80,10 +80,11 @@ interface BaseboardTraits {
     color: string;
 }
 
-// Round rug lying on the floor, with a contrasting border ring
+// Rectangular rug lying on the floor, with a contrasting border
 interface RugTraits {
     position: { x: number; z: number };
-    radius: number;
+    width: number; // along the x axis
+    depth: number; // along the z axis
     borderWidth: number;
     color: string;
     borderColor: string;
@@ -219,10 +220,13 @@ const defaultBaseboardTraits: BaseboardTraits = {
 // Centered under the character's starting spot
 const defaultRugTraits: RugTraits = {
     position: { x: 0, z: 0 },
-    radius: scaledFeet(5),
+    width: scaledFeet(10),
+    depth: scaledFeet(7),
     borderWidth: scaledFeet(0.6),
-    color: "#F2B84B",
-    borderColor: "#E8735A",
+    // Muted sage-teal with a slate border: cool against the warm wood floor
+    // without competing with the character's saturated clothing
+    color: "#6FA3A0",
+    borderColor: "#34506B",
 };
 
 // Desk top height (a standard desk is ~30in tall)

@@ -10,9 +10,9 @@ describe("Rug", () => {
         resetThreeTestState();
     });
 
-    it("renders a center and a border ring", () => {
+    it("renders a center and a border", () => {
         const { container } = render(<Rug />);
 
-        expect(container.querySelectorAll("cylindergeometry")).toHaveLength(2);
+        expect(container.querySelectorAll("boxgeometry")).toHaveLength(2);
     });
 });

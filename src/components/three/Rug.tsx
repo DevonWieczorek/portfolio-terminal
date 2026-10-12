@@ -7,7 +7,8 @@ import { useScene } from "@/lib/contexts/SceneContext";
 type RugControls = {
     rugX: number;
     rugZ: number;
-    rugRadius: number;
+    rugWidth: number;
+    rugDepth: number;
     rugColor: string;
     rugBorderColor: string;
 };
@@ -15,24 +16,26 @@ type RugControls = {
 // Kept paper-thin so the character's blob shadow still sits above it
 const BORDER_HEIGHT = 0.01;
 const CENTER_HEIGHT = 0.015;
-const SEGMENTS = 64;
+const ROUGHNESS = 0.9;
 
 const Rug = memo(() => {
     const { rug } = useScene();
 
     let rugX: number,
         rugZ: number,
-        rugRadius: number,
+        rugWidth: number,
+        rugDepth: number,
         rugColor: string,
         rugBorderColor: string;
 
     // #if DEBUG
-    ({ rugX, rugZ, rugRadius, rugColor, rugBorderColor } = useControls(
+    ({ rugX, rugZ, rugWidth, rugDepth, rugColor, rugBorderColor } = useControls(
         "Rug",
         {
             rugX: { value: rug.position.x, min: -14, max: 14, step: 0.1 },
             rugZ: { value: rug.position.z, min: -14, max: 14, step: 0.1 },
-            rugRadius: { value: rug.radius, min: 1, max: 12, step: 0.1 },
+            rugWidth: { value: rug.width, min: 2, max: 28, step: 0.1 },
+            rugDepth: { value: rug.depth, min: 2, max: 28, step: 0.1 },
             rugColor: rug.color,
             rugBorderColor: rug.borderColor,
         },
@@ -43,26 +46,27 @@ const Rug = memo(() => {
     // #if !DEBUG
     rugX = rug.position.x;
     rugZ = rug.position.z;
-    rugRadius = rug.radius;
+    rugWidth = rug.width;
+    rugDepth = rug.depth;
     rugColor = rug.color;
     rugBorderColor = rug.borderColor;
     // #endif
 
-    const centerRadius = Math.max(0, rugRadius - rug.borderWidth);
+    const centerWidth = Math.max(0, rugWidth - rug.borderWidth * 2);
+    const centerDepth = Math.max(0, rugDepth - rug.borderWidth * 2);
 
     return (
         <group position={[rugX, 0, rugZ]}>
             <mesh position={[0, BORDER_HEIGHT / 2, 0]} receiveShadow>
-                <cylinderGeometry
-                    args={[rugRadius, rugRadius, BORDER_HEIGHT, SEGMENTS]}
+                <boxGeometry args={[rugWidth, BORDER_HEIGHT, rugDepth]} />
+                <meshStandardMaterial
+                    color={rugBorderColor}
+                    roughness={ROUGHNESS}
                 />
-                <meshStandardMaterial color={rugBorderColor} roughness={1} />
             </mesh>
             <mesh position={[0, CENTER_HEIGHT / 2, 0]} receiveShadow>
-                <cylinderGeometry
-                    args={[centerRadius, centerRadius, CENTER_HEIGHT, SEGMENTS]}
-                />
-                <meshStandardMaterial color={rugColor} roughness={1} />
+                <boxGeometry args={[centerWidth, CENTER_HEIGHT, centerDepth]} />
+                <meshStandardMaterial color={rugColor} roughness={ROUGHNESS} />
             </mesh>
         </group>
     );
