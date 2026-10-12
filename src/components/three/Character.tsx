@@ -37,9 +37,8 @@ const MAX_LIMB_SWING = 0.6;
 const BOB_HEIGHT = 0.1;
 const WALK_BLEND_RATE = 10;
 const BREATH_FREQUENCY = 2;
-// Cartoon squash and stretch, as a fraction of body height: compress as each
-// foot lands, stretch at the top of the step, and swell gently when idle
-const STEP_SQUASH = 0.08;
+// Idle swell, as a fraction of body height. The walking squash and stretch
+// amount comes from SceneContext.
 const BREATH_SQUASH = 0.025;
 
 const BLOB_SHADOW_RADIUS = 1;
@@ -72,6 +71,7 @@ const FACE_FEATURES: { position: Vec3; size: Vec3 }[] = [
 type CharacterControls = {
     characterHeight: number;
     characterSpeed: number;
+    stepSquash: number;
     skinColor: string;
     shirtColor: string;
     pantsColor: string;
@@ -107,6 +107,7 @@ const Character = memo(() => {
     const setPosition = useMovement(state => state.setPosition);
     const {
         characterSpeed,
+        characterStepSquash,
         characterBoundary,
         characterHeight,
         characterAppearance,
@@ -121,6 +122,7 @@ const Character = memo(() => {
 
     let height: number,
         speed: number,
+        stepSquash: number,
         skinColor: string,
         shirtColor: string,
         pantsColor: string,
@@ -131,6 +133,7 @@ const Character = memo(() => {
     ({
         characterHeight: height,
         characterSpeed: speed,
+        stepSquash,
         skinColor,
         shirtColor,
         pantsColor,
@@ -151,6 +154,12 @@ const Character = memo(() => {
                 max: 1,
                 step: 0.01,
             },
+            stepSquash: {
+                value: characterStepSquash,
+                min: 0,
+                max: 0.2,
+                step: 0.005,
+            },
             skinColor: characterAppearance.skinColor,
             shirtColor: characterAppearance.shirtColor,
             pantsColor: characterAppearance.pantsColor,
@@ -169,6 +178,7 @@ const Character = memo(() => {
     // #if !DEBUG
     height = characterHeight;
     speed = characterSpeed;
+    stepSquash = characterStepSquash;
     ({ skinColor, shirtColor, pantsColor, featureColor, roughness } =
         characterAppearance);
     // #endif
@@ -292,8 +302,8 @@ const Character = memo(() => {
         const swing = Math.sin(stridePhase.current) * MAX_LIMB_SWING * blend;
         const stepHeight = Math.abs(Math.sin(stridePhase.current));
         const bob = stepHeight * BOB_HEIGHT;
-        // -1 as a foot lands, +1 at the top of the step
-        const stepStretch = (stepHeight * 2 - 1) * STEP_SQUASH;
+        // Compress as a foot lands, stretch at the top of the step
+        const stepStretch = (stepHeight * 2 - 1) * stepSquash;
         const breathStretch =
             Math.sin(elapsed * BREATH_FREQUENCY) * BREATH_SQUASH;
         const stretch = stepStretch * blend + breathStretch * (1 - blend);

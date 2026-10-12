@@ -125,6 +125,7 @@ export const sceneState = {
     characterBoundary: 28,
     cameraBuffer: 2,
     characterSpeed: 0.1,
+    characterStepSquash: 0.04,
     characterHeight: 6,
     characterAppearance: {
         skinColor: "#f7d0b4",
