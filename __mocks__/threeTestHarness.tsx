@@ -174,6 +174,8 @@ export const sceneState = {
         bloomSmoothing: 0.3,
         aoIntensity: 3,
         aoRadius: 2,
+        vignetteOffset: 0.3,
+        vignetteDarkness: 0.45,
     },
     bass: {
         position: { x: -1, y: 4, z: -14 },
@@ -281,6 +283,13 @@ jest.mock("@react-three/postprocessing", () => ({
             data-testid="bloom"
             data-intensity={String(props.intensity)}
             data-threshold={String(props.luminanceThreshold)}
+        />
+    ),
+    Vignette: (props: Record<string, unknown>) => (
+        <div
+            data-testid="vignette"
+            data-offset={String(props.offset)}
+            data-darkness={String(props.darkness)}
         />
     ),
     ToneMapping: ({ mode }: { mode: number }) => (

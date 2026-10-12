@@ -42,6 +42,8 @@ interface EffectsSettings {
     bloomSmoothing: number;
     aoIntensity: number;
     aoRadius: number; // world-space reach of the contact shadowing
+    vignetteOffset: number; // how far in from the edges the darkening starts
+    vignetteDarkness: number;
 }
 
 // Floor footprint of an L-shaped object anchored at its back-left corner
@@ -311,6 +313,8 @@ const defaultEffectsSettings: EffectsSettings = {
     bloomSmoothing: 0.3,
     aoIntensity: 3,
     aoRadius: 2,
+    vignetteOffset: 0.3,
+    vignetteDarkness: 0.45,
 };
 
 // Bass height (a full-scale bass is ~46in tall)
