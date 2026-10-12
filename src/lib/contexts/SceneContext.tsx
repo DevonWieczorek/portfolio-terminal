@@ -49,6 +49,20 @@ interface RoomDimensions {
     interiorDepth: number;
 }
 
+// Texture set and tiling for a room surface (floor, walls). Normal and
+// roughness maps are optional; without a roughness map, `roughness` applies
+// evenly across the surface.
+interface SurfaceTraits {
+    textures: {
+        map: string;
+        normalMap?: string;
+        roughnessMap?: string;
+    };
+    tileSize: number; // feet covered by one repeat of the texture
+    roughness: number;
+    normalScale: number;
+}
+
 interface Rotations {
     clockwise: number;
     counterclockwise: number;
@@ -73,6 +87,30 @@ const roomDimensions: RoomDimensions = {
 const rotationY: Rotations = {
     clockwise: -Math.PI / 2,
     counterclockwise: Math.PI / 2,
+};
+
+// One meter in feet, for textures authored at real-world scale
+const METER: number = 3.281;
+
+// Oak planks: one tile is ~2m x 2m (8 planks)
+const defaultFloorSurface: SurfaceTraits = {
+    textures: {
+        map: "/textures/floor_albedo.jpg",
+    },
+    tileSize: 1.5 * METER,
+    roughness: 0.35,
+    normalScale: 1,
+};
+
+// Eggshell plaster: one tile is ~1m x 1m. The albedo is near-white so
+// `wallColor` tints it.
+const defaultWallSurface: SurfaceTraits = {
+    textures: {
+        map: "/textures/wall_albedo.jpg",
+    },
+    tileSize: METER,
+    roughness: 0.35,
+    normalScale: 1,
 };
 
 // Scale factor based on INTERIOR room size vs standard interior (28x28x12)
@@ -248,6 +286,8 @@ interface SceneConfig {
     wallColor: string;
     wallHeight: number;
     wallThickness: number;
+    floorSurface: SurfaceTraits;
+    wallSurface: SurfaceTraits;
     characterBoundary: number;
     cameraBuffer: number;
     characterSpeed: number;
@@ -279,6 +319,8 @@ const defaultSceneConfig: SceneConfig = {
     wallColor: "#F5F5DC",
     wallHeight: ROOM_HEIGHT,
     wallThickness: WALL_THICKNESS,
+    floorSurface: defaultFloorSurface,
+    wallSurface: defaultWallSurface,
     characterHeight: scaledHeight(6),
     characterBoundary: ROOM_SIZE - 2.25,
     cameraBuffer: 2,

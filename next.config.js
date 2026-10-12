@@ -6,7 +6,7 @@ const nextConfig = {
     },
     webpack: config => {
         config.module.rules.push({
-            test: /src\/components\/three\/(InteractiveBox|SkateboardGroup|Desk|BassGroup|Bass|Character|Monitor|MonitorScreen|Effects|Lights)\.tsx$/,
+            test: /src\/components\/three\/(InteractiveBox|SkateboardGroup|Desk|Room|BassGroup|Bass|Character|Monitor|MonitorScreen|Effects|Lights)\.tsx$/,
             enforce: "pre",
             use: [
                 {

@@ -28,16 +28,29 @@ const useGLTFModuleMock = Object.assign((path: string) => useGLTFMock(path), {
     preload: useGLTFPreloadMock,
 });
 
-export const useTextureMock = jest.fn((_: string) => ({
+const createTextureMock = () => ({
     wrapS: 0,
     wrapT: 0,
     repeat: { set: jest.fn() },
+    anisotropy: 1,
+    colorSpace: "",
     needsUpdate: false,
-}));
+});
+
+// Mirrors drei: a single path returns one texture, a map of paths returns a
+// map of textures
+export const useTextureMock = jest.fn(
+    (paths: string | Record<string, string>) =>
+        typeof paths === "string"
+            ? createTextureMock()
+            : Object.fromEntries(
+                  Object.keys(paths).map(key => [key, createTextureMock()])
+              )
+);
 
 export const useTexturePreloadMock = jest.fn();
 const useTextureModuleMock = Object.assign(
-    (path: string) => useTextureMock(path),
+    (paths: string | Record<string, string>) => useTextureMock(paths),
     { preload: useTexturePreloadMock }
 );
 
@@ -56,6 +69,24 @@ export const sceneState = {
     wallColor: "#F5F5DC",
     wallHeight: 12,
     wallThickness: 1,
+    floorSurface: {
+        textures: {
+            map: "/textures/floor_albedo.jpg",
+            normalMap: "/textures/floor_normal.jpg",
+            roughnessMap: undefined,
+        },
+        tileSize: 6.562,
+        roughness: 0.7,
+        normalScale: 1,
+    },
+    wallSurface: {
+        textures: {
+            map: "/textures/wall_albedo.jpg",
+        },
+        tileSize: 3.281,
+        roughness: 0.9,
+        normalScale: 0.6,
+    },
     characterBoundary: 28,
     cameraBuffer: 2,
     characterSpeed: 0.1,
