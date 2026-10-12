@@ -40,9 +40,10 @@ const Character = memo(() => {
     const allowMovement = mode === "scene" && !isTransitioning;
 
     let height: number;
+    let speed: number;
 
     // #if DEBUG
-    ({ characterHeight: height } = useControls(
+    ({ characterHeight: height, characterSpeed: speed } = useControls(
         "Character",
         {
             characterHeight: {
@@ -51,13 +52,20 @@ const Character = memo(() => {
                 max: 12,
                 step: 0.01,
             },
+            characterSpeed: {
+                value: characterSpeed,
+                min: 0.01,
+                max: 1,
+                step: 0.01,
+            },
         },
         { collapsed: true }
-    ) as { characterHeight: number });
+    ) as { characterHeight: number; characterSpeed: number });
     // #endif
 
     // #if !DEBUG
     height = characterHeight;
+    speed = characterSpeed;
     // #endif
 
     // Scale the avatar to the configured height and lift it so its feet rest
@@ -65,9 +73,6 @@ const Character = memo(() => {
     // camera and interaction boxes, so it isn't used to place the body.
     const characterScale = height / MODEL_HEIGHT;
     const bodyY = -MODEL_FEET_Y * characterScale;
-
-    // Movement speed from context
-    const speed = characterSpeed;
 
     // Room boundaries from context
     const boundary = characterBoundary / 2;
