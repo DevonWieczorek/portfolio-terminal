@@ -18,6 +18,14 @@ describe("Effects", () => {
         expect(bloom).toHaveAttribute("data-threshold", "1");
     });
 
+    it("renders ambient occlusion from the scene settings", () => {
+        render(<Effects />);
+
+        const ao = screen.getByTestId("n8ao");
+        expect(ao).toHaveAttribute("data-intensity", "3");
+        expect(ao).toHaveAttribute("data-radius", "2");
+    });
+
     it("restores ACES tone mapping as the final pass", () => {
         render(<Effects />);
 

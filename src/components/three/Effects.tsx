@@ -2,6 +2,7 @@ import { memo } from "react";
 import {
     Bloom,
     EffectComposer,
+    N8AO,
     ToneMapping,
 } from "@react-three/postprocessing";
 import { ToneMappingMode } from "postprocessing";
@@ -14,48 +15,77 @@ type EffectsControls = {
     bloomIntensity: number;
     bloomThreshold: number;
     bloomSmoothing: number;
+    aoIntensity: number;
+    aoRadius: number;
 };
 
 const Effects = memo(() => {
     const { effects } = useScene();
 
-    let bloomIntensity: number, bloomThreshold: number, bloomSmoothing: number;
+    let bloomIntensity: number,
+        bloomThreshold: number,
+        bloomSmoothing: number,
+        aoIntensity: number,
+        aoRadius: number;
 
     // #if DEBUG
-    ({ bloomIntensity, bloomThreshold, bloomSmoothing } = useControls(
-        "Effects",
-        {
-            bloomIntensity: {
-                value: effects.bloomIntensity,
-                min: 0,
-                max: 5,
-                step: 0.05,
+    ({ bloomIntensity, bloomThreshold, bloomSmoothing, aoIntensity, aoRadius } =
+        useControls(
+            "Effects",
+            {
+                bloomIntensity: {
+                    value: effects.bloomIntensity,
+                    min: 0,
+                    max: 5,
+                    step: 0.05,
+                },
+                bloomThreshold: {
+                    value: effects.bloomThreshold,
+                    min: 0,
+                    max: 2,
+                    step: 0.01,
+                },
+                bloomSmoothing: {
+                    value: effects.bloomSmoothing,
+                    min: 0,
+                    max: 1,
+                    step: 0.01,
+                },
+                aoIntensity: {
+                    value: effects.aoIntensity,
+                    min: 0,
+                    max: 10,
+                    step: 0.1,
+                },
+                aoRadius: {
+                    value: effects.aoRadius,
+                    min: 0.1,
+                    max: 8,
+                    step: 0.1,
+                },
             },
-            bloomThreshold: {
-                value: effects.bloomThreshold,
-                min: 0,
-                max: 2,
-                step: 0.01,
-            },
-            bloomSmoothing: {
-                value: effects.bloomSmoothing,
-                min: 0,
-                max: 1,
-                step: 0.01,
-            },
-        },
-        { collapsed: true }
-    ) as EffectsControls);
+            { collapsed: true }
+        ) as EffectsControls);
     // #endif
 
     // #if !DEBUG
     bloomIntensity = effects.bloomIntensity;
     bloomThreshold = effects.bloomThreshold;
     bloomSmoothing = effects.bloomSmoothing;
+    aoIntensity = effects.aoIntensity;
+    aoRadius = effects.aoRadius;
     // #endif
 
     return (
         <EffectComposer>
+            {/* Darkens creases and contact points (wall corners, feet on the
+                floor) so objects feel grounded; half res keeps it cheap */}
+            <N8AO
+                halfRes
+                quality="medium"
+                intensity={aoIntensity}
+                aoRadius={aoRadius}
+            />
             <Bloom
                 mipmapBlur
                 intensity={bloomIntensity}

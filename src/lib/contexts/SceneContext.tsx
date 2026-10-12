@@ -30,6 +30,8 @@ interface EffectsSettings {
     bloomIntensity: number;
     bloomThreshold: number;
     bloomSmoothing: number;
+    aoIntensity: number;
+    aoRadius: number; // world-space reach of the contact shadowing
 }
 
 // Floor footprint of an L-shaped object anchored at its back-left corner
@@ -230,6 +232,8 @@ const defaultEffectsSettings: EffectsSettings = {
     bloomIntensity: 1.2,
     bloomThreshold: 0.65,
     bloomSmoothing: 0.3,
+    aoIntensity: 3,
+    aoRadius: 2,
 };
 
 // Bass height (a full-scale bass is ~46in tall)

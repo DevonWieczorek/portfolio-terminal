@@ -134,6 +134,8 @@ export const sceneState = {
         bloomIntensity: 1.2,
         bloomThreshold: 1,
         bloomSmoothing: 0.3,
+        aoIntensity: 3,
+        aoRadius: 2,
     },
     bass: {
         position: { x: -1, y: 4, z: -14 },
@@ -219,6 +221,13 @@ jest.mock("@react-three/postprocessing", () => ({
     __esModule: true,
     EffectComposer: ({ children }: { children: React.ReactNode }) => (
         <div data-testid="effect-composer">{children}</div>
+    ),
+    N8AO: (props: Record<string, unknown>) => (
+        <div
+            data-testid="n8ao"
+            data-intensity={String(props.intensity)}
+            data-radius={String(props.aoRadius)}
+        />
     ),
     Bloom: (props: Record<string, unknown>) => (
         <div
