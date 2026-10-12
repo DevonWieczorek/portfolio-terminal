@@ -139,7 +139,9 @@ const R3FSceneContent = memo(() => {
                 {showCanvas && (
                     <KeyboardControls map={CONTROLS}>
                         <Canvas
-                            shadows
+                            // PCF soft shadows: blurred edges suit the
+                            // cartoon look better than hard pixel steps
+                            shadows="soft"
                             camera={{
                                 position: [0, 5, 10],
                                 fov: 45,

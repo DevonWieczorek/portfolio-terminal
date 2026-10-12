@@ -1,5 +1,5 @@
 import { memo, useMemo } from "react";
-import { Color } from "three";
+import { Color, Object3D } from "three";
 import { Environment, Lightformer } from "@react-three/drei";
 // #if DEBUG
 import { useControls } from "leva";
@@ -31,9 +31,47 @@ const ENV_PANEL_SIZE = 4;
 const ENV_RIM_INTENSITY = 0.8;
 const ENV_RIM_COLORS = ["#ffb38a", "#7fd6e0"];
 const ENV_RESOLUTION = 256;
+// Padding around the room for the key light's shadow frustum; fitting it to
+// the room spends the whole shadow map on visible floor
+const SHADOW_MARGIN = 1;
+
+type FixtureLightProps = {
+    position: [number, number, number];
+    color: Color;
+    intensity: number;
+};
+
+// A downlight that lights the whole hemisphere below it, matching a point
+// light there, but leaves the ceiling just above it unlit instead of
+// blowing it out. The soft edge fades the light out near the tops of the
+// walls instead of cutting it off.
+const FIXTURE_PENUMBRA = 0.1;
+
+const FixtureLight = ({ position, color, intensity }: FixtureLightProps) => {
+    const target = useMemo(() => new Object3D(), []);
+    const [x, , z] = position;
+
+    return (
+        <>
+            <spotLight
+                position={position}
+                target={target}
+                color={color}
+                intensity={intensity}
+                angle={Math.PI / 2}
+                penumbra={FIXTURE_PENUMBRA}
+                decay={2}
+            />
+            {/* The target must be in the scene for its world position to
+                update, so the light points straight down */}
+            <primitive object={target} position={[x, 0, z]} />
+        </>
+    );
+};
 
 const Lights = memo(() => {
     const { lighting, wallHeight, roomSize } = useScene();
+    const shadowExtent = roomSize / 2 + SHADOW_MARGIN;
 
     let brightness: number, temperature: number, environmentIntensity: number;
 
@@ -94,21 +132,24 @@ const Lights = memo(() => {
                 intensity={KEY_INTENSITY * brightness}
                 castShadow
                 shadow-mapSize={[2048, 2048]}
-                shadow-camera-far={50}
-                shadow-camera-left={-20}
-                shadow-camera-right={20}
-                shadow-camera-top={20}
-                shadow-camera-bottom={-20}
+                shadow-camera-far={wallHeight * 4}
+                shadow-camera-left={-shadowExtent}
+                shadow-camera-right={shadowExtent}
+                shadow-camera-top={shadowExtent}
+                shadow-camera-bottom={-shadowExtent}
+                // Offsets keep the textured floor and walls from shadowing
+                // themselves (acne) without detaching shadows from objects
+                shadow-bias={-0.0005}
+                shadow-normalBias={0.02}
             />
 
             {/* Ceiling fixtures */}
             {lighting.fixtures.map(({ x, y, z }) => (
-                <pointLight
+                <FixtureLight
                     key={`${x},${z}`}
                     position={[x, y, z]}
                     color={color}
                     intensity={FIXTURE_INTENSITY * brightness}
-                    decay={2}
                 />
             ))}
 
