@@ -4,14 +4,17 @@ import * as THREE from "three";
 const originalConsoleError = console.error;
 const originalConsoleWarn = console.warn;
 
-export const frameCallbacks: Array<() => void> = [];
+type FrameState = { clock: { elapsedTime: number } };
+type FrameCallback = (state: FrameState, delta: number) => void;
+
+export const frameCallbacks: FrameCallback[] = [];
 
 export const mockCamera = {
     position: new THREE.Vector3(0, 0, 0),
     lookAt: jest.fn(),
 };
 
-export const useFrameMock = jest.fn((cb: () => void) => {
+export const useFrameMock = jest.fn((cb: FrameCallback) => {
     frameCallbacks.push(cb);
 });
 
@@ -25,16 +28,29 @@ const useGLTFModuleMock = Object.assign((path: string) => useGLTFMock(path), {
     preload: useGLTFPreloadMock,
 });
 
-export const useTextureMock = jest.fn((_: string) => ({
+const createTextureMock = () => ({
     wrapS: 0,
     wrapT: 0,
     repeat: { set: jest.fn() },
+    anisotropy: 1,
+    colorSpace: "",
     needsUpdate: false,
-}));
+});
+
+// Mirrors drei: a single path returns one texture, a map of paths returns a
+// map of textures
+export const useTextureMock = jest.fn(
+    (paths: string | Record<string, string>) =>
+        typeof paths === "string"
+            ? createTextureMock()
+            : Object.fromEntries(
+                  Object.keys(paths).map(key => [key, createTextureMock()])
+              )
+);
 
 export const useTexturePreloadMock = jest.fn();
 const useTextureModuleMock = Object.assign(
-    (path: string) => useTextureMock(path),
+    (paths: string | Record<string, string>) => useTextureMock(paths),
     { preload: useTexturePreloadMock }
 );
 
@@ -57,6 +73,24 @@ export const sceneState = {
     wallColor: "#F5F5DC",
     wallHeight: 12,
     wallThickness: 1,
+    floorSurface: {
+        textures: {
+            map: "/textures/floor_albedo.jpg",
+            normalMap: "/textures/floor_normal.jpg",
+            roughnessMap: undefined,
+        },
+        tileSize: 6.562,
+        roughness: 0.7,
+        normalScale: 1,
+    },
+    wallSurface: {
+        textures: {
+            map: "/textures/wall_albedo.jpg",
+        },
+        tileSize: 3.281,
+        roughness: 0.9,
+        normalScale: 0.6,
+    },
     characterBoundary: 28,
     cameraBuffer: 2,
     characterSpeed: 0.1,
@@ -82,6 +116,29 @@ export const sceneState = {
         boxSize: { x: 5, y: 2, z: 3 },
         boxAnchor: { x: 0, y: 0, z: 0 },
         approachYawOffset: Math.PI / 4,
+    },
+    monitorScreen: {
+        width: 0.6,
+        height: 0.5,
+        position: { x: 0.39, y: 0.105, z: 0 },
+        rotation: { x: -0.1, y: Math.PI / 2 },
+        color: "#00ff00",
+        intensity: 1.6,
+    },
+    lighting: {
+        brightness: 1,
+        temperature: 3000,
+        fixtures: [
+            { x: -7, y: 11.5, z: -7 },
+            { x: -7, y: 11.5, z: 7 },
+            { x: 7, y: 11.5, z: -7 },
+            { x: 7, y: 11.5, z: 7 },
+        ],
+    },
+    effects: {
+        bloomIntensity: 1.2,
+        bloomThreshold: 1,
+        bloomSmoothing: 0.3,
     },
     bass: {
         position: { x: -1, y: 4, z: -14 },
@@ -151,7 +208,7 @@ jest.mock("@react-three/fiber", () => ({
     Canvas: ({ children }: { children: React.ReactNode }) => (
         <div data-testid="canvas">{children}</div>
     ),
-    useFrame: (cb: () => void) => useFrameMock(cb),
+    useFrame: (cb: FrameCallback) => useFrameMock(cb),
     useThree: () => useThreeMock(),
 }));
 
@@ -163,6 +220,28 @@ jest.mock("@react-three/drei", () => ({
     KeyboardControls: ({ children }: { children: React.ReactNode }) => (
         <>{children}</>
     ),
+}));
+
+jest.mock("@react-three/postprocessing", () => ({
+    __esModule: true,
+    EffectComposer: ({ children }: { children: React.ReactNode }) => (
+        <div data-testid="effect-composer">{children}</div>
+    ),
+    Bloom: (props: Record<string, unknown>) => (
+        <div
+            data-testid="bloom"
+            data-intensity={String(props.intensity)}
+            data-threshold={String(props.luminanceThreshold)}
+        />
+    ),
+    ToneMapping: ({ mode }: { mode: number }) => (
+        <div data-testid="tone-mapping" data-mode={String(mode)} />
+    ),
+}));
+
+jest.mock("postprocessing", () => ({
+    __esModule: true,
+    ToneMappingMode: { ACES_FILMIC: 6 },
 }));
 
 jest.mock("@/utils/three", () => ({
@@ -243,6 +322,6 @@ export function resetThreeTestState() {
     movementState.cameraYaw = 0;
 }
 
-export function runFrameCallbacks() {
-    frameCallbacks.forEach(cb => cb());
+export function runFrameCallbacks(elapsedTime = 0, delta = 1 / 60) {
+    frameCallbacks.forEach(cb => cb({ clock: { elapsedTime } }, delta));
 }

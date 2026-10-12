@@ -15,6 +15,23 @@ interface ObjectTraits {
     footprint: Footprint;
 }
 
+// Light sources (screens) rendered in HDR so they bloom
+interface GlowTraits {
+    intensity: number; // HDR multiplier; values above the bloom threshold glow
+}
+
+interface LightingSettings {
+    brightness: number; // multiplier applied to every light in the room
+    temperature: number; // color temperature in Kelvin; lower is warmer
+    fixtures: Coordinates[]; // ceiling-mounted light positions
+}
+
+interface EffectsSettings {
+    bloomIntensity: number;
+    bloomThreshold: number;
+    bloomSmoothing: number;
+}
+
 // Floor footprint of an L-shaped object anchored at its back-left corner
 interface Footprint {
     width: number; // along the back wall
@@ -30,6 +47,20 @@ interface RoomDimensions {
     wallThickness: number;
     interiorWidth: number;
     interiorDepth: number;
+}
+
+// Texture set and tiling for a room surface (floor, walls). Normal and
+// roughness maps are optional; without a roughness map, `roughness` applies
+// evenly across the surface.
+interface SurfaceTraits {
+    textures: {
+        map: string;
+        normalMap?: string;
+        roughnessMap?: string;
+    };
+    tileSize: number; // feet covered by one repeat of the texture
+    roughness: number;
+    normalScale: number;
 }
 
 interface Rotations {
@@ -56,6 +87,30 @@ const roomDimensions: RoomDimensions = {
 const rotationY: Rotations = {
     clockwise: -Math.PI / 2,
     counterclockwise: Math.PI / 2,
+};
+
+// One meter in feet, for textures authored at real-world scale
+const METER: number = 3.281;
+
+// Oak planks: one tile is ~2m x 2m (8 planks)
+const defaultFloorSurface: SurfaceTraits = {
+    textures: {
+        map: "/textures/floor_albedo.jpg",
+    },
+    tileSize: 1.5 * METER,
+    roughness: 0.35,
+    normalScale: 1,
+};
+
+// Eggshell plaster: one tile is ~1m x 1m. The albedo is near-white so
+// `wallColor` tints it.
+const defaultWallSurface: SurfaceTraits = {
+    textures: {
+        map: "/textures/wall_albedo.jpg",
+    },
+    tileSize: METER,
+    roughness: 0.35,
+    normalScale: 1,
 };
 
 // Scale factor based on INTERIOR room size vs standard interior (28x28x12)
@@ -134,6 +189,49 @@ const defaultMonitorTraits: DeepPartial<ObjectTraits> = {
     approachYawOffset: Math.PI / 4,
 };
 
+// Screen overlay in the monitor model's own units (the model is normalized to
+// 1 unit tall). The CRT faces the model's local +X and its glass tilts back
+// slightly, measured from monitor.glb.
+const defaultMonitorScreenTraits: DeepPartial<ObjectTraits & GlowTraits> = {
+    width: 0.6,
+    height: 0.5,
+    position: {
+        x: 0.39,
+        y: 0.105,
+        z: 0,
+    },
+    rotation: {
+        x: -0.1,
+        y: Math.PI / 2,
+    },
+    color: "#00ff00",
+    intensity: 1.6,
+};
+
+// Overhead lighting: a 2x2 grid of ceiling fixtures, each centered in a
+// quadrant of the room, at a warm-white residential color temperature
+const FIXTURE_Y: number = scaledHeight(ROOM_HEIGHT - 0.5);
+const FIXTURE_SPREAD: number = scaledFeet(7);
+const defaultLightingSettings: LightingSettings = {
+    brightness: 1.35,
+    temperature: 5000,
+    fixtures: [-1, 1].flatMap(x =>
+        [-1, 1].map(z => ({
+            x: x * FIXTURE_SPREAD,
+            y: FIXTURE_Y,
+            z: z * FIXTURE_SPREAD,
+        }))
+    ),
+};
+
+// Only HDR colors (LEDs, screens) should exceed the threshold, so regular lit
+// surfaces never bloom
+const defaultEffectsSettings: EffectsSettings = {
+    bloomIntensity: 1.2,
+    bloomThreshold: 0.65,
+    bloomSmoothing: 0.3,
+};
+
 // Bass height (a full-scale bass is ~46in tall)
 const BASS_SCALE: number = scaledFeet(3.8);
 const defaultBassTraits: DeepPartial<ObjectTraits> = {
@@ -188,6 +286,8 @@ interface SceneConfig {
     wallColor: string;
     wallHeight: number;
     wallThickness: number;
+    floorSurface: SurfaceTraits;
+    wallSurface: SurfaceTraits;
     characterBoundary: number;
     cameraBuffer: number;
     characterSpeed: number;
@@ -207,6 +307,9 @@ interface SceneConfig {
     };
     desk: DeepPartial<ObjectTraits>;
     monitor: DeepPartial<ObjectTraits>;
+    monitorScreen: DeepPartial<ObjectTraits & GlowTraits>;
+    lighting: LightingSettings;
+    effects: EffectsSettings;
     bass: DeepPartial<ObjectTraits>;
     deck: DeepPartial<ObjectTraits>;
 }
@@ -218,6 +321,8 @@ const defaultSceneConfig: SceneConfig = {
     wallColor: "#F5F5DC",
     wallHeight: ROOM_HEIGHT,
     wallThickness: WALL_THICKNESS,
+    floorSurface: defaultFloorSurface,
+    wallSurface: defaultWallSurface,
     characterHeight: scaledHeight(6),
     characterBoundary: ROOM_SIZE - 2.25,
     cameraBuffer: 2,
@@ -237,6 +342,9 @@ const defaultSceneConfig: SceneConfig = {
     },
     desk: defaultDeskTraits,
     monitor: defaultMonitorTraits,
+    monitorScreen: defaultMonitorScreenTraits,
+    lighting: defaultLightingSettings,
+    effects: defaultEffectsSettings,
     bass: defaultBassTraits,
     deck: defaultDeckTraits,
 };

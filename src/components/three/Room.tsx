@@ -1,7 +1,9 @@
 import { memo, useEffect, useRef } from "react";
 import { useFrame } from "@react-three/fiber";
-import { useTexture } from "@react-three/drei";
 import * as THREE from "three";
+// #if DEBUG
+import { useControls } from "leva";
+// #endif
 import { useMovement } from "@/lib/stores/useMovement";
 import { useScene } from "@/lib/contexts/SceneContext";
 import { useMessage } from "@/lib/contexts/MessageContext";
@@ -9,33 +11,121 @@ import Desk from "@/components/three/Desk";
 import BassGroup from "@/components/three/BassGroup";
 import SkateboardGroup from "@/components/three/SkateboardGroup";
 import { INTRO_MESSAGE } from "@/lib/constants/sceneMessages";
+import {
+    useSurfaceTextures,
+    type SurfaceTextures,
+} from "@/hooks/use-surface-textures";
+
+type SurfaceControls = {
+    floorTileSize: number;
+    floorRoughness: number;
+    floorNormalScale: number;
+    wallTileSize: number;
+    wallRoughness: number;
+    wallNormalScale: number;
+};
 
 interface RoomProps {
     onReady?: () => void;
 }
 
 const Room = memo(({ onReady }: RoomProps) => {
-    const { roomSize, wallColor, wallHeight, wallThickness } = useScene();
+    const {
+        roomSize,
+        wallColor,
+        wallHeight,
+        wallThickness,
+        floorSurface,
+        wallSurface,
+    } = useScene();
     const { setMessage } = useMessage();
 
-    // Load wood texture for floor
-    const floorTexture = useTexture("/textures/wood.jpg");
+    let floorTileSize: number,
+        floorRoughness: number,
+        floorNormalScale: number,
+        wallTileSize: number,
+        wallRoughness: number,
+        wallNormalScale: number;
+
+    // #if DEBUG
+    ({
+        floorTileSize,
+        floorRoughness,
+        floorNormalScale,
+        wallTileSize,
+        wallRoughness,
+        wallNormalScale,
+    } = useControls(
+        "Surfaces",
+        {
+            floorTileSize: {
+                value: floorSurface.tileSize,
+                min: 1,
+                max: 20,
+                step: 0.1,
+            },
+            floorRoughness: {
+                value: floorSurface.roughness,
+                min: 0,
+                max: 1,
+                step: 0.05,
+            },
+            floorNormalScale: {
+                value: floorSurface.normalScale,
+                min: 0,
+                max: 2,
+                step: 0.05,
+            },
+            wallTileSize: {
+                value: wallSurface.tileSize,
+                min: 1,
+                max: 20,
+                step: 0.1,
+            },
+            wallRoughness: {
+                value: wallSurface.roughness,
+                min: 0,
+                max: 1,
+                step: 0.05,
+            },
+            wallNormalScale: {
+                value: wallSurface.normalScale,
+                min: 0,
+                max: 2,
+                step: 0.05,
+            },
+        },
+        { collapsed: true }
+    ) as SurfaceControls);
+    // #endif
+
+    // #if !DEBUG
+    floorTileSize = floorSurface.tileSize;
+    floorRoughness = floorSurface.roughness;
+    floorNormalScale = floorSurface.normalScale;
+    wallTileSize = wallSurface.tileSize;
+    wallRoughness = wallSurface.roughness;
+    wallNormalScale = wallSurface.normalScale;
+    // #endif
+
+    // Box UVs span each face once, so the repeat count is the face size over
+    // the tile size. Every wall's large face is roomSize x wallHeight, so the
+    // walls can share one texture set.
+    const floorTextures = useSurfaceTextures(
+        floorSurface.textures,
+        roomSize / floorTileSize,
+        roomSize / floorTileSize
+    );
+    const wallTextures = useSurfaceTextures(
+        wallSurface.textures,
+        roomSize / wallTileSize,
+        wallHeight / wallTileSize
+    );
 
     useEffect(() => {
         setMessage(INTRO_MESSAGE);
         onReady?.();
     }, [onReady, setMessage]);
-
-    // Configure texture repeat for wooden floor - moved to useEffect to prevent reconfiguration on every render
-    useEffect(() => {
-        floorTexture.wrapS = floorTexture.wrapT = THREE.RepeatWrapping;
-
-        const plankSize = 1; // World units per plank
-        const repeatsX = Math.ceil(roomSize / plankSize);
-
-        floorTexture.repeat.set(repeatsX, 8);
-        floorTexture.needsUpdate = true; // Critical to apply changes
-    }, [floorTexture, roomSize]);
 
     // Keep a stable vector reference and mutate it in the frame loop so
     // movement updates do not force React rerenders of the room subtree.
@@ -51,13 +141,22 @@ const Room = memo(({ onReady }: RoomProps) => {
             {/* Floor */}
             <mesh position={[0, -0.5, 0]} receiveShadow>
                 <boxGeometry args={[roomSize, 1, roomSize]} />
-                <meshLambertMaterial map={floorTexture} />
+                <SurfaceMaterial
+                    textures={floorTextures}
+                    roughness={floorRoughness}
+                    normalScale={floorNormalScale}
+                />
             </mesh>
 
             {/* North Wall */}
             <mesh position={[0, wallHeight / 2, -roomSize / 2]} receiveShadow>
                 <boxGeometry args={[roomSize, wallHeight, wallThickness]} />
-                <meshLambertMaterial color={wallColor} />
+                <SurfaceMaterial
+                    textures={wallTextures}
+                    roughness={wallRoughness}
+                    normalScale={wallNormalScale}
+                    color={wallColor}
+                />
             </mesh>
 
             <BassGroup proximityPosition={proximityPositionRef.current} />
@@ -68,13 +167,23 @@ const Room = memo(({ onReady }: RoomProps) => {
             {/* South Wall */}
             <mesh position={[0, wallHeight / 2, roomSize / 2]} receiveShadow>
                 <boxGeometry args={[roomSize, wallHeight, wallThickness]} />
-                <meshLambertMaterial color={wallColor} />
+                <SurfaceMaterial
+                    textures={wallTextures}
+                    roughness={wallRoughness}
+                    normalScale={wallNormalScale}
+                    color={wallColor}
+                />
             </mesh>
 
             {/* East Wall */}
             <mesh position={[roomSize / 2, wallHeight / 2, 0]} receiveShadow>
                 <boxGeometry args={[wallThickness, wallHeight, roomSize]} />
-                <meshLambertMaterial color={wallColor} />
+                <SurfaceMaterial
+                    textures={wallTextures}
+                    roughness={wallRoughness}
+                    normalScale={wallNormalScale}
+                    color={wallColor}
+                />
             </mesh>
 
             <SkateboardGroup proximityPosition={proximityPositionRef.current} />
@@ -82,11 +191,37 @@ const Room = memo(({ onReady }: RoomProps) => {
             {/* West Wall */}
             <mesh position={[-roomSize / 2, wallHeight / 2, 0]} receiveShadow>
                 <boxGeometry args={[wallThickness, wallHeight, roomSize]} />
-                <meshLambertMaterial color={wallColor} />
+                <SurfaceMaterial
+                    textures={wallTextures}
+                    roughness={wallRoughness}
+                    normalScale={wallNormalScale}
+                    color={wallColor}
+                />
             </mesh>
         </group>
     );
 });
 Room.displayName = "Room";
+
+type SurfaceMaterialProps = {
+    textures: SurfaceTextures;
+    roughness: number;
+    normalScale: number;
+    color?: string;
+};
+
+const SurfaceMaterial = ({
+    textures,
+    roughness,
+    normalScale,
+    color = "#ffffff",
+}: SurfaceMaterialProps) => (
+    <meshStandardMaterial
+        {...textures}
+        roughness={roughness}
+        normalScale={[normalScale, normalScale]}
+        color={color}
+    />
+);
 
 export default Room;
