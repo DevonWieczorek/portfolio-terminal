@@ -1,38 +1,82 @@
+$ink: #2b2622;
+$paper: #fff8ec;
+$accent: #e8505b;
+$accent-hover: #2f8fd8;
+$outline: 3px;
+$lift: 6px;
+
 .message {
     position: fixed;
     bottom: 0;
     left: 0;
     width: 100%;
-    padding: clamp(0.75rem, 1.5vw, 1.5rem) clamp(1rem, 2vw, 2.5rem);
-    background: rgba(0, 0, 0, 0.65);
-    color: #f5f5f5;
+    padding: clamp(0.75rem, 2vw, 1.75rem) clamp(1rem, 2vw, 2.5rem);
+    padding-bottom: calc(
+        clamp(1rem, 2.5vw, 2rem) + #{$lift} + env(safe-area-inset-bottom)
+    );
     display: flex;
     align-items: center;
     justify-content: center;
-    text-align: center;
     pointer-events: none;
     box-sizing: border-box;
-    font-size: clamp(0.875rem, 1.2vw, 1.125rem);
-    line-height: 1.4;
     z-index: 1000;
-    backdrop-filter: blur(6px);
-    padding-bottom: calc(
-        clamp(0.75rem, 1.5vw, 1.5rem) + env(safe-area-inset-bottom)
-    );
 }
 
 .messageContent {
-    max-width: min(720px, 90vw);
+    max-width: min(680px, 92vw);
+    padding: clamp(0.75rem, 1.4vw, 1.1rem) clamp(1rem, 2vw, 1.6rem);
+    background: $paper;
+    color: $ink;
+    border: $outline solid $ink;
+    border-radius: 1.25rem;
+    box-shadow:
+        0 $lift 0 $ink,
+        0 calc(#{$lift} + 10px) 24px rgba($ink, 0.25);
+    font-family: var(--font-cartoon), "Comic Sans MS", system-ui, sans-serif;
+    font-size: clamp(0.95rem, 1.25vw, 1.15rem);
+    font-weight: 500;
+    line-height: 1.45;
+    letter-spacing: 0.01em;
+    text-align: center;
     pointer-events: auto;
+    animation: messagePop 0.45s cubic-bezier(0.34, 1.56, 0.64, 1) both;
 }
 
 .messageContent a {
-    color: #fff;
+    color: $accent;
+    font-weight: 700;
     text-decoration: underline;
-    text-underline-offset: 0.12em;
+    text-decoration-thickness: 0.15em;
+    text-underline-offset: 0.18em;
+    transition:
+        color 0.15s ease,
+        transform 0.2s cubic-bezier(0.34, 1.56, 0.64, 1);
+    display: inline-block;
 }
 
-.messageContent a:hover {
-    color: #fff;
-    text-decoration: none;
+.messageContent a:hover,
+.messageContent a:focus-visible {
+    color: $accent-hover;
+    transform: translateY(-2px) rotate(-2deg);
+}
+
+@keyframes messagePop {
+    from {
+        opacity: 0;
+        transform: translateY(1.5rem) scale(0.85);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .messageContent {
+        animation: none;
+    }
+
+    .messageContent a {
+        transition: none;
+    }
 }
