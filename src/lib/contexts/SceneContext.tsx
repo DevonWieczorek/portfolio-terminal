@@ -26,6 +26,15 @@ interface LightingSettings {
     fixtures: Coordinates[]; // ceiling-mounted light positions
 }
 
+// Cartoon avatar palette, shaded with the same PBR lighting as the room
+interface CharacterAppearance {
+    skinColor: string;
+    shirtColor: string;
+    pantsColor: string;
+    featureColor: string; // eyes and mouth
+    roughness: number;
+}
+
 interface EffectsSettings {
     bloomIntensity: number;
     bloomThreshold: number;
@@ -296,6 +305,7 @@ interface SceneConfig {
     cameraBuffer: number;
     characterSpeed: number;
     characterHeight: number;
+    characterAppearance: CharacterAppearance;
     cameraOffset: {
         x: number;
         y: number;
@@ -327,6 +337,13 @@ const defaultSceneConfig: SceneConfig = {
     floorSurface: defaultFloorSurface,
     wallSurface: defaultWallSurface,
     characterHeight: scaledHeight(6),
+    characterAppearance: {
+        skinColor: "#fccfaf",
+        shirtColor: "#269dff",
+        pantsColor: "#091634",
+        featureColor: "#000",
+        roughness: 0.75,
+    },
     characterBoundary: ROOM_SIZE - 2.25,
     cameraBuffer: 2,
     characterSpeed: 0.1,

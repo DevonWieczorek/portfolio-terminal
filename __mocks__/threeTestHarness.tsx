@@ -91,6 +91,13 @@ export const sceneState = {
     cameraBuffer: 2,
     characterSpeed: 0.1,
     characterHeight: 6,
+    characterAppearance: {
+        skinColor: "#f7d0b4",
+        shirtColor: "#6593c6",
+        pantsColor: "#3b4252",
+        featureColor: "#2b2623",
+        roughness: 0.75,
+    },
     cameraOffset: { x: 0, y: 5, z: 18 },
     cameraLookAtHeight: 3.5,
     zoomSettings: { min: 0.5, max: 2, speed: 0.1, default: 1 },
@@ -212,6 +219,9 @@ jest.mock("@react-three/drei", () => ({
     useGLTF: useGLTFModuleMock,
     useTexture: useTextureModuleMock,
     useKeyboardControls: () => [subscribeMock, getKeysMock],
+    RoundedBox: ({ children }: { children?: React.ReactNode }) => (
+        <mesh>{children}</mesh>
+    ),
     KeyboardControls: ({ children }: { children: React.ReactNode }) => (
         <>{children}</>
     ),
