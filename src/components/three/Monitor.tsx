@@ -6,6 +6,7 @@ import { useControls } from "leva";
 // #endif
 import { useScene } from "@/lib/contexts/SceneContext";
 import InteractiveBox from "@/components/three/InteractiveBox";
+import MonitorScreen from "@/components/three/MonitorScreen";
 // #if DEBUG
 import type { InteractiveBounds } from "@/components/three/InteractiveBox";
 // #endif
@@ -317,12 +318,15 @@ const Monitor = memo(({ proximityPosition }: MonitorProps) => {
             position={[monitorX, monitorY, monitorZ]}
             rotation={[0, monitorRotationY, 0]}
         >
-            <primitive
-                object={monitorModel.scene}
-                position={[0, 0, 0]}
-                rotation={[0, 0, 0]}
-                scale={monitorScale / MODEL_HEIGHT}
-            />
+            {/* Scale the screen with the model so it stays in model units */}
+            <group scale={monitorScale / MODEL_HEIGHT}>
+                <primitive
+                    object={monitorModel.scene}
+                    position={[0, 0, 0]}
+                    rotation={[0, 0, 0]}
+                />
+                <MonitorScreen />
+            </group>
             <InteractiveBox
                 message={MONITOR_MESSAGE}
                 proximityPosition={proximityPosition}
