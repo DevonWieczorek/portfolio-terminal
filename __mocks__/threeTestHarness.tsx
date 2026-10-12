@@ -152,7 +152,7 @@ export const sceneState = {
     },
     cameraOffset: { x: 0, y: 5, z: 18 },
     cameraLookAtHeight: 3.5,
-    loaderMinDuration: 3000,
+    loaderMinDuration: 5000,
     zoomSettings: { min: 0.5, max: 2, speed: 0.1, default: 1 },
     desk: {
         scale: 2.5,

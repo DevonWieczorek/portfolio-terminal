@@ -7,6 +7,7 @@ $phosphor: #8ef0a6;
 $ink: #3a3631;
 $segment-empty: #e2dacd;
 $bounce: cubic-bezier(0.34, 1.56, 0.64, 1);
+$flash: #e9fff0;
 
 .overlay {
     position: absolute;
@@ -26,10 +27,23 @@ $bounce: cubic-bezier(0.34, 1.56, 0.64, 1);
     color: $ink;
     font-family: "Courier New", Courier, monospace;
     pointer-events: none;
+    will-change: opacity;
 }
 
+// Zoom and idle bob live on separate elements so the reveal composes with
+// the bob instead of snapping out of it. Only transform/opacity animate, so
+// everything stays on the compositor.
 .toy {
     position: relative;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    // Centre of the screen, so the zoom flies straight through it
+    transform-origin: 50% 42%;
+    will-change: transform;
+}
+
+.body {
     display: flex;
     flex-direction: column;
     align-items: center;
@@ -48,6 +62,7 @@ $bounce: cubic-bezier(0.34, 1.56, 0.64, 1);
 }
 
 .screen {
+    position: relative;
     height: 9.5rem;
     padding: 0.75rem 0.9rem;
     border-radius: 0.9rem;
@@ -72,6 +87,13 @@ $bounce: cubic-bezier(0.34, 1.56, 0.64, 1);
         overflow: hidden;
         text-overflow: ellipsis;
     }
+}
+
+.flash {
+    position: absolute;
+    inset: 0;
+    background: $flash;
+    opacity: 0;
 }
 
 .status {
@@ -99,9 +121,11 @@ $bounce: cubic-bezier(0.34, 1.56, 0.64, 1);
     bottom: -1.25rem;
     width: 70%;
     height: 1rem;
-    border-radius: 50%;
-    background: rgba(58, 54, 49, 0.18);
-    filter: blur(4px);
+    background: radial-gradient(
+        closest-side,
+        rgba(58, 54, 49, 0.22),
+        rgba(58, 54, 49, 0)
+    );
     animation: shadowPulse 1.6s ease-in-out infinite;
 }
 
@@ -135,25 +159,25 @@ $bounce: cubic-bezier(0.34, 1.56, 0.64, 1);
 
 // Fly out through the monitor screen into the room.
 .revealing {
-    animation: fadeOut var(--reveal-duration) ease-in forwards;
+    animation: overlayFade var(--reveal-duration) linear forwards;
 
     .toy {
-        animation: zoomThrough var(--reveal-duration)
-            cubic-bezier(0.7, 0, 0.84, 0) forwards;
+        animation: zoomThrough var(--reveal-duration) forwards;
     }
 
-    .screen {
-        animation: powerFlash var(--reveal-duration) ease-out forwards;
+    .flash {
+        animation: flashOn var(--reveal-duration) linear forwards;
     }
 
+    .shadow,
     .progress,
     .percent {
-        animation: fadeOut calc(var(--reveal-duration) / 3) ease-out forwards;
+        animation: dropAway calc(var(--reveal-duration) / 3) ease-in forwards;
     }
 }
 
 @media (prefers-reduced-motion: reduce) {
-    .toy,
+    .body,
     .shadow,
     .line,
     .filled,
@@ -162,7 +186,7 @@ $bounce: cubic-bezier(0.34, 1.56, 0.64, 1);
     }
 
     .revealing .toy,
-    .revealing .screen {
+    .revealing .flash {
         animation: none;
     }
 }
@@ -208,27 +232,47 @@ $bounce: cubic-bezier(0.34, 1.56, 0.64, 1);
     }
 }
 
+// A small anticipation dip, then an accelerating push into the screen.
 @keyframes zoomThrough {
-    to {
-        transform: translateY(1.5rem) scale(9);
+    0% {
+        transform: scale(1);
+        animation-timing-function: cubic-bezier(0.33, 0, 0.67, 1);
+    }
+    16% {
+        transform: scale(0.95);
+        animation-timing-function: cubic-bezier(0.5, 0, 0.75, 0);
+    }
+    100% {
+        transform: scale(10);
     }
 }
 
-@keyframes powerFlash {
-    30% {
-        background: #e9fff0;
-    }
-    to {
-        background: #e9fff0;
-    }
-}
-
-@keyframes fadeOut {
+@keyframes flashOn {
     0%,
-    45% {
+    15% {
+        opacity: 0;
+        animation-timing-function: ease-in;
+    }
+    55%,
+    100% {
         opacity: 1;
     }
+}
+
+@keyframes overlayFade {
+    0%,
+    40% {
+        opacity: 1;
+        animation-timing-function: cubic-bezier(0.45, 0, 0.55, 1);
+    }
+    100% {
+        opacity: 0;
+    }
+}
+
+@keyframes dropAway {
     to {
         opacity: 0;
+        transform: translateY(0.5rem);
     }
 }

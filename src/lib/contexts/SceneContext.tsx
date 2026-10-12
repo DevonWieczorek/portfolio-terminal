@@ -467,7 +467,7 @@ const defaultSceneConfig: SceneConfig = {
     effects: defaultEffectsSettings,
     bass: defaultBassTraits,
     deck: defaultDeckTraits,
-    loaderMinDuration: 3000,
+    loaderMinDuration: 5000,
 };
 
 // Context
