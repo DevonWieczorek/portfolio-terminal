@@ -8,6 +8,7 @@ import styles from "@/styles/LoadingScreen.module.scss";
 export const REVEAL_DURATION_MS = 1200;
 const SEGMENT_COUNT = 10;
 const VISIBLE_LINES = 4;
+export const LINE_STAGGER_MS = 400;
 
 // First matching keyword wins, so more specific asset names come first.
 const ASSET_LABELS: [RegExp, string][] = [
@@ -45,6 +46,7 @@ const LoadingScreen = memo(({ isReady }: LoadingScreenProps) => {
     const { progress, item } = useProgress();
     const mountedAt = useRef(0);
     const [lines, setLines] = useState<string[]>([]);
+    const [shownCount, setShownCount] = useState(0);
     const [phase, setPhase] = useState<Phase>("loading");
 
     useEffect(() => {
@@ -55,12 +57,26 @@ const LoadingScreen = memo(({ isReady }: LoadingScreenProps) => {
         setLines(prev => (prev.includes(label) ? prev : [...prev, label]));
     }, [item]);
 
+    // Cached assets resolve in bursts, so print queued lines one at a time.
+    useEffect(() => {
+        if (shownCount >= lines.length) {
+            return;
+        }
+        const timeout = window.setTimeout(
+            () => setShownCount(count => count + 1),
+            LINE_STAGGER_MS
+        );
+        return () => window.clearTimeout(timeout);
+    }, [lines.length, shownCount]);
+
     useEffect(() => {
         mountedAt.current = performance.now();
     }, []);
 
+    const isLogDone = isReady && shownCount >= lines.length;
+
     useEffect(() => {
-        if (!isReady) {
+        if (!isLogDone) {
             return;
         }
         const elapsed = performance.now() - mountedAt.current;
@@ -77,17 +93,17 @@ const LoadingScreen = memo(({ isReady }: LoadingScreenProps) => {
             window.clearTimeout(revealTimeout);
             window.clearTimeout(doneTimeout);
         };
-    }, [isReady, loaderMinDuration]);
+    }, [isLogDone, loaderMinDuration]);
 
     if (phase === "done") {
         return null;
     }
 
     // The loader can report 100% before the scene has mounted, so hold at
-    // 99 until the room says it's ready.
-    const percent = isReady ? 100 : Math.min(Math.round(progress), 99);
+    // 99 until the room is ready and the log has caught up.
+    const percent = isLogDone ? 100 : Math.min(Math.round(progress), 99);
     const filledSegments = Math.round((percent / 100) * SEGMENT_COUNT);
-    const visibleLines = lines.slice(-VISIBLE_LINES);
+    const visibleLines = lines.slice(0, shownCount).slice(-VISIBLE_LINES);
 
     return (
         <div
@@ -111,7 +127,7 @@ const LoadingScreen = memo(({ isReady }: LoadingScreenProps) => {
                             <p className={styles.line}>&gt; booting room.exe</p>
                             {visibleLines.map((line, index) => {
                                 const isCurrent =
-                                    !isReady &&
+                                    !isLogDone &&
                                     index === visibleLines.length - 1;
                                 return (
                                     <p key={line} className={styles.line}>
@@ -122,7 +138,7 @@ const LoadingScreen = memo(({ isReady }: LoadingScreenProps) => {
                                     </p>
                                 );
                             })}
-                            {isReady ? (
+                            {isLogDone ? (
                                 <p className={styles.line}>&gt; welcome in!</p>
                             ) : (
                                 <span className={styles.cursor} />
