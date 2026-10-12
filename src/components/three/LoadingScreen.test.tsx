@@ -24,7 +24,7 @@ describe("LoadingScreen", () => {
     });
 
     it("maps asset urls to friendly boot log labels", () => {
-        expect(labelForAsset("/models/l_shaped_desk.glb")).toBe(
+        expect(labelForAsset("/models/cartoon_desk.glb")).toBe(
             "assembling desk"
         );
         expect(labelForAsset("/models/bass-guitar-configurable.glb")).toBe(
@@ -51,8 +51,8 @@ describe("LoadingScreen", () => {
     it("prints lines that load together one at a time", () => {
         const { rerender } = render(<LoadingScreen isReady={false} />);
 
-        act(() => setProgress({ item: "/models/l_shaped_desk.glb" }));
-        act(() => setProgress({ item: "/models/monitor.glb" }));
+        act(() => setProgress({ item: "/models/cartoon_desk.glb" }));
+        act(() => setProgress({ item: "/models/cartoon_monitor.glb" }));
         rerender(<LoadingScreen isReady />);
 
         expect(screen.queryByText(/assembling desk/)).not.toBeInTheDocument();

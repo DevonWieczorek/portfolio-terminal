@@ -231,7 +231,8 @@ const defaultRugTraits: RugTraits = {
 
 // Desk top height (a standard desk is ~30in tall)
 const DESK_HEIGHT: number = scaledHeight(2.5);
-// L-desk footprint as multiples of its top height, measured from l_shaped_desk.glb
+// L-desk footprint as multiples of its top height. Must match DESK in
+// .bin/generate-scene-models.mts, which builds cartoon_desk.glb.
 const DESK_PROPORTIONS: Footprint = {
     width: 2.566,
     depth: 2.258,
@@ -258,44 +259,55 @@ const defaultDeskTraits: DeepPartial<ObjectTraits> = {
 
 // Monitor height in feet
 const MONITOR_SCALE: number = scaledHeight(1.5);
-// Monitor is positioned relative to the desk's back-left corner
+// Screen glass in the monitor model's own units (1 unit tall, centered, facing
+// +Z). Must match MONITOR_SCREEN in .bin/generate-scene-models.mts.
+const MONITOR_GLASS = {
+    centerY: 0.1,
+    width: 0.74,
+    height: 0.58,
+    frontZ: 0.425,
+};
+// Monitor is positioned relative to the desk's back-left corner; the model is
+// centered, so lifting it by half its height stands it on the desk top
 const defaultMonitorTraits: DeepPartial<ObjectTraits> = {
     scale: MONITOR_SCALE,
     position: {
         x: scaledFeet(2),
-        y: scaledHeight(3.2),
+        y: DESK_HEIGHT + MONITOR_SCALE / 2,
         z: scaledFeet(1.4),
     },
     rotation: {
-        y: -1,
+        // Angled out of the corner toward the middle of the room
+        y: 0.57,
     },
     boxSize: {
         x: 10,
         y: 6,
         z: 6,
     },
+    // The camera flies in toward this point, so it's the center of the glass
     boxAnchor: {
         x: 0,
-        y: 0,
-        z: 0,
+        y: MONITOR_GLASS.centerY * MONITOR_SCALE,
+        z: MONITOR_GLASS.frontZ * MONITOR_SCALE,
     },
-    approachYawOffset: Math.PI / 4,
+    approachYawOffset: 0,
 };
 
-// Screen overlay in the monitor model's own units (the model is normalized to
-// 1 unit tall). The CRT faces the model's local +X and its glass tilts back
-// slightly, measured from monitor.glb.
+// Screen overlay in the monitor model's own units, sitting just in front of the
+// glass and inset so its square corners stay inside the glass's rounded ones
+const SCREEN_INSET = 0.02;
 const defaultMonitorScreenTraits: DeepPartial<ObjectTraits & GlowTraits> = {
-    width: 0.6,
-    height: 0.5,
+    width: MONITOR_GLASS.width - SCREEN_INSET * 2,
+    height: MONITOR_GLASS.height - SCREEN_INSET * 2,
     position: {
-        x: 0.39,
-        y: 0.105,
-        z: 0,
+        x: 0,
+        y: MONITOR_GLASS.centerY,
+        z: MONITOR_GLASS.frontZ + 0.002,
     },
     rotation: {
-        x: -0.1,
-        y: Math.PI / 2,
+        x: 0,
+        y: 0,
     },
     color: "#00ff00",
     intensity: 1.6,

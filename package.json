@@ -18,6 +18,7 @@
         "format": "prettier --write . && eslint --fix .",
         "compile-resume-markdown": "node .bin/convert-resume-to-markdown.mts",
         "compile-resume-html": "node .bin/convert-resume-to-html.mts",
+        "generate-scene-models": "node .bin/generate-scene-models.mts",
         "deploy": "vercel deploy --prod --token \"$VERCEL_TOKEN\"",
         "test": "jest",
         "sync-env-vars": "bash .bin/sync-env-vars.sh",
