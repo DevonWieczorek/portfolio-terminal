@@ -10,6 +10,7 @@ import {
 } from "react";
 import { Canvas } from "@react-three/fiber";
 import { KeyboardControls } from "@react-three/drei";
+import { Leva } from "leva";
 import Room from "@/components/three/Room";
 import Character from "@/components/three/Character";
 import Lights from "@/components/three/Lights";
@@ -36,6 +37,9 @@ const CONTROLS = [
     { name: Controls.leftward, keys: ["KeyA", "ArrowLeft"] },
     { name: Controls.rightward, keys: ["KeyD", "ArrowRight"] },
 ];
+
+const IS_DEBUG = process.env.NEXT_PUBLIC_DEBUG === "true";
+const LEVA_THEME = { sizes: { rootWidth: "500px" } };
 
 const R3FSceneContent = memo(() => {
     const [showCanvas, setShowCanvas] = useState(false);
@@ -127,6 +131,7 @@ const R3FSceneContent = memo(() => {
 
     return (
         <div className={styles.sceneContainer}>
+            <Leva hidden={!IS_DEBUG} theme={LEVA_THEME} />
             <LoadingScreen isReady={isRoomReady} />
             <div className={canvasClassName}>
                 {showCanvas && (
