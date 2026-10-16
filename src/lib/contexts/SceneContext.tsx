@@ -54,6 +54,14 @@ interface Footprint {
     sideArmWidth: number; // width of the arm against the side wall
 }
 
+// Axis-aligned rectangle of floor the character can't walk into
+interface FloorRect {
+    minX: number;
+    maxX: number;
+    minZ: number;
+    maxZ: number;
+}
+
 interface RoomDimensions {
     width: number; // feet
     depth: number; // feet
@@ -294,6 +302,51 @@ const defaultDeskTraits: DeepPartial<ObjectTraits> = {
     },
 };
 
+// Pinboard height in feet, hung on the west wall above the desk's side arm.
+// The model is centered on its origin with its back on the wall.
+const PINBOARD_HEIGHT: number = scaledHeight(3.4);
+const defaultPinboardTraits: DeepPartial<ObjectTraits> = {
+    scale: PINBOARD_HEIGHT,
+    position: {
+        x: wallFaces.left,
+        y: scaledHeight(6.2),
+        z: wallFaces.back + scaledFeet(3.4),
+    },
+    rotation: {
+        y: rotationY.counterclockwise,
+    },
+};
+
+// Record shelf height to its top (a low cube shelf is ~36in tall)
+const SHELF_HEIGHT: number = scaledHeight(3);
+// Shelf width and depth as multiples of its height. Must match SHELF in
+// .bin/generate-scene-models.mts, which builds cartoon_shelf.glb.
+const SHELF_PROPORTIONS = { width: 1.8, depth: 0.43 };
+const SHELF_WALL_X: number = wallFaces.left + BASEBOARD_THICKNESS;
+const SHELF_Z: number = scaledFeet(7);
+// Against the west wall toward the southwest corner, facing into the room
+const defaultShelfTraits: DeepPartial<ObjectTraits> = {
+    scale: SHELF_HEIGHT,
+    position: {
+        x: SHELF_WALL_X,
+        y: feetFromFloor(0),
+        z: SHELF_Z,
+    },
+    rotation: {
+        y: rotationY.counterclockwise,
+    },
+};
+
+// Furniture the character walks around, besides the desk
+const defaultFloorColliders: FloorRect[] = [
+    {
+        minX: SHELF_WALL_X,
+        maxX: SHELF_WALL_X + SHELF_PROPORTIONS.depth * SHELF_HEIGHT,
+        minZ: SHELF_Z - (SHELF_PROPORTIONS.width * SHELF_HEIGHT) / 2,
+        maxZ: SHELF_Z + (SHELF_PROPORTIONS.width * SHELF_HEIGHT) / 2,
+    },
+];
+
 // Monitor height in feet
 const MONITOR_SCALE: number = scaledHeight(1.5);
 // Screen glass in the monitor model's own units (1 unit tall, centered, facing
@@ -460,6 +513,9 @@ interface SceneConfig {
     };
     desk: DeepPartial<ObjectTraits>;
     door: DeepPartial<ObjectTraits>;
+    pinboard: DeepPartial<ObjectTraits>;
+    shelf: DeepPartial<ObjectTraits>;
+    floorColliders: FloorRect[];
     monitor: DeepPartial<ObjectTraits>;
     monitorScreen: DeepPartial<ObjectTraits & GlowTraits>;
     lighting: LightingSettings;
@@ -516,6 +572,9 @@ const defaultSceneConfig: SceneConfig = {
     },
     desk: defaultDeskTraits,
     door: defaultDoorTraits,
+    pinboard: defaultPinboardTraits,
+    shelf: defaultShelfTraits,
+    floorColliders: defaultFloorColliders,
     monitor: defaultMonitorTraits,
     monitorScreen: defaultMonitorScreenTraits,
     lighting: defaultLightingSettings,
