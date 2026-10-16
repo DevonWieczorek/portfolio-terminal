@@ -4,7 +4,7 @@ import * as THREE from "three";
 import { RoundedBoxGeometry } from "three/examples/jsm/geometries/RoundedBoxGeometry.js";
 import { GLTFExporter } from "three/examples/jsm/exporters/GLTFExporter.js";
 
-// Builds the cartoon desk, monitor and door models from simple bevelled shapes and
+// Builds the cartoon desk, monitor, door, pinboard and shelf models from simple bevelled shapes and
 // writes them to public/models. Run with `yarn generate-scene-models`.
 
 // GLTFExporter reads its output through FileReader, which Node lacks
@@ -556,6 +556,692 @@ const buildDoor = () => {
     return door;
 };
 
+// Deterministic pseudo-random numbers, so regenerating gives identical models
+const seededRandom = (seed: number) => () => {
+    seed = (seed + 0x6d2b79f5) | 0;
+    let t = Math.imul(seed ^ (seed >>> 15), 1 | seed);
+    t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
+    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+};
+
+// Thin cylinder stretched between two points, for yarn and tonearms
+const strand = (
+    name: string,
+    from: THREE.Vector3,
+    to: THREE.Vector3,
+    radius: number,
+    meshMaterial: THREE.Material
+) => {
+    const mesh = new THREE.Mesh(
+        new THREE.CylinderGeometry(radius, radius, from.distanceTo(to), 8),
+        meshMaterial
+    );
+    mesh.name = name;
+    mesh.position.copy(from).add(to).multiplyScalar(0.5);
+    mesh.quaternion.setFromUnitVectors(
+        new THREE.Vector3(0, 1, 0),
+        to.clone().sub(from).normalize()
+    );
+    return mesh;
+};
+
+// Pinboard: a cork board in a light wood frame, authored 1 unit tall and
+// centered on the origin, with its back flat against the wall at z = 0 and
+// facing +Z. Notes, polaroids and pins sit on the cork at slight angles.
+const PINBOARD = {
+    width: 1.5,
+    frameWidth: 0.06,
+    frameDepth: 0.05,
+    corkDepth: 0.03,
+};
+
+const buildPinboard = () => {
+    const pinboard = new THREE.Group();
+    pinboard.name = "Pinboard";
+
+    const frameMaterial = material("PinboardFrame", "#E8D2AE", {
+        roughness: 0.75,
+    });
+    const corkMaterial = material("PinboardCork", "#C9A27A", {
+        roughness: 0.95,
+    });
+    const paperMaterial = material("PinboardPaper", "#FAF7F0", {
+        roughness: 0.85,
+    });
+    const inkMaterial = material("PinboardInk", "#3F4B5E", { roughness: 0.8 });
+    const yarnMaterial = material("PinboardYarn", "#E8504F", {
+        roughness: 0.9,
+    });
+    const pinMaterials = ["#E8504F", "#3F8FD8", "#F2C14E", "#5DBB63"].map(
+        (color, index) =>
+            material(`PinboardPin${index + 1}`, color, { roughness: 0.4 })
+    );
+
+    const { width, frameWidth, frameDepth, corkDepth } = PINBOARD;
+    const height = 1;
+
+    pinboard.add(
+        roundedBox(
+            "PinboardCork",
+            [width - frameWidth, height - frameWidth, corkDepth],
+            [0, 0, corkDepth / 2],
+            0.008,
+            corkMaterial
+        )
+    );
+    // Frame: rails across the top and bottom, stiles up the sides
+    [-1, 1].forEach(side => {
+        pinboard.add(
+            roundedBox(
+                side < 0 ? "PinboardFrameBottom" : "PinboardFrameTop",
+                [width, frameWidth, frameDepth],
+                [0, side * (height / 2 - frameWidth / 2), frameDepth / 2],
+                0.018,
+                frameMaterial
+            )
+        );
+        pinboard.add(
+            roundedBox(
+                side < 0 ? "PinboardFrameLeft" : "PinboardFrameRight",
+                [frameWidth, height - frameWidth * 2 + 0.002, frameDepth],
+                [side * (width / 2 - frameWidth / 2), 0, frameDepth / 2],
+                0.018,
+                frameMaterial
+            )
+        );
+    });
+
+    let pinIndex = 0;
+    const pin = (x: number, y: number, z: number) => {
+        const mesh = new THREE.Mesh(
+            new THREE.SphereGeometry(0.02, 16, 12),
+            pinMaterials[pinIndex % pinMaterials.length]
+        );
+        mesh.name = `PinboardPin${++pinIndex}`;
+        mesh.scale.z = 0.8;
+        mesh.position.set(x, y, z);
+        pinboard.add(mesh);
+        return mesh.position.clone();
+    };
+
+    // A pinned item: a flat card rotated a little around its pin, which sits
+    // near its top edge
+    const pinned = (
+        name: string,
+        [cardWidth, cardHeight]: [number, number],
+        [x, y]: [number, number],
+        tilt: number,
+        cardMaterial: THREE.Material,
+        decorate: (card: THREE.Group, top: number) => void
+    ) => {
+        const card = new THREE.Group();
+        card.name = name;
+        card.position.set(x, y, corkDepth);
+        card.rotation.z = tilt;
+        card.add(
+            roundedBox(
+                `${name}Card`,
+                [cardWidth, cardHeight, 0.006],
+                [0, 0, 0.003],
+                0.0025,
+                cardMaterial
+            )
+        );
+        decorate(card, cardHeight / 2);
+        pinboard.add(card);
+        const pinOffset = new THREE.Vector3(0, cardHeight / 2 - 0.03, 0)
+            .applyAxisAngle(new THREE.Vector3(0, 0, 1), tilt)
+            .add(card.position);
+        return pin(pinOffset.x, pinOffset.y, corkDepth + 0.018);
+    };
+
+    const scribbles = (
+        card: THREE.Group,
+        lines: number,
+        lineWidth: number,
+        startY: number,
+        spacing: number,
+        random: () => number
+    ) => {
+        for (let index = 0; index < lines; index++) {
+            const lengthScale =
+                index === lines - 1 ? 0.55 : 0.8 + random() * 0.2;
+            const lineLength = lineWidth * lengthScale;
+            card.add(
+                roundedBox(
+                    `${card.name}Line${index + 1}`,
+                    [lineLength, 0.009, 0.002],
+                    [
+                        -lineWidth / 2 + lineLength / 2,
+                        startY - index * spacing,
+                        0.007,
+                    ],
+                    0.001,
+                    inkMaterial
+                )
+            );
+        }
+    };
+
+    const random = seededRandom(7);
+
+    // Resume-style sheet with a colored header band
+    pinned(
+        "PinboardSheet",
+        [0.3, 0.38],
+        [-0.43, 0.04],
+        0.035,
+        paperMaterial,
+        (card, top) => {
+            card.add(
+                roundedBox(
+                    "PinboardSheetHeader",
+                    [0.24, 0.045, 0.002],
+                    [0, top - 0.075, 0.007],
+                    0.001,
+                    material("PinboardSheetHeader", "#7FB4DE")
+                )
+            );
+            scribbles(card, 8, 0.22, top - 0.135, 0.03, random);
+        }
+    );
+
+    // Polaroids linked with red yarn
+    const photoColors = ["#7FB4DE", "#97C98C", "#F09A8C"];
+    const polaroids: [number, number, number][] = [
+        [-0.1, 0.17, -0.08],
+        [0.18, 0.21, 0.06],
+        [0.47, 0.13, -0.045],
+    ];
+    const polaroidPins = polaroids.map(([x, y, tilt], index) =>
+        pinned(
+            `PinboardPolaroid${index + 1}`,
+            [0.2, 0.24],
+            [x, y],
+            tilt,
+            paperMaterial,
+            card => {
+                card.add(
+                    roundedBox(
+                        `PinboardPhoto${index + 1}`,
+                        [0.165, 0.155, 0.002],
+                        [0, 0.022, 0.007],
+                        0.001,
+                        material(
+                            `PinboardPhoto${index + 1}`,
+                            photoColors[index],
+                            {
+                                roughness: 0.4,
+                            }
+                        )
+                    )
+                );
+            }
+        )
+    );
+    polaroidPins.slice(1).forEach((to, index) => {
+        const from = polaroidPins[index];
+        pinboard.add(
+            strand(
+                `PinboardYarn${index + 1}`,
+                new THREE.Vector3(from.x, from.y, corkDepth + 0.012),
+                new THREE.Vector3(to.x, to.y, corkDepth + 0.012),
+                0.004,
+                yarnMaterial
+            )
+        );
+    });
+
+    // Pastel sticky notes along the bottom
+    const notes: [number, number, number, string][] = [
+        [-0.07, -0.22, 0.1, "#F6E27A"],
+        [0.17, -0.2, -0.07, "#F4A7B9"],
+        [0.42, -0.24, 0.05, "#9CCBEA"],
+    ];
+    notes.forEach(([x, y, tilt, color], index) => {
+        pinned(
+            `PinboardNote${index + 1}`,
+            [0.15, 0.15],
+            [x, y],
+            tilt,
+            material(`PinboardNote${index + 1}`, color),
+            (card, top) => scribbles(card, 3, 0.1, top - 0.06, 0.03, random)
+        );
+    });
+
+    return pinboard;
+};
+
+// Shelf: a low cube shelf of records and books, authored with its bottom
+// center at the origin, its back flat against the wall at z = 0, its top
+// 1 unit high, and facing +Z. A turntable and a plant sit on top. Its width
+// and depth must match SHELF_PROPORTIONS in SceneContext, which the
+// character's collision uses.
+const SHELF = {
+    width: 1.8,
+    depth: 0.43,
+    legHeight: 0.07,
+    panel: 0.05,
+    columns: 3,
+    rows: 2,
+};
+
+const buildShelf = () => {
+    const shelf = new THREE.Group();
+    shelf.name = "Shelf";
+
+    const bodyMaterial = material("ShelfBody", "#E8D2AE", { roughness: 0.75 });
+    const backMaterial = material("ShelfBack", "#BFD8D2");
+    const legMaterial = material("ShelfLegs", "#3F4B5E", { roughness: 0.7 });
+    const nearBlack = material("ShelfVinyl", "#23262B", { roughness: 0.35 });
+    const darkMaterial = material("ShelfDark", "#3A3F47", { roughness: 0.6 });
+    const offWhite = material("ShelfOffWhite", "#F2EDE4");
+    const coverColors = [
+        "#F09A8C",
+        "#7FB4DE",
+        "#F6E27A",
+        "#97C98C",
+        "#C9A0DC",
+        "#2E3138",
+        "#FFFDF7",
+        "#E8504F",
+        "#4E7FA8",
+        "#F2A65A",
+    ];
+    const coverMaterials = coverColors.map((color, index) =>
+        material(`ShelfCover${index + 1}`, color)
+    );
+    const random = seededRandom(42);
+    const pick = <T,>(items: T[]) => items[Math.floor(random() * items.length)];
+
+    const { width, depth, legHeight, panel, columns, rows } = SHELF;
+    const bodyHeight = 1 - legHeight;
+    const cubbyWidth = (width - panel * (columns + 1)) / columns;
+    const cubbyHeight = (bodyHeight - panel * (rows + 1)) / rows;
+    const backDepth = 0.02;
+    const cubbyDepth = depth - backDepth;
+    const middleZ = backDepth + cubbyDepth / 2;
+
+    // Short tapered legs, like the desk's
+    [-1, 1].forEach(sideX => {
+        [0.07, depth - 0.07].forEach((z, index) => {
+            shelf.add(
+                cylinder(
+                    `ShelfLeg${sideX < 0 ? "Left" : "Right"}${index + 1}`,
+                    0.032,
+                    0.024,
+                    legHeight,
+                    [sideX * (width / 2 - 0.09), legHeight / 2, z],
+                    legMaterial
+                )
+            );
+        });
+    });
+
+    // Carcass: top, bottom and middle boards, then sides and dividers
+    for (let row = 0; row <= rows; row++) {
+        shelf.add(
+            roundedBox(
+                `ShelfBoard${row + 1}`,
+                [width, panel, depth],
+                [
+                    0,
+                    legHeight + panel / 2 + row * (cubbyHeight + panel),
+                    depth / 2,
+                ],
+                row === 0 || row === rows ? 0.02 : 0.008,
+                bodyMaterial
+            )
+        );
+    }
+    for (let column = 0; column <= columns; column++) {
+        shelf.add(
+            roundedBox(
+                `ShelfUpright${column + 1}`,
+                [panel, bodyHeight - panel * 2 + 0.002, depth],
+                [
+                    -width / 2 + panel / 2 + column * (cubbyWidth + panel),
+                    legHeight + bodyHeight / 2,
+                    depth / 2,
+                ],
+                column === 0 || column === columns ? 0.02 : 0.008,
+                bodyMaterial
+            )
+        );
+    }
+    shelf.add(
+        roundedBox(
+            "ShelfBack",
+            [width - panel, bodyHeight - panel, backDepth],
+            [0, legHeight + bodyHeight / 2, backDepth / 2],
+            0.006,
+            backMaterial
+        )
+    );
+
+    // Cubby origin: its floor's left edge, centered in depth
+    const cubby = (column: number, row: number) => ({
+        left: -width / 2 + panel + column * (cubbyWidth + panel),
+        floor: legHeight + panel + row * (cubbyHeight + panel),
+    });
+
+    // Upright spines packed from the left, ending with one leaning on the row
+    type Spine = {
+        thickness: number;
+        height: number;
+        depth: number;
+        band: boolean;
+    };
+    const fillRow = (
+        name: string,
+        column: number,
+        row: number,
+        spines: Spine[],
+        fill: number
+    ) => {
+        const { left, floor } = cubby(column, row);
+        let x = left + 0.012;
+        const limit = left + cubbyWidth * fill;
+        let index = 0;
+        let last: Spine | undefined;
+        for (const spine of spines) {
+            if (x + spine.thickness > limit) {
+                break;
+            }
+            const cover = pick(coverMaterials);
+            const jitter = (random() - 0.5) * 0.02;
+            shelf.add(
+                roundedBox(
+                    `${name}${++index}`,
+                    [spine.thickness, spine.height, spine.depth],
+                    [
+                        x + spine.thickness / 2,
+                        floor + spine.height / 2,
+                        middleZ + jitter,
+                    ],
+                    Math.min(0.004, spine.thickness / 3),
+                    cover
+                )
+            );
+            if (spine.band) {
+                shelf.add(
+                    roundedBox(
+                        `${name}${index}Band`,
+                        [spine.thickness + 0.002, 0.02, 0.004],
+                        [
+                            x + spine.thickness / 2,
+                            floor + spine.height * 0.75,
+                            middleZ + jitter + spine.depth / 2,
+                        ],
+                        0.001,
+                        cover === coverMaterials[6] ? darkMaterial : offWhite
+                    )
+                );
+            }
+            x += spine.thickness + 0.002;
+            last = spine;
+        }
+
+        // Lean the next spine back against the row, its top touching the
+        // last upright and its bottom corner on the shelf
+        const leaning = spines[index] ?? last;
+        if (!leaning) {
+            return;
+        }
+        const angle = 0.32;
+        const pivotX = x + leaning.height * Math.sin(angle);
+        const lean = roundedBox(
+            `${name}Leaning`,
+            [leaning.thickness, leaning.height, leaning.depth],
+            [
+                pivotX +
+                    (leaning.thickness / 2) * Math.cos(angle) -
+                    (leaning.height / 2) * Math.sin(angle),
+                floor +
+                    (leaning.thickness / 2) * Math.sin(angle) +
+                    (leaning.height / 2) * Math.cos(angle),
+                middleZ,
+            ],
+            Math.min(0.004, leaning.thickness / 3),
+            pick(coverMaterials)
+        );
+        lean.rotation.z = angle;
+        shelf.add(lean);
+    };
+
+    const records = (count: number): Spine[] =>
+        Array.from({ length: count }, () => ({
+            thickness: 0.014,
+            height: 0.333,
+            depth: 0.333,
+            band: false,
+        }));
+    const books = (count: number): Spine[] =>
+        Array.from({ length: count }, () => ({
+            thickness: 0.032 + random() * 0.028,
+            height: 0.22 + random() * 0.13,
+            depth: 0.24 + random() * 0.05,
+            band: random() > 0.45,
+        }));
+
+    // Top row: records, books, records. Bottom row: bin, records, books.
+    fillRow("ShelfRecordA", 0, 1, records(40), 0.78);
+    fillRow("ShelfBookA", 1, 1, books(14), 0.6);
+    fillRow("ShelfRecordB", 2, 1, records(40), 0.62);
+    fillRow("ShelfRecordC", 1, 0, records(40), 0.85);
+    fillRow("ShelfBookB", 2, 0, books(14), 0.55);
+
+    // A flat stack of books beside the upright ones
+    {
+        const { left, floor } = cubby(1, 1);
+        let y = floor;
+        [0.05, 0.04, 0.045].forEach((thickness, index) => {
+            const stackBook = roundedBox(
+                `ShelfBookStack${index + 1}`,
+                [0.17 - index * 0.015, thickness, 0.25],
+                [
+                    left + cubbyWidth - 0.11 + (random() - 0.5) * 0.02,
+                    y + thickness / 2,
+                    middleZ,
+                ],
+                0.006,
+                pick(coverMaterials)
+            );
+            stackBook.rotation.y = (random() - 0.5) * 0.2;
+            shelf.add(stackBook);
+            y += thickness;
+        });
+    }
+
+    // Fabric bin with a handle slot in the bottom-left cubby
+    {
+        const { left, floor } = cubby(0, 0);
+        const binHeight = cubbyHeight - 0.03;
+        const binDepth = cubbyDepth - 0.03;
+        shelf.add(
+            roundedBox(
+                "ShelfBin",
+                [cubbyWidth - 0.03, binHeight, binDepth],
+                [
+                    left + cubbyWidth / 2,
+                    floor + binHeight / 2,
+                    depth - 0.015 - binDepth / 2,
+                ],
+                0.03,
+                material("ShelfBin", "#F09A8C", { roughness: 0.95 })
+            )
+        );
+        shelf.add(
+            roundedBox(
+                "ShelfBinHandle",
+                [0.14, 0.04, 0.01],
+                [
+                    left + cubbyWidth / 2,
+                    floor + binHeight - 0.07,
+                    depth - 0.012,
+                ],
+                0.018,
+                darkMaterial
+            )
+        );
+    }
+
+    // Turntable on top: plinth, platter, record, label and tonearm
+    {
+        const x = -0.48;
+        const z = depth / 2;
+        const plinthHeight = 0.08;
+        shelf.add(
+            roundedBox(
+                "TurntablePlinth",
+                [0.46, plinthHeight, 0.36],
+                [x, 1 + plinthHeight / 2, z],
+                0.025,
+                offWhite
+            )
+        );
+        const top = 1 + plinthHeight;
+        shelf.add(
+            cylinder(
+                "TurntablePlatter",
+                0.155,
+                0.155,
+                0.02,
+                [x - 0.04, top + 0.01, z],
+                darkMaterial
+            )
+        );
+        shelf.add(
+            cylinder(
+                "TurntableRecord",
+                0.148,
+                0.148,
+                0.008,
+                [x - 0.04, top + 0.024, z],
+                nearBlack
+            )
+        );
+        shelf.add(
+            cylinder(
+                "TurntableLabel",
+                0.05,
+                0.05,
+                0.01,
+                [x - 0.04, top + 0.025, z],
+                material("TurntableLabel", "#F09A8C")
+            )
+        );
+        shelf.add(
+            cylinder(
+                "TurntableSpindle",
+                0.006,
+                0.006,
+                0.03,
+                [x - 0.04, top + 0.03, z],
+                offWhite
+            )
+        );
+        const pivot = new THREE.Vector3(x + 0.17, top + 0.05, z - 0.12);
+        shelf.add(
+            cylinder(
+                "TonearmBase",
+                0.025,
+                0.03,
+                0.05,
+                [pivot.x, top + 0.025, pivot.z],
+                darkMaterial
+            )
+        );
+        const head = new THREE.Vector3(x + 0.04, top + 0.04, z + 0.08);
+        shelf.add(strand("Tonearm", pivot, head, 0.006, offWhite));
+        shelf.add(
+            roundedBox(
+                "TonearmHead",
+                [0.03, 0.015, 0.045],
+                [head.x, head.y, head.z],
+                0.005,
+                darkMaterial
+            )
+        );
+        const button = cylinder(
+            "TurntableButton",
+            0.018,
+            0.018,
+            0.012,
+            [x + 0.17, top + 0.006, z + 0.12],
+            material("TurntableButton", "#5DBB63", { roughness: 0.5 })
+        );
+        shelf.add(button);
+    }
+
+    // Potted plant: a coral pot with a bushy cluster of leaves
+    {
+        const x = 0.6;
+        const z = depth / 2;
+        const potHeight = 0.16;
+        shelf.add(
+            cylinder(
+                "PlantPot",
+                0.1,
+                0.075,
+                potHeight,
+                [x, 1 + potHeight / 2, z],
+                material("PlantPot", "#F09A8C", { roughness: 0.7 })
+            )
+        );
+        shelf.add(
+            cylinder(
+                "PlantPotRim",
+                0.11,
+                0.11,
+                0.03,
+                [x, 1 + potHeight - 0.015, z],
+                material("PlantPotRim", "#E88A7C", { roughness: 0.7 })
+            )
+        );
+        const leafMaterials = [
+            material("PlantLeafDark", "#5E9E5A"),
+            material("PlantLeafLight", "#7DBB6E"),
+        ];
+        const leaves: [number, number, number, number][] = [
+            [0, 0.27, 0, 0.11],
+            [-0.08, 0.22, 0.03, 0.08],
+            [0.08, 0.23, -0.02, 0.085],
+            [0.02, 0.21, 0.08, 0.075],
+            [-0.03, 0.22, -0.08, 0.075],
+            [0.04, 0.35, 0.02, 0.07],
+        ];
+        leaves.forEach(([lx, ly, lz, radius], index) => {
+            const leaf = new THREE.Mesh(
+                new THREE.SphereGeometry(radius, 18, 14),
+                leafMaterials[index % 2]
+            );
+            leaf.name = `PlantLeaves${index + 1}`;
+            leaf.position.set(x + lx, 1 + ly, z + lz);
+            shelf.add(leaf);
+        });
+    }
+
+    // A short stack of records lying flat between them
+    {
+        let y = 1;
+        [0, 1, 2].forEach(index => {
+            const sleeve = roundedBox(
+                `ShelfTopRecord${index + 1}`,
+                [0.333, 0.014, 0.333],
+                [0.08, y + 0.007, depth / 2],
+                0.004,
+                pick(coverMaterials)
+            );
+            sleeve.rotation.y = (random() - 0.5) * 0.3;
+            shelf.add(sleeve);
+            y += 0.015;
+        });
+    }
+
+    return shelf;
+};
+
 const exportModel = (object: THREE.Object3D, fileName: string) =>
     new Promise<void>((resolve, reject) => {
         new GLTFExporter().parse(
@@ -576,6 +1262,8 @@ const exportModel = (object: THREE.Object3D, fileName: string) =>
 exportModel(buildDesk(), "cartoon_desk.glb")
     .then(() => exportModel(buildMonitor(), "cartoon_monitor.glb"))
     .then(() => exportModel(buildDoor(), "cartoon_door.glb"))
+    .then(() => exportModel(buildPinboard(), "cartoon_pinboard.glb"))
+    .then(() => exportModel(buildShelf(), "cartoon_shelf.glb"))
     .catch(error => {
         console.error(error);
         process.exit(1);

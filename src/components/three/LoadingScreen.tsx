@@ -15,6 +15,8 @@ const ASSET_LABELS: [RegExp, string][] = [
     [/desk\.glb/i, "assembling desk"],
     [/monitor/i, "plugging in monitor"],
     [/door/i, "hanging the door"],
+    [/pinboard/i, "pinning up notes"],
+    [/shelf/i, "alphabetizing records"],
     [/bass/i, "tuning bass"],
     [/deck/i, "waxing skate decks"],
     [/floor/i, "laying floorboards"],

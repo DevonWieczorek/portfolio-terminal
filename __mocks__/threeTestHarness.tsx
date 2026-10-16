@@ -181,6 +181,17 @@ export const sceneState = {
         position: { x: 8, y: 0, z: 14.5 },
         rotation: { y: Math.PI },
     },
+    pinboard: {
+        scale: 3.4,
+        position: { x: -14.5, y: 6.2, z: -11.1 },
+        rotation: { y: Math.PI / 2 },
+    },
+    shelf: {
+        scale: 3,
+        position: { x: -14.35, y: 0, z: 7 },
+        rotation: { y: Math.PI / 2 },
+    },
+    floorColliders: [{ minX: -14.35, maxX: -13.06, minZ: 4.3, maxZ: 9.7 }],
     monitor: {
         scale: 1.2,
         position: { x: -0.5, y: 1.5, z: 2.6 },

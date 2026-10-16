@@ -20,6 +20,7 @@ enum Controls {
 }
 
 const POSITION_EPSILON = 1e-5;
+const CHARACTER_RADIUS = 0.5;
 // The avatar's box geometry spans from the bottom of the legs (y = -1.3) to
 // the top of the head (y = 2.4) in local units.
 const MODEL_FEET_Y = -1.3;
@@ -113,6 +114,7 @@ const Character = memo(() => {
         characterHeight,
         characterAppearance,
         desk,
+        floorColliders,
     } = useScene();
     const { message, clearMessage } = useMessage();
     // Use individual selectors to prevent unnecessary rerenders
@@ -255,7 +257,6 @@ const Character = memo(() => {
         const cornerX = desk?.position?.x ?? 0;
         const cornerZ = desk?.position?.z ?? 0;
         const footprint = desk?.footprint;
-        const characterRadius = 0.5; // Character collision radius
 
         // Check collision with the arm of the L-desk along the back wall
         const horizX1 = cornerX;
@@ -271,20 +272,29 @@ const Character = memo(() => {
 
         // Check if character overlaps with horizontal desk section
         const horizCollision =
-            x + characterRadius > horizX1 &&
-            x - characterRadius < horizX2 &&
-            z + characterRadius > horizZ1 &&
-            z - characterRadius < horizZ2;
+            x + CHARACTER_RADIUS > horizX1 &&
+            x - CHARACTER_RADIUS < horizX2 &&
+            z + CHARACTER_RADIUS > horizZ1 &&
+            z - CHARACTER_RADIUS < horizZ2;
 
         // Check if character overlaps with vertical desk section
         const vertCollision =
-            x + characterRadius > vertX1 &&
-            x - characterRadius < vertX2 &&
-            z + characterRadius > vertZ1 &&
-            z - characterRadius < vertZ2;
+            x + CHARACTER_RADIUS > vertX1 &&
+            x - CHARACTER_RADIUS < vertX2 &&
+            z + CHARACTER_RADIUS > vertZ1 &&
+            z - CHARACTER_RADIUS < vertZ2;
 
         return horizCollision || vertCollision;
     };
+
+    const checkFurnitureCollision = (x: number, z: number) =>
+        floorColliders.some(
+            ({ minX, maxX, minZ, maxZ }) =>
+                x + CHARACTER_RADIUS > minX &&
+                x - CHARACTER_RADIUS < maxX &&
+                z + CHARACTER_RADIUS > minZ &&
+                z - CHARACTER_RADIUS < maxZ
+        );
 
     // Animates the limbs: a walk cycle while moving that eases into an idle
     // breathing loop when standing still
@@ -362,8 +372,11 @@ const Character = memo(() => {
         newPosition.x = Math.max(-boundary, Math.min(boundary, newPosition.x));
         newPosition.z = Math.max(-boundary, Math.min(boundary, newPosition.z));
 
-        // Check desk collision and revert if colliding
-        if (checkDeskCollision(newPosition.x, newPosition.z)) {
+        // Check furniture collision and revert if colliding
+        if (
+            checkDeskCollision(newPosition.x, newPosition.z) ||
+            checkFurnitureCollision(newPosition.x, newPosition.z)
+        ) {
             // If collision detected, don't move to new position
             newPosition.x = position.x;
             newPosition.z = position.z;
