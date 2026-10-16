@@ -10,7 +10,6 @@ import {
 } from "react";
 import { Canvas } from "@react-three/fiber";
 import { KeyboardControls } from "@react-three/drei";
-import { Leva } from "leva";
 import Room from "@/components/three/Room";
 import Character from "@/components/three/Character";
 import Lights from "@/components/three/Lights";
@@ -19,6 +18,7 @@ import Effects from "@/components/three/Effects";
 import { SceneProvider } from "@/lib/contexts/SceneContext";
 import { MessageProvider, useMessage } from "@/lib/contexts/MessageContext";
 import Message from "@/components/three/Message";
+import DebugPanel from "@/components/three/DebugPanel";
 import LoadingScreen from "@/components/three/LoadingScreen";
 import Terminal from "@/components/Terminal";
 import { useExperience } from "@/lib/stores/useExperience";
@@ -39,7 +39,6 @@ const CONTROLS = [
 ];
 
 const IS_DEBUG = process.env.NEXT_PUBLIC_DEBUG === "true";
-const LEVA_THEME = { sizes: { rootWidth: "500px" } };
 
 const R3FSceneContent = memo(() => {
     const [showCanvas, setShowCanvas] = useState(false);
@@ -131,7 +130,7 @@ const R3FSceneContent = memo(() => {
 
     return (
         <div className={styles.sceneContainer}>
-            <Leva hidden={!IS_DEBUG} theme={LEVA_THEME} />
+            {IS_DEBUG && <DebugPanel />}
             <LoadingScreen isReady={isRoomReady} />
             <div className={canvasClassName}>
                 {showCanvas && (
