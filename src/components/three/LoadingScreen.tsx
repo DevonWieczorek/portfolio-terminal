@@ -14,6 +14,7 @@ export const LINE_STAGGER_MS = 400;
 const ASSET_LABELS: [RegExp, string][] = [
     [/desk\.glb/i, "assembling desk"],
     [/monitor/i, "plugging in monitor"],
+    [/door/i, "hanging the door"],
     [/bass/i, "tuning bass"],
     [/deck/i, "waxing skate decks"],
     [/floor/i, "laying floorboards"],

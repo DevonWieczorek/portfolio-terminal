@@ -10,9 +10,9 @@ describe("Baseboards", () => {
         resetThreeTestState();
     });
 
-    it("runs trim along every wall", () => {
+    it("runs trim along every wall, split around the door", () => {
         const { container } = render(<Baseboards />);
 
-        expect(container.querySelectorAll("boxgeometry")).toHaveLength(4);
+        expect(container.querySelectorAll("boxgeometry")).toHaveLength(5);
     });
 });

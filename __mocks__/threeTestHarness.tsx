@@ -111,8 +111,13 @@ export const sceneState = {
         runs: [
             { position: { x: 0, y: 0, z: -14.5 }, length: 29, rotationY: 0 },
             {
-                position: { x: 0, y: 0, z: 14.5 },
-                length: 29,
+                position: { x: -3.6, y: 0, z: 14.5 },
+                length: 21.8,
+                rotationY: Math.PI,
+            },
+            {
+                position: { x: 12.3, y: 0, z: 14.5 },
+                length: 4.4,
                 rotationY: Math.PI,
             },
             {
@@ -163,6 +168,12 @@ export const sceneState = {
             backArmDepth: 2.1,
             sideArmWidth: 2.3,
         },
+    },
+    door: {
+        scale: 7.6,
+        width: 4.3,
+        position: { x: 8, y: 0, z: 14.5 },
+        rotation: { y: Math.PI },
     },
     monitor: {
         scale: 1.2,

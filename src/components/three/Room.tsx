@@ -8,6 +8,7 @@ import { useMovement } from "@/lib/stores/useMovement";
 import { useScene } from "@/lib/contexts/SceneContext";
 import { useMessage } from "@/lib/contexts/MessageContext";
 import Desk from "@/components/three/Desk";
+import Door from "@/components/three/Door";
 import BassGroup from "@/components/three/BassGroup";
 import SkateboardGroup from "@/components/three/SkateboardGroup";
 import Baseboards from "@/components/three/Baseboards";
@@ -205,6 +206,8 @@ const Room = memo(({ onReady }: RoomProps) => {
                     color={wallColor}
                 />
             </mesh>
+
+            <Door />
 
             {/* East Wall */}
             <mesh position={[roomSize / 2, wallHeight / 2, 0]} receiveShadow>
