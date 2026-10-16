@@ -6,7 +6,8 @@ const nextConfig = {
     },
     webpack: config => {
         config.module.rules.push({
-            test: /src\/components\/three\/(InteractiveBox|SkateboardGroup|Desk|Room|BassGroup|Bass|Character|Monitor|MonitorScreen|Effects|Lights|Camera|Baseboards|Rug)\.tsx$/,
+            test: /src\/.*\.tsx?$/,
+            exclude: /node_modules/,
             enforce: "pre",
             use: [
                 {
