@@ -4,7 +4,7 @@ import * as THREE from "three";
 import { RoundedBoxGeometry } from "three/examples/jsm/geometries/RoundedBoxGeometry.js";
 import { GLTFExporter } from "three/examples/jsm/exporters/GLTFExporter.js";
 
-// Builds the cartoon desk and monitor models from simple bevelled shapes and
+// Builds the cartoon desk, monitor and door models from simple bevelled shapes and
 // writes them to public/models. Run with `yarn generate-scene-models`.
 
 // GLTFExporter reads its output through FileReader, which Node lacks
@@ -26,13 +26,18 @@ const outputDirectory = path.resolve(import.meta.dirname, "../public/models");
 const material = (
     name: string,
     color: string,
-    { roughness = 0.8, emissive = "#000000", emissiveIntensity = 0 } = {}
+    {
+        roughness = 0.8,
+        metalness = 0,
+        emissive = "#000000",
+        emissiveIntensity = 0,
+    } = {}
 ) => {
     const result = new THREE.MeshStandardMaterial({
         name,
         color,
         roughness,
-        metalness: 0,
+        metalness,
         emissive,
         emissiveIntensity,
     });
@@ -352,6 +357,205 @@ const buildMonitor = () => {
     return monitor;
 };
 
+// Door: a chunky panelled door in an off-white casing, authored 1 unit tall
+// with its bottom center at the origin, its back flat against the wall at
+// z = 0, and facing +Z. Its plinth-to-plinth width (width plus the plinths'
+// overhang) must match DOOR_PROPORTIONS in SceneContext, which splits the
+// baseboard around it.
+const DOOR = {
+    width: 0.56,
+    casingWidth: 0.075,
+    casingDepth: 0.045,
+    headHeight: 0.07,
+    capHeight: 0.025,
+    plinthHeight: 0.09,
+};
+
+const buildDoor = () => {
+    const door = new THREE.Group();
+    door.name = "Door";
+
+    const casingMaterial = material("DoorCasing", "#FFFDF7", {
+        roughness: 0.5,
+    });
+    const slabMaterial = material("DoorSlab", "#4E7FA8", { roughness: 0.7 });
+    const panelMaterial = material("DoorPanels", "#5A8DB8", {
+        roughness: 0.65,
+    });
+    const shadowMaterial = material("DoorGap", "#2E3138", { roughness: 0.9 });
+    const brassMaterial = material("DoorBrass", "#E2B65A", {
+        roughness: 0.35,
+        metalness: 0.6,
+    });
+    const hingeMaterial = material("DoorHinges", "#3A3F47", {
+        roughness: 0.5,
+        metalness: 0.4,
+    });
+
+    const openingWidth = DOOR.width - DOOR.casingWidth * 2;
+    const headTop = 1 - DOOR.capHeight;
+    const openingHeight = headTop - DOOR.headHeight;
+    const sideX = DOOR.width / 2 - DOOR.casingWidth / 2;
+
+    // Dark backing so the gap around the slab reads as a crisp outline
+    door.add(
+        roundedBox(
+            "DoorGap",
+            [openingWidth + 0.02, openingHeight + 0.01, 0.006],
+            [0, (openingHeight + 0.01) / 2, 0.003],
+            0.002,
+            shadowMaterial
+        )
+    );
+
+    // Casing: side legs on plinth blocks, a head, and a cap that overhangs
+    [-1, 1].forEach(side => {
+        door.add(
+            roundedBox(
+                side < 0 ? "DoorCasingLeft" : "DoorCasingRight",
+                [DOOR.casingWidth, headTop, DOOR.casingDepth],
+                [side * sideX, headTop / 2, DOOR.casingDepth / 2],
+                0.012,
+                casingMaterial
+            )
+        );
+        door.add(
+            roundedBox(
+                side < 0 ? "DoorPlinthLeft" : "DoorPlinthRight",
+                [
+                    DOOR.casingWidth + 0.012,
+                    DOOR.plinthHeight,
+                    DOOR.casingDepth + 0.01,
+                ],
+                [
+                    side * sideX,
+                    DOOR.plinthHeight / 2,
+                    (DOOR.casingDepth + 0.01) / 2,
+                ],
+                0.01,
+                casingMaterial
+            )
+        );
+    });
+    door.add(
+        roundedBox(
+            "DoorHead",
+            [DOOR.width, DOOR.headHeight, DOOR.casingDepth],
+            [0, headTop - DOOR.headHeight / 2, DOOR.casingDepth / 2],
+            0.012,
+            casingMaterial
+        )
+    );
+    door.add(
+        roundedBox(
+            "DoorCap",
+            [DOOR.width + 0.04, DOOR.capHeight, DOOR.casingDepth + 0.018],
+            [0, 1 - DOOR.capHeight / 2, (DOOR.casingDepth + 0.018) / 2],
+            0.01,
+            casingMaterial
+        )
+    );
+
+    // Slab recessed slightly behind the casing face
+    const gap = 0.006;
+    const slabWidth = openingWidth - gap * 2;
+    const slabHeight = openingHeight - gap;
+    const slabThickness = 0.03;
+    const slabFrontZ = 0.006 + slabThickness;
+    door.add(
+        roundedBox(
+            "DoorSlab",
+            [slabWidth, slabHeight, slabThickness],
+            [0, slabHeight / 2, slabFrontZ - slabThickness / 2],
+            0.01,
+            slabMaterial
+        )
+    );
+
+    // Four raised panels: short ones above the lock rail, tall ones below
+    const stile = 0.05;
+    const panelWidth = (slabWidth - stile * 3) / 2;
+    const panelDepth = 0.014;
+    const bottomRail = 0.075;
+    const lockRail = 0.06;
+    const topRail = 0.06;
+    const lowerHeight = (slabHeight - bottomRail - lockRail - topRail) * 0.58;
+    const upperHeight =
+        slabHeight - bottomRail - lockRail - topRail - lowerHeight;
+    const panelRows: [string, number, number][] = [
+        ["Lower", bottomRail + lowerHeight / 2, lowerHeight],
+        [
+            "Upper",
+            bottomRail + lowerHeight + lockRail + upperHeight / 2,
+            upperHeight,
+        ],
+    ];
+    panelRows.forEach(([row, y, height]) => {
+        [-1, 1].forEach(side => {
+            door.add(
+                roundedBox(
+                    `DoorPanel${row}${side < 0 ? "Left" : "Right"}`,
+                    [panelWidth, height, panelDepth],
+                    [
+                        side * (stile / 2 + panelWidth / 2),
+                        y,
+                        slabFrontZ + panelDepth / 2 - 0.004,
+                    ],
+                    0.006,
+                    panelMaterial
+                )
+            );
+        });
+    });
+
+    // Round brass knob on a backplate, at the lock rail
+    const knobX = slabWidth / 2 - 0.045;
+    const knobY = bottomRail + lowerHeight + lockRail / 2;
+    const backplate = cylinder(
+        "DoorKnobPlate",
+        0.024,
+        0.024,
+        0.008,
+        [knobX, knobY, slabFrontZ + 0.004],
+        brassMaterial
+    );
+    backplate.rotation.x = Math.PI / 2;
+    door.add(backplate);
+    const neck = cylinder(
+        "DoorKnobNeck",
+        0.008,
+        0.011,
+        0.026,
+        [knobX, knobY, slabFrontZ + 0.018],
+        brassMaterial
+    );
+    neck.rotation.x = Math.PI / 2;
+    door.add(neck);
+    const knob = new THREE.Mesh(
+        new THREE.SphereGeometry(0.024, 20, 14),
+        brassMaterial
+    );
+    knob.name = "DoorKnob";
+    knob.scale.z = 0.8;
+    knob.position.set(knobX, knobY, slabFrontZ + 0.038);
+    door.add(knob);
+
+    // Hinges on the opposite edge
+    [0.16, openingHeight - 0.16].forEach((y, index) => {
+        door.add(
+            roundedBox(
+                `DoorHinge${index + 1}`,
+                [0.016, 0.06, 0.012],
+                [-slabWidth / 2 - 0.002, y, slabFrontZ - 0.002],
+                0.004,
+                hingeMaterial
+            )
+        );
+    });
+
+    return door;
+};
+
 const exportModel = (object: THREE.Object3D, fileName: string) =>
     new Promise<void>((resolve, reject) => {
         new GLTFExporter().parse(
@@ -371,6 +575,7 @@ const exportModel = (object: THREE.Object3D, fileName: string) =>
 
 exportModel(buildDesk(), "cartoon_desk.glb")
     .then(() => exportModel(buildMonitor(), "cartoon_monitor.glb"))
+    .then(() => exportModel(buildDoor(), "cartoon_door.glb"))
     .catch(error => {
         console.error(error);
         process.exit(1);

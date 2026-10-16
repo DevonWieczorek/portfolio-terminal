@@ -183,6 +183,29 @@ const wallFaces = {
     front: ROOM_DEPTH / 2 - WALL_THICKNESS / 2,
 };
 
+// Door height to the top of its casing (a standard door is 6'8", plus trim)
+const DOOR_HEIGHT: number = scaledHeight(7.6);
+// Plinth-to-plinth width at the floor as a multiple of the door height. Must
+// match DOOR in .bin/generate-scene-models.mts, which builds cartoon_door.glb.
+const DOOR_PROPORTIONS = { width: 0.572 };
+const DOOR_X: number = scaledFeet(8);
+const DOOR_LEFT: number = DOOR_X - (DOOR_PROPORTIONS.width * DOOR_HEIGHT) / 2;
+const DOOR_RIGHT: number = DOOR_X + (DOOR_PROPORTIONS.width * DOOR_HEIGHT) / 2;
+// The model's back sits at its origin, so this sets it flat on the south wall,
+// turned to face into the room
+const defaultDoorTraits: DeepPartial<ObjectTraits> = {
+    scale: DOOR_HEIGHT,
+    width: DOOR_PROPORTIONS.width * DOOR_HEIGHT,
+    position: {
+        x: DOOR_X,
+        y: feetFromFloor(0),
+        z: wallFaces.front,
+    },
+    rotation: {
+        y: Math.PI,
+    },
+};
+
 // Chunky, oversized trim along every wall for a cartoon look. Each run spans
 // its wall's full interior length and sits flush against the wall face.
 const BASEBOARD_HEIGHT: number = scaledHeight(0.6);
@@ -196,9 +219,23 @@ const defaultBaseboardTraits: BaseboardTraits = {
             length: RUN_X,
             rotationY: 0,
         },
+        // The south wall's trim stops at the door's plinth blocks
         {
-            position: { x: 0, y: 0, z: wallFaces.front },
-            length: RUN_X,
+            position: {
+                x: (wallFaces.left + DOOR_LEFT) / 2,
+                y: 0,
+                z: wallFaces.front,
+            },
+            length: DOOR_LEFT - wallFaces.left,
+            rotationY: Math.PI,
+        },
+        {
+            position: {
+                x: (DOOR_RIGHT + wallFaces.right) / 2,
+                y: 0,
+                z: wallFaces.front,
+            },
+            length: wallFaces.right - DOOR_RIGHT,
             rotationY: Math.PI,
         },
         {
@@ -422,6 +459,7 @@ interface SceneConfig {
         default: number;
     };
     desk: DeepPartial<ObjectTraits>;
+    door: DeepPartial<ObjectTraits>;
     monitor: DeepPartial<ObjectTraits>;
     monitorScreen: DeepPartial<ObjectTraits & GlowTraits>;
     lighting: LightingSettings;
@@ -477,6 +515,7 @@ const defaultSceneConfig: SceneConfig = {
         default: 1,
     },
     desk: defaultDeskTraits,
+    door: defaultDoorTraits,
     monitor: defaultMonitorTraits,
     monitorScreen: defaultMonitorScreenTraits,
     lighting: defaultLightingSettings,
