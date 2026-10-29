@@ -54,6 +54,14 @@ interface Footprint {
     sideArmWidth: number; // width of the arm against the side wall
 }
 
+// Axis-aligned rectangle of floor the character can't walk into
+interface FloorRect {
+    minX: number;
+    maxX: number;
+    minZ: number;
+    maxZ: number;
+}
+
 interface RoomDimensions {
     width: number; // feet
     depth: number; // feet
@@ -183,6 +191,29 @@ const wallFaces = {
     front: ROOM_DEPTH / 2 - WALL_THICKNESS / 2,
 };
 
+// Door height to the top of its casing (a standard door is 6'8", plus trim)
+const DOOR_HEIGHT: number = scaledHeight(7.6);
+// Plinth-to-plinth width at the floor as a multiple of the door height. Must
+// match DOOR in .bin/generate-scene-models.mts, which builds cartoon_door.glb.
+const DOOR_PROPORTIONS = { width: 0.572 };
+const DOOR_X: number = scaledFeet(8);
+const DOOR_LEFT: number = DOOR_X - (DOOR_PROPORTIONS.width * DOOR_HEIGHT) / 2;
+const DOOR_RIGHT: number = DOOR_X + (DOOR_PROPORTIONS.width * DOOR_HEIGHT) / 2;
+// The model's back sits at its origin, so this sets it flat on the south wall,
+// turned to face into the room
+const defaultDoorTraits: DeepPartial<ObjectTraits> = {
+    scale: DOOR_HEIGHT,
+    width: DOOR_PROPORTIONS.width * DOOR_HEIGHT,
+    position: {
+        x: DOOR_X,
+        y: feetFromFloor(0),
+        z: wallFaces.front,
+    },
+    rotation: {
+        y: Math.PI,
+    },
+};
+
 // Chunky, oversized trim along every wall for a cartoon look. Each run spans
 // its wall's full interior length and sits flush against the wall face.
 const BASEBOARD_HEIGHT: number = scaledHeight(0.6);
@@ -196,9 +227,23 @@ const defaultBaseboardTraits: BaseboardTraits = {
             length: RUN_X,
             rotationY: 0,
         },
+        // The south wall's trim stops at the door's plinth blocks
         {
-            position: { x: 0, y: 0, z: wallFaces.front },
-            length: RUN_X,
+            position: {
+                x: (wallFaces.left + DOOR_LEFT) / 2,
+                y: 0,
+                z: wallFaces.front,
+            },
+            length: DOOR_LEFT - wallFaces.left,
+            rotationY: Math.PI,
+        },
+        {
+            position: {
+                x: (DOOR_RIGHT + wallFaces.right) / 2,
+                y: 0,
+                z: wallFaces.front,
+            },
+            length: wallFaces.right - DOOR_RIGHT,
             rotationY: Math.PI,
         },
         {
@@ -256,6 +301,51 @@ const defaultDeskTraits: DeepPartial<ObjectTraits> = {
         sideArmWidth: DESK_PROPORTIONS.sideArmWidth * DESK_HEIGHT,
     },
 };
+
+// Pinboard height in feet, hung on the west wall above the desk's side arm.
+// The model is centered on its origin with its back on the wall.
+const PINBOARD_HEIGHT: number = scaledHeight(3.4);
+const defaultPinboardTraits: DeepPartial<ObjectTraits> = {
+    scale: PINBOARD_HEIGHT,
+    position: {
+        x: wallFaces.left,
+        y: scaledHeight(6.2),
+        z: wallFaces.back + scaledFeet(3.4),
+    },
+    rotation: {
+        y: rotationY.counterclockwise,
+    },
+};
+
+// Record shelf height to its top (a low cube shelf is ~36in tall)
+const SHELF_HEIGHT: number = scaledHeight(3);
+// Shelf width and depth as multiples of its height. Must match SHELF in
+// .bin/generate-scene-models.mts, which builds cartoon_shelf.glb.
+const SHELF_PROPORTIONS = { width: 1.8, depth: 0.43 };
+const SHELF_WALL_X: number = wallFaces.left + BASEBOARD_THICKNESS;
+const SHELF_Z: number = scaledFeet(7);
+// Against the west wall toward the southwest corner, facing into the room
+const defaultShelfTraits: DeepPartial<ObjectTraits> = {
+    scale: SHELF_HEIGHT,
+    position: {
+        x: SHELF_WALL_X,
+        y: feetFromFloor(0),
+        z: SHELF_Z,
+    },
+    rotation: {
+        y: rotationY.counterclockwise,
+    },
+};
+
+// Furniture the character walks around, besides the desk
+const defaultFloorColliders: FloorRect[] = [
+    {
+        minX: SHELF_WALL_X,
+        maxX: SHELF_WALL_X + SHELF_PROPORTIONS.depth * SHELF_HEIGHT,
+        minZ: SHELF_Z - (SHELF_PROPORTIONS.width * SHELF_HEIGHT) / 2,
+        maxZ: SHELF_Z + (SHELF_PROPORTIONS.width * SHELF_HEIGHT) / 2,
+    },
+];
 
 // Monitor height in feet
 const MONITOR_SCALE: number = scaledHeight(1.5);
@@ -347,7 +437,7 @@ const BASS_SCALE: number = scaledFeet(3.8);
 const defaultBassTraits: DeepPartial<ObjectTraits> = {
     position: {
         x: feetFromCenter(-1 * scaleFactorXZ),
-        y: scaledHeight((ROOM_HEIGHT - BASS_SCALE) / 2),
+        y: scaledHeight(5.5),
         z: wallFaces.back,
     },
     scale: BASS_SCALE,
@@ -372,14 +462,14 @@ const defaultDeckTraits: DeepPartial<ObjectTraits> = {
         x: wallFaces.right,
         // Decks are centered on their origin, so this lines them up with the
         // vertical center of the basses
-        y: scaledHeight(ROOM_HEIGHT / 2),
+        y: scaledHeight(7.5),
         z: feetFromCenter(-1 * scaleFactorXZ),
     },
     scale: DECK_SCALE,
     spacing: scaledFeet(5),
     boxSize: {
         x: 20,
-        y: 12,
+        y: 18,
         z: 5,
     },
     boxAnchor: {
@@ -406,6 +496,8 @@ interface SceneConfig {
     characterSpeed: number;
     characterStepSquash: number; // squash and stretch per step, as a fraction of body height
     characterHeight: number;
+    cameraPanSpeed: number;
+    cameraRotateSpeed: number;
     characterAppearance: CharacterAppearance;
     cameraOffset: {
         x: number;
@@ -420,6 +512,10 @@ interface SceneConfig {
         default: number;
     };
     desk: DeepPartial<ObjectTraits>;
+    door: DeepPartial<ObjectTraits>;
+    pinboard: DeepPartial<ObjectTraits>;
+    shelf: DeepPartial<ObjectTraits>;
+    floorColliders: FloorRect[];
     monitor: DeepPartial<ObjectTraits>;
     monitorScreen: DeepPartial<ObjectTraits & GlowTraits>;
     lighting: LightingSettings;
@@ -458,6 +554,8 @@ const defaultSceneConfig: SceneConfig = {
     cameraBuffer: 2,
     characterSpeed: 0.15,
     characterStepSquash: 0.04,
+    cameraPanSpeed: 0.2,
+    cameraRotateSpeed: 0.03,
     // Low and aimed above the character so the far wall (and the basses on
     // it) stays in frame instead of the camera looking down at the floor
     cameraOffset: {
@@ -473,6 +571,10 @@ const defaultSceneConfig: SceneConfig = {
         default: 1,
     },
     desk: defaultDeskTraits,
+    door: defaultDoorTraits,
+    pinboard: defaultPinboardTraits,
+    shelf: defaultShelfTraits,
+    floorColliders: defaultFloorColliders,
     monitor: defaultMonitorTraits,
     monitorScreen: defaultMonitorScreenTraits,
     lighting: defaultLightingSettings,

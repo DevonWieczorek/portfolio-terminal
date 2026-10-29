@@ -18,6 +18,7 @@ import Effects from "@/components/three/Effects";
 import { SceneProvider } from "@/lib/contexts/SceneContext";
 import { MessageProvider, useMessage } from "@/lib/contexts/MessageContext";
 import Message from "@/components/three/Message";
+import DebugPanel from "@/components/three/DebugPanel";
 import LoadingScreen from "@/components/three/LoadingScreen";
 import Terminal from "@/components/Terminal";
 import { useExperience } from "@/lib/stores/useExperience";
@@ -28,14 +29,25 @@ enum Controls {
     backward = "backward",
     leftward = "leftward",
     rightward = "rightward",
+    panForward = "panForward",
+    panBackward = "panBackward",
+    rotateLeft = "rotateLeft",
+    rotateRight = "rotateRight",
 }
 
+// Arrow keys move the character; W/S pan and A/D rotate the camera.
 const CONTROLS = [
-    { name: Controls.forward, keys: ["KeyW", "ArrowUp"] },
-    { name: Controls.backward, keys: ["KeyS", "ArrowDown"] },
-    { name: Controls.leftward, keys: ["KeyA", "ArrowLeft"] },
-    { name: Controls.rightward, keys: ["KeyD", "ArrowRight"] },
+    { name: Controls.forward, keys: ["ArrowUp"] },
+    { name: Controls.backward, keys: ["ArrowDown"] },
+    { name: Controls.leftward, keys: ["ArrowLeft"] },
+    { name: Controls.rightward, keys: ["ArrowRight"] },
+    { name: Controls.panForward, keys: ["KeyW"] },
+    { name: Controls.panBackward, keys: ["KeyS"] },
+    { name: Controls.rotateLeft, keys: ["KeyA"] },
+    { name: Controls.rotateRight, keys: ["KeyD"] },
 ];
+
+const IS_DEBUG = process.env.NEXT_PUBLIC_DEBUG === "true";
 
 const R3FSceneContent = memo(() => {
     const [showCanvas, setShowCanvas] = useState(false);
@@ -127,6 +139,7 @@ const R3FSceneContent = memo(() => {
 
     return (
         <div className={styles.sceneContainer}>
+            {IS_DEBUG && <DebugPanel />}
             <LoadingScreen isReady={isRoomReady} />
             <div className={canvasClassName}>
                 {showCanvas && (

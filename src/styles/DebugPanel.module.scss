@@ -1,0 +1,24 @@
+.panel {
+    position: fixed;
+    top: 10px;
+    right: 10px;
+    max-height: calc(100vh - 20px);
+    overflow-y: auto;
+    z-index: 1001;
+}
+
+.resizeHandle {
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    left: 0;
+    width: 6px;
+    cursor: ew-resize;
+    touch-action: none;
+    z-index: 1;
+
+    &:hover,
+    &:active {
+        background: rgba(255, 255, 255, 0.2);
+    }
+}

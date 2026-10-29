@@ -74,6 +74,10 @@ export const keyboardState = {
     backward: false,
     leftward: false,
     rightward: false,
+    panForward: false,
+    panBackward: false,
+    rotateLeft: false,
+    rotateRight: false,
 };
 
 export const subscribeMock = jest.fn(() => jest.fn());
@@ -111,8 +115,13 @@ export const sceneState = {
         runs: [
             { position: { x: 0, y: 0, z: -14.5 }, length: 29, rotationY: 0 },
             {
-                position: { x: 0, y: 0, z: 14.5 },
-                length: 29,
+                position: { x: -3.6, y: 0, z: 14.5 },
+                length: 21.8,
+                rotationY: Math.PI,
+            },
+            {
+                position: { x: 12.3, y: 0, z: 14.5 },
+                length: 4.4,
                 rotationY: Math.PI,
             },
             {
@@ -143,6 +152,8 @@ export const sceneState = {
     characterSpeed: 0.1,
     characterStepSquash: 0.04,
     characterHeight: 6,
+    cameraPanSpeed: 0.2,
+    cameraRotateSpeed: 0.03,
     characterAppearance: {
         skinColor: "#f7d0b4",
         shirtColor: "#6593c6",
@@ -164,6 +175,23 @@ export const sceneState = {
             sideArmWidth: 2.3,
         },
     },
+    door: {
+        scale: 7.6,
+        width: 4.3,
+        position: { x: 8, y: 0, z: 14.5 },
+        rotation: { y: Math.PI },
+    },
+    pinboard: {
+        scale: 3.4,
+        position: { x: -14.5, y: 6.2, z: -11.1 },
+        rotation: { y: Math.PI / 2 },
+    },
+    shelf: {
+        scale: 3,
+        position: { x: -14.35, y: 0, z: 7 },
+        rotation: { y: Math.PI / 2 },
+    },
+    floorColliders: [{ minX: -14.35, maxX: -13.06, minZ: 4.3, maxZ: 9.7 }],
     monitor: {
         scale: 1.2,
         position: { x: -0.5, y: 1.5, z: 2.6 },
@@ -229,7 +257,9 @@ export const messageState = {
 
 export const movementState = {
     position: { x: 0, y: 1, z: 0 },
+    cameraYaw: 0,
     setPosition: jest.fn(),
+    setCameraYaw: jest.fn(),
     resetPosition: jest.fn(),
 };
 
@@ -390,6 +420,10 @@ export function resetThreeTestState() {
     keyboardState.backward = false;
     keyboardState.leftward = false;
     keyboardState.rightward = false;
+    keyboardState.panForward = false;
+    keyboardState.panBackward = false;
+    keyboardState.rotateLeft = false;
+    keyboardState.rotateRight = false;
     experienceState.mode = "scene";
     experienceState.targetMode = "scene";
     experienceState.isTransitioning = false;
@@ -398,6 +432,7 @@ export function resetThreeTestState() {
     messageState.message = "";
     messageState.interaction = null;
     movementState.position = { x: 0, y: 1, z: 0 };
+    movementState.cameraYaw = 0;
     progressState = { progress: 0, item: "" };
 }
 

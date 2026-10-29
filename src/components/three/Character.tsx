@@ -10,6 +10,7 @@ import { useScene } from "@/lib/contexts/SceneContext";
 import { useExperience } from "@/lib/stores/useExperience";
 import { useMessage } from "@/lib/contexts/MessageContext";
 import { INTRO_MESSAGE } from "@/lib/constants/sceneMessages";
+import { getFacingRotation, toCameraRelative } from "@/utils/movement";
 
 enum Controls {
     forward = "forward",
@@ -19,6 +20,7 @@ enum Controls {
 }
 
 const POSITION_EPSILON = 1e-5;
+const CHARACTER_RADIUS = 0.5;
 // The avatar's box geometry spans from the bottom of the legs (y = -1.3) to
 // the top of the head (y = 2.4) in local units.
 const MODEL_FEET_Y = -1.3;
@@ -112,6 +114,7 @@ const Character = memo(() => {
         characterHeight,
         characterAppearance,
         desk,
+        floorColliders,
     } = useScene();
     const { message, clearMessage } = useMessage();
     // Use individual selectors to prevent unnecessary rerenders
@@ -254,7 +257,6 @@ const Character = memo(() => {
         const cornerX = desk?.position?.x ?? 0;
         const cornerZ = desk?.position?.z ?? 0;
         const footprint = desk?.footprint;
-        const characterRadius = 0.5; // Character collision radius
 
         // Check collision with the arm of the L-desk along the back wall
         const horizX1 = cornerX;
@@ -270,20 +272,29 @@ const Character = memo(() => {
 
         // Check if character overlaps with horizontal desk section
         const horizCollision =
-            x + characterRadius > horizX1 &&
-            x - characterRadius < horizX2 &&
-            z + characterRadius > horizZ1 &&
-            z - characterRadius < horizZ2;
+            x + CHARACTER_RADIUS > horizX1 &&
+            x - CHARACTER_RADIUS < horizX2 &&
+            z + CHARACTER_RADIUS > horizZ1 &&
+            z - CHARACTER_RADIUS < horizZ2;
 
         // Check if character overlaps with vertical desk section
         const vertCollision =
-            x + characterRadius > vertX1 &&
-            x - characterRadius < vertX2 &&
-            z + characterRadius > vertZ1 &&
-            z - characterRadius < vertZ2;
+            x + CHARACTER_RADIUS > vertX1 &&
+            x - CHARACTER_RADIUS < vertX2 &&
+            z + CHARACTER_RADIUS > vertZ1 &&
+            z - CHARACTER_RADIUS < vertZ2;
 
         return horizCollision || vertCollision;
     };
+
+    const checkFurnitureCollision = (x: number, z: number) =>
+        floorColliders.some(
+            ({ minX, maxX, minZ, maxZ }) =>
+                x + CHARACTER_RADIUS > minX &&
+                x - CHARACTER_RADIUS < maxX &&
+                z + CHARACTER_RADIUS > minZ &&
+                z - CHARACTER_RADIUS < maxZ
+        );
 
     // Animates the limbs: a walk cycle while moving that eases into an idle
     // breathing loop when standing still
@@ -337,47 +348,35 @@ const Character = memo(() => {
         const keys = getKeys();
         // Reuse position object to avoid creating new object every frame
         const newPosition = { x: position.x, y: position.y, z: position.z };
-        let isMoving = false;
 
-        // Calculate movement and determine rotation
-        if (keys.forward) {
-            newPosition.z -= speed;
-            targetRotation.current = 0; // Face forward
-            isMoving = true;
-        }
-        if (keys.backward) {
-            newPosition.z += speed;
-            targetRotation.current = Math.PI; // Face backward
-            isMoving = true;
-        }
-        if (keys.leftward) {
-            newPosition.x -= speed;
-            targetRotation.current = Math.PI / 2; // Face left
-            isMoving = true;
-        }
-        if (keys.rightward) {
-            newPosition.x += speed;
-            targetRotation.current = -Math.PI / 2; // Face right
-            isMoving = true;
-        }
+        // Input in camera space: -z is "into the screen", +x is screen right
+        const inputX = Number(keys.rightward) - Number(keys.leftward);
+        const inputZ = Number(keys.backward) - Number(keys.forward);
+        const isMoving = inputX !== 0 || inputZ !== 0;
 
-        // Handle diagonal movement
-        if (keys.forward && keys.leftward) {
-            targetRotation.current = Math.PI / 4; // Northeast
-        } else if (keys.forward && keys.rightward) {
-            targetRotation.current = -Math.PI / 4; // Northwest
-        } else if (keys.backward && keys.leftward) {
-            targetRotation.current = (3 * Math.PI) / 4; // Southeast
-        } else if (keys.backward && keys.rightward) {
-            targetRotation.current = (-3 * Math.PI) / 4; // Southwest
+        if (isMoving) {
+            // Rotate input by the camera's orbit so controls follow the view.
+            // Read via getState to avoid rerendering on every camera turn.
+            const move = toCameraRelative(
+                inputX,
+                inputZ,
+                useMovement.getState().cameraYaw
+            );
+
+            newPosition.x += move.x * speed;
+            newPosition.z += move.z * speed;
+            targetRotation.current = getFacingRotation(move);
         }
 
         // Collision detection - keep character within room boundaries
         newPosition.x = Math.max(-boundary, Math.min(boundary, newPosition.x));
         newPosition.z = Math.max(-boundary, Math.min(boundary, newPosition.z));
 
-        // Check desk collision and revert if colliding
-        if (checkDeskCollision(newPosition.x, newPosition.z)) {
+        // Check furniture collision and revert if colliding
+        if (
+            checkDeskCollision(newPosition.x, newPosition.z) ||
+            checkFurnitureCollision(newPosition.x, newPosition.z)
+        ) {
             // If collision detected, don't move to new position
             newPosition.x = position.x;
             newPosition.z = position.z;
@@ -403,6 +402,11 @@ const Character = memo(() => {
             }
 
             currentRotation.current += shortestDiff * 0.1; // Smooth rotation
+            // Keep within [-PI, PI] so the shortest-path check stays valid
+            currentRotation.current = Math.atan2(
+                Math.sin(currentRotation.current),
+                Math.cos(currentRotation.current)
+            );
             characterRef.current.rotation.y = currentRotation.current;
         }
 
