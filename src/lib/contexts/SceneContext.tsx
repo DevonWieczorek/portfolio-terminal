@@ -437,7 +437,7 @@ const BASS_SCALE: number = scaledFeet(3.8);
 const defaultBassTraits: DeepPartial<ObjectTraits> = {
     position: {
         x: feetFromCenter(-1 * scaleFactorXZ),
-        y: scaledHeight((ROOM_HEIGHT - BASS_SCALE) / 2),
+        y: scaledHeight(5.5),
         z: wallFaces.back,
     },
     scale: BASS_SCALE,
@@ -462,14 +462,14 @@ const defaultDeckTraits: DeepPartial<ObjectTraits> = {
         x: wallFaces.right,
         // Decks are centered on their origin, so this lines them up with the
         // vertical center of the basses
-        y: scaledHeight(ROOM_HEIGHT / 2),
+        y: scaledHeight(7.5),
         z: feetFromCenter(-1 * scaleFactorXZ),
     },
     scale: DECK_SCALE,
     spacing: scaledFeet(5),
     boxSize: {
         x: 20,
-        y: 12,
+        y: 18,
         z: 5,
     },
     boxAnchor: {
