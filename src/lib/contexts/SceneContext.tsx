@@ -85,6 +85,7 @@ interface BaseboardTraits {
     runs: WallRun[];
     height: number;
     thickness: number;
+    bevelRadius: number;
     color: string;
 }
 
@@ -94,6 +95,9 @@ interface RugTraits {
     width: number; // along the x axis
     depth: number; // along the z axis
     borderWidth: number;
+    // Kept paper-thin so the character's blob shadow still sits above it
+    borderHeight: number;
+    centerHeight: number;
     color: string;
     borderColor: string;
 }
@@ -259,6 +263,7 @@ const defaultBaseboardTraits: BaseboardTraits = {
     ],
     height: BASEBOARD_HEIGHT,
     thickness: BASEBOARD_THICKNESS,
+    bevelRadius: BASEBOARD_THICKNESS * 0.25,
     color: "#FFFDF7",
 };
 
@@ -268,6 +273,8 @@ const defaultRugTraits: RugTraits = {
     width: scaledFeet(15),
     depth: scaledFeet(10),
     borderWidth: scaledFeet(0.6),
+    borderHeight: 0.01,
+    centerHeight: 0.015,
     // Muted sage-teal with a slate border: cool against the warm wood floor
     // without competing with the character's saturated clothing
     color: "#6FA3A0",
@@ -493,7 +500,7 @@ interface SceneConfig {
     rug: RugTraits;
     characterBoundary: number;
     cameraBuffer: number;
-    characterSpeed: number;
+    characterSpeed: number; // world units per second
     characterStepSquash: number; // squash and stretch per step, as a fraction of body height
     characterHeight: number;
     cameraPanSpeed: number;
@@ -552,7 +559,7 @@ const defaultSceneConfig: SceneConfig = {
     },
     characterBoundary: ROOM_SIZE - 2.25,
     cameraBuffer: 2,
-    characterSpeed: 0.15,
+    characterSpeed: 9,
     characterStepSquash: 0.04,
     cameraPanSpeed: 0.2,
     cameraRotateSpeed: 0.03,

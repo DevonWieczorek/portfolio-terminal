@@ -52,6 +52,7 @@ const IS_DEBUG = process.env.NEXT_PUBLIC_DEBUG === "true";
 const R3FSceneContent = memo(() => {
     const [showCanvas, setShowCanvas] = useState(false);
     const [isRoomReady, setIsRoomReady] = useState(false);
+    const [isRoomRevealed, setIsRoomRevealed] = useState(false);
     const { message, interaction, clearMessage } = useMessage();
     // Use individual selectors to prevent unnecessary rerenders
     const mode = useExperience(state => state.mode);
@@ -130,6 +131,9 @@ const R3FSceneContent = memo(() => {
     const handleRoomReady = useCallback(() => {
         setIsRoomReady(true);
     }, []);
+    const handleRoomRevealed = useCallback(() => {
+        setIsRoomRevealed(true);
+    }, []);
 
     useEffect(() => {
         if (isTransitioning && targetMode === "terminal") {
@@ -140,7 +144,10 @@ const R3FSceneContent = memo(() => {
     return (
         <div className={styles.sceneContainer}>
             {IS_DEBUG && <DebugPanel />}
-            <LoadingScreen isReady={isRoomReady} />
+            <LoadingScreen
+                isReady={isRoomReady}
+                onReveal={handleRoomRevealed}
+            />
             <div className={canvasClassName}>
                 {showCanvas && (
                     <KeyboardControls map={CONTROLS}>
@@ -169,7 +176,7 @@ const R3FSceneContent = memo(() => {
                                 <Room onReady={handleRoomReady} />
 
                                 {/* Character */}
-                                <Character />
+                                <Character inputEnabled={isRoomRevealed} />
 
                                 {/* Camera controller */}
                                 <Camera />

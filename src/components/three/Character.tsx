@@ -38,6 +38,10 @@ const STRIDE_FREQUENCY = 10;
 const MAX_LIMB_SWING = 0.6;
 const BOB_HEIGHT = 0.1;
 const WALK_BLEND_RATE = 10;
+const TURN_RATE = 6;
+// Caps a single frame's step so a long stall (e.g. a background tab) can't
+// tunnel the character through the desk
+const MAX_FRAME_DELTA = 0.1;
 const BREATH_FREQUENCY = 2;
 // Idle swell, as a fraction of body height. The walking squash and stretch
 // amount comes from SceneContext.
@@ -101,7 +105,12 @@ const BodyPart = ({ size, position, color, roughness }: BodyPartProps) => (
     </RoundedBox>
 );
 
-const Character = memo(() => {
+interface CharacterProps {
+    // False while the loading screen still covers the room
+    inputEnabled?: boolean;
+}
+
+const Character = memo(({ inputEnabled = true }: CharacterProps) => {
     const characterRef = useRef<THREE.Group>(null);
     const [subscribe, getKeys] = useKeyboardControls<Controls>();
     // Subscribe only to the slices used by this component.
@@ -121,7 +130,7 @@ const Character = memo(() => {
     const mode = useExperience(state => state.mode);
     const isTransitioning = useExperience(state => state.isTransitioning);
 
-    const allowMovement = mode === "scene" && !isTransitioning;
+    const allowMovement = inputEnabled && mode === "scene" && !isTransitioning;
 
     let height: number,
         speed: number,
@@ -153,9 +162,9 @@ const Character = memo(() => {
             },
             characterSpeed: {
                 value: characterSpeed,
-                min: 0.01,
-                max: 1,
-                step: 0.01,
+                min: 1,
+                max: 30,
+                step: 0.5,
             },
             stepSquash: {
                 value: characterStepSquash,
@@ -346,6 +355,7 @@ const Character = memo(() => {
         }
 
         const keys = getKeys();
+        const step = speed * Math.min(delta, MAX_FRAME_DELTA);
         // Reuse position object to avoid creating new object every frame
         const newPosition = { x: position.x, y: position.y, z: position.z };
 
@@ -363,8 +373,8 @@ const Character = memo(() => {
                 useMovement.getState().cameraYaw
             );
 
-            newPosition.x += move.x * speed;
-            newPosition.z += move.z * speed;
+            newPosition.x += move.x * step;
+            newPosition.z += move.z * step;
             targetRotation.current = getFacingRotation(move);
         }
 
@@ -401,7 +411,12 @@ const Character = memo(() => {
                         : rotationDiff + 2 * Math.PI;
             }
 
-            currentRotation.current += shortestDiff * 0.1; // Smooth rotation
+            currentRotation.current += THREE.MathUtils.damp(
+                0,
+                shortestDiff,
+                TURN_RATE,
+                delta
+            );
             // Keep within [-PI, PI] so the shortest-path check stays valid
             currentRotation.current = Math.atan2(
                 Math.sin(currentRotation.current),

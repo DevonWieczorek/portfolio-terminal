@@ -13,6 +13,6 @@ describe("Baseboards", () => {
     it("runs trim along every wall, split around the door", () => {
         const { container } = render(<Baseboards />);
 
-        expect(container.querySelectorAll("boxgeometry")).toHaveLength(5);
+        expect(container.querySelectorAll("mesh")).toHaveLength(5);
     });
 });
