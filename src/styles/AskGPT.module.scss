@@ -31,6 +31,44 @@
         background-color: #444;
     }
 
+    .thinking {
+        display: flex;
+        align-items: baseline;
+        gap: 1ch;
+        margin-bottom: 10px;
+
+        // Blinking block cursor after the status text
+        &::after {
+            content: "";
+            display: inline-block;
+            width: 0.6em;
+            height: 1em;
+            align-self: center;
+            background: var(--terminal-green);
+            animation: blink 1s steps(1) infinite;
+        }
+    }
+
+    .spinner {
+        display: inline-block;
+        width: 1ch;
+    }
+
+    .elapsed {
+        opacity: 0.6;
+        font-variant-numeric: tabular-nums;
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+        .spinner {
+            visibility: hidden;
+        }
+
+        .thinking::after {
+            animation: none;
+        }
+    }
+
     .askGptResponse {
         margin-top: 20px;
         white-space: pre-wrap;
@@ -45,5 +83,11 @@
             display: grid;
             grid-gap: 8px;
         }
+    }
+}
+
+@keyframes blink {
+    50% {
+        opacity: 0;
     }
 }
