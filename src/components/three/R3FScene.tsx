@@ -152,6 +152,9 @@ const R3FSceneContent = memo(() => {
                 {showCanvas && (
                     <KeyboardControls map={CONTROLS}>
                         <Canvas
+                            // The canvas is hidden behind the terminal, so
+                            // stop rendering it to keep typing responsive
+                            frameloop={isTerminalActive ? "never" : "always"}
                             // PCF soft shadows: blurred edges suit the
                             // cartoon look better than hard pixel steps
                             shadows="soft"

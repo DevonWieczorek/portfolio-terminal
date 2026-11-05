@@ -43,6 +43,58 @@ const FormattedResponse: FC<FormattedResponseProps> = ({
     return null;
 };
 
+const SPINNER_FRAMES = ["⠋", "⠙", "⠹", "⠸", "⠼", "⠴", "⠦", "⠧", "⠇", "⠏"];
+const SPINNER_INTERVAL_MS = 80;
+const STATUS_INTERVAL_MS = 3000;
+// Shown in order; the last one stays up for slow responses
+const STATUS_MESSAGES = [
+    "thinking",
+    "digging through devon's background",
+    "putting an answer together",
+    "still working on it, almost there",
+];
+
+const ThinkingIndicator: FC = () => {
+    const containerRef = useRef<HTMLDivElement>(null);
+    const [elapsedMs, setElapsedMs] = useState(0);
+
+    useEffect(() => {
+        containerRef.current?.scrollIntoView?.({ block: "nearest" });
+
+        const start = performance.now();
+        const interval = window.setInterval(
+            () => setElapsedMs(performance.now() - start),
+            SPINNER_INTERVAL_MS
+        );
+        return () => window.clearInterval(interval);
+    }, []);
+
+    const frame =
+        SPINNER_FRAMES[
+            Math.floor(elapsedMs / SPINNER_INTERVAL_MS) % SPINNER_FRAMES.length
+        ];
+    const status =
+        STATUS_MESSAGES[
+            Math.min(
+                Math.floor(elapsedMs / STATUS_INTERVAL_MS),
+                STATUS_MESSAGES.length - 1
+            )
+        ];
+    const seconds = Math.floor(elapsedMs / 1000);
+
+    return (
+        <div ref={containerRef} className={styles.thinking}>
+            <span className={styles.spinner} aria-hidden="true">
+                {frame}
+            </span>
+            <span role="status">devon-gpt is {status}</span>
+            <span className={styles.elapsed} aria-hidden="true">
+                {seconds}s
+            </span>
+        </div>
+    );
+};
+
 type AskGPTProps = {
     onShowResponse: () => void;
     initialQuery?: string;
@@ -106,11 +158,7 @@ const AskGPT: FC<AskGPTProps> = ({ onShowResponse, initialQuery = "" }) => {
     const handleSubmit = async (submittedQuery: string = query) => {
         if (!submittedQuery || isLoading) return;
 
-        if (inputRef?.current) {
-            setInputValue("asking devon-gpt, this may take a moment... ");
-            setDisplayQuery(submittedQuery);
-            inputRef.current.blur();
-        }
+        setDisplayQuery(submittedQuery);
 
         await queryOpenAIAssistant(submittedQuery);
     };
@@ -155,25 +203,27 @@ const AskGPT: FC<AskGPTProps> = ({ onShowResponse, initialQuery = "" }) => {
             ) : (
                 <div>press ENTER to submit:</div>
             )}
-            <div className={styles.inputArea}>
-                <input
-                    ref={inputRef}
-                    type="text"
-                    value={inputValue}
-                    onKeyDown={handleKeyPress}
-                    onChange={handleQueryChange}
-                    placeholder="ask a question to devon-gpt..."
-                    className={styles.askGptInput}
-                    disabled={isLoading}
-                />
-                <button
-                    onClick={() => handleSubmit()}
-                    className={styles.askGptButton}
-                    disabled={isLoading}
-                >
-                    submit
-                </button>
-            </div>
+            {isLoading ? (
+                <ThinkingIndicator />
+            ) : (
+                <div className={styles.inputArea}>
+                    <input
+                        ref={inputRef}
+                        type="text"
+                        value={inputValue}
+                        onKeyDown={handleKeyPress}
+                        onChange={handleQueryChange}
+                        placeholder="ask a question to devon-gpt..."
+                        className={styles.askGptInput}
+                    />
+                    <button
+                        onClick={() => handleSubmit()}
+                        className={styles.askGptButton}
+                    >
+                        submit
+                    </button>
+                </div>
+            )}
         </div>
     );
 };

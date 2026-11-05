@@ -1,5 +1,11 @@
 import React from "react";
-import { render, screen, fireEvent, waitFor } from "@testing-library/react";
+import {
+    act,
+    render,
+    screen,
+    fireEvent,
+    waitFor,
+} from "@testing-library/react";
 import "@testing-library/jest-dom";
 import AskGPT from "./AskGPT";
 
@@ -54,7 +60,12 @@ describe("AskGPT", () => {
         );
         fireEvent.change(input, { target: { value: "Loading test" } });
         fireEvent.keyDown(input, { key: "Enter", code: "Enter" });
-        expect(screen.getByText(/loading/i)).toBeInTheDocument();
+        expect(screen.getByRole("status")).toHaveTextContent(
+            /devon-gpt is thinking/i
+        );
+        expect(
+            screen.queryByPlaceholderText(/ask a question to devon-gpt/i)
+        ).not.toBeInTheDocument();
         resolveFetch({
             ok: true,
             json: () => Promise.resolve({ response: "Done" }),
@@ -62,6 +73,27 @@ describe("AskGPT", () => {
         await waitFor(() =>
             expect(screen.getByText(/done/i)).toBeInTheDocument()
         );
+        expect(screen.queryByRole("status")).not.toBeInTheDocument();
+    });
+
+    it("advances the loading status while waiting on a slow response", () => {
+        jest.useFakeTimers();
+        (global.fetch as jest.Mock).mockImplementationOnce(
+            () => new Promise(() => {})
+        );
+        render(<AskGPT onShowResponse={jest.fn()} />);
+        const input = screen.getByPlaceholderText(
+            /ask a question to devon-gpt/i
+        );
+        fireEvent.change(input, { target: { value: "Slow question" } });
+        fireEvent.keyDown(input, { key: "Enter", code: "Enter" });
+        act(() => {
+            jest.advanceTimersByTime(60000);
+        });
+        expect(screen.getByRole("status")).toHaveTextContent(
+            /still working on it/i
+        );
+        jest.useRealTimers();
     });
 
     it("displays the server error message on a non-ok response", async () => {
