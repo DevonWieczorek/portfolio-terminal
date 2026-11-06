@@ -191,10 +191,11 @@ export const sceneState = {
     },
     shelf: {
         scale: 3,
+        width: 5.4,
+        thickness: 1.29,
         position: { x: -14.35, y: 0, z: 7 },
         rotation: { y: Math.PI / 2 },
     },
-    floorColliders: [{ minX: -14.35, maxX: -13.06, minZ: 4.3, maxZ: 9.7 }],
     monitor: {
         scale: 1.2,
         position: { x: -0.5, y: 1.5, z: 2.6 },
@@ -263,7 +264,6 @@ export const movementState = {
     cameraYaw: 0,
     setPosition: jest.fn(),
     setCameraYaw: jest.fn(),
-    resetPosition: jest.fn(),
 };
 
 export const experienceState = {
@@ -321,6 +321,88 @@ jest.mock("@react-three/drei", () => ({
     KeyboardControls: ({ children }: { children: React.ReactNode }) => (
         <>{children}</>
     ),
+}));
+
+type Vec3Like = { x: number; y: number; z: number };
+type PhysicsStepCallback = () => void;
+
+export const physicsStepCallbacks: PhysicsStepCallback[] = [];
+
+export const bodyTranslation: Vec3Like = { x: 0, y: 0, z: 0 };
+export const rigidBodyMock = {
+    translation: jest.fn(() => ({ ...bodyTranslation })),
+    setNextKinematicTranslation: jest.fn(),
+};
+export const colliderMock = {
+    setTranslation: jest.fn(),
+    setRotation: jest.fn(),
+};
+
+// Lets everything through by default; tests override it to simulate an
+// obstacle in the way
+let lastDesiredMovement: Vec3Like = { x: 0, y: 0, z: 0 };
+export const characterControllerMock = {
+    computeColliderMovement: jest.fn((_: unknown, desired: Vec3Like) => {
+        lastDesiredMovement = { ...desired };
+    }),
+    computedMovement: jest.fn(() => lastDesiredMovement),
+};
+
+export const rapierModuleMock = {
+    ActiveCollisionTypes: { DEFAULT: 15, KINEMATIC_FIXED: 512 },
+    QueryFilterFlags: { EXCLUDE_SENSORS: 8 },
+};
+export const rapierWorldMock = {
+    createCharacterController: jest.fn(() => characterControllerMock),
+    removeCharacterController: jest.fn(),
+};
+
+type ColliderProps = {
+    sensor?: boolean;
+    onIntersectionEnter?: () => void;
+    onIntersectionExit?: () => void;
+    children?: React.ReactNode;
+    ref?: React.Ref<unknown>;
+};
+
+// Latest props of each rendered sensor, so tests can fire its events
+export const sensorProps: ColliderProps[] = [];
+
+const createColliderMock = (shape: string) => {
+    const ColliderMock = ({ ref, children, ...props }: ColliderProps) => {
+        React.useImperativeHandle(ref, () => colliderMock);
+        if (props.sensor) {
+            sensorProps.push(props);
+        }
+        return <object3D name={shape}>{children}</object3D>;
+    };
+    return ColliderMock;
+};
+
+jest.mock("@react-three/rapier", () => ({
+    __esModule: true,
+    Physics: ({ children }: { children: React.ReactNode }) => (
+        <div data-testid="physics">{children}</div>
+    ),
+    RigidBody: ({
+        ref,
+        children,
+    }: {
+        ref?: React.Ref<unknown>;
+        children?: React.ReactNode;
+    }) => {
+        React.useImperativeHandle(ref, () => rigidBodyMock);
+        return <group name="rigid-body">{children}</group>;
+    },
+    CuboidCollider: createColliderMock("cuboid-collider"),
+    CapsuleCollider: createColliderMock("capsule-collider"),
+    useRapier: () => ({ world: rapierWorldMock, rapier: rapierModuleMock }),
+    useBeforePhysicsStep: (cb: PhysicsStepCallback) => {
+        physicsStepCallbacks.push(cb);
+    },
+    interactionGroups: (membership: number, filters: number[]) =>
+        (1 << (membership + 16)) |
+        filters.reduce((mask, layer) => mask | (1 << layer), 0),
 }));
 
 jest.mock("@react-three/postprocessing", () => ({
@@ -419,6 +501,9 @@ afterAll(() => {
 export function resetThreeTestState() {
     jest.clearAllMocks();
     frameCallbacks.length = 0;
+    physicsStepCallbacks.length = 0;
+    sensorProps.length = 0;
+    Object.assign(bodyTranslation, { x: 0, y: 0, z: 0 });
     keyboardState.forward = false;
     keyboardState.backward = false;
     keyboardState.leftward = false;
@@ -441,4 +526,10 @@ export function resetThreeTestState() {
 
 export function runFrameCallbacks(elapsedTime = 0, delta = 1 / 60) {
     frameCallbacks.forEach(cb => cb({ clock: { elapsedTime } }, delta));
+}
+
+// Every registered callback runs on each render, so only the latest one
+// per component reflects its current props
+export function runPhysicsStep() {
+    physicsStepCallbacks.at(-1)?.();
 }

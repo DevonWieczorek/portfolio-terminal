@@ -10,6 +10,7 @@ import {
 } from "react";
 import { Canvas } from "@react-three/fiber";
 import { KeyboardControls } from "@react-three/drei";
+import { Physics } from "@react-three/rapier";
 import Room from "@/components/three/Room";
 import Character from "@/components/three/Character";
 import Lights from "@/components/three/Lights";
@@ -22,6 +23,7 @@ import DebugPanel from "@/components/three/DebugPanel";
 import LoadingScreen from "@/components/three/LoadingScreen";
 import Terminal from "@/components/Terminal";
 import { useExperience } from "@/lib/stores/useExperience";
+import { PHYSICS_TIMESTEP } from "@/lib/constants/physics";
 import styles from "@/styles/R3FScene.module.scss";
 
 enum Controls {
@@ -175,11 +177,18 @@ const R3FSceneContent = memo(() => {
                             <Lights />
 
                             <Suspense fallback={null}>
-                                {/* Room environment */}
-                                <Room onReady={handleRoomReady} />
+                                {/* Loads Rapier's WASM, so it suspends too.
+                                    Debug mode outlines every collider. */}
+                                <Physics
+                                    timeStep={PHYSICS_TIMESTEP}
+                                    debug={IS_DEBUG}
+                                >
+                                    {/* Room environment */}
+                                    <Room onReady={handleRoomReady} />
 
-                                {/* Character */}
-                                <Character inputEnabled={isRoomRevealed} />
+                                    {/* Character */}
+                                    <Character inputEnabled={isRoomRevealed} />
+                                </Physics>
 
                                 {/* Camera controller */}
                                 <Camera />

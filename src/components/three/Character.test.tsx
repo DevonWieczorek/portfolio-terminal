@@ -4,20 +4,29 @@ import { render } from "@testing-library/react";
 import "@testing-library/jest-dom";
 import "../../../__mocks__/threeTestHarness";
 import {
+    bodyTranslation,
+    characterControllerMock,
+    colliderMock,
     keyboardState,
     movementState,
+    rapierModuleMock,
     resetThreeTestState,
-    runFrameCallbacks,
+    rigidBodyMock,
+    runPhysicsStep,
     sceneState,
 } from "../../../__mocks__/threeTestHarness";
+import { PHYSICS_TIMESTEP, PLAYER_GROUPS } from "@/lib/constants/physics";
 import Character from "./Character";
 
 // Refs resolve to DOM nodes under the mocked renderer, so give each group the
-// transforms the frame loop writes to
+// transforms the component writes to before its effects run
 const renderWithTransforms = (ui: React.ReactElement) => {
+    const effects: React.EffectCallback[] = [];
     const useEffectSpy = jest
         .spyOn(React, "useEffect")
-        .mockImplementation(() => {});
+        .mockImplementation(effect => {
+            effects.push(effect);
+        });
     const result = render(ui);
     useEffectSpy.mockRestore();
     result.container.querySelectorAll("group").forEach(group => {
@@ -27,8 +36,11 @@ const renderWithTransforms = (ui: React.ReactElement) => {
             scale: new THREE.Vector3(1, 1, 1),
         });
     });
+    effects.forEach(effect => effect());
     return result;
 };
+
+const STEP_DISTANCE = sceneState.characterSpeed * PHYSICS_TIMESTEP;
 
 describe("Character", () => {
     beforeEach(() => {
@@ -46,25 +58,79 @@ describe("Character", () => {
         useEffectSpy.mockRestore();
     });
 
-    it("moves the same distance per second at any frame rate", () => {
+    it("moves a fixed distance per physics step", () => {
         renderWithTransforms(<Character />);
         keyboardState.forward = true;
 
-        runFrameCallbacks(0, 1 / 144);
+        runPhysicsStep();
 
-        expect(movementState.setPosition).toHaveBeenCalledWith(
+        expect(rigidBodyMock.setNextKinematicTranslation).toHaveBeenCalledWith(
             expect.objectContaining({
-                z: expect.closeTo(-sceneState.characterSpeed / 144, 6),
+                x: expect.closeTo(0, 6),
+                z: expect.closeTo(-STEP_DISTANCE, 6),
             })
         );
+        expect(movementState.setPosition).toHaveBeenCalledWith(
+            expect.objectContaining({ z: expect.closeTo(-STEP_DISTANCE, 6) })
+        );
+    });
+
+    it("moves diagonally at the same speed as straight ahead", () => {
+        renderWithTransforms(<Character />);
+        keyboardState.forward = true;
+        keyboardState.rightward = true;
+
+        runPhysicsStep();
+
+        const [{ x, z }] =
+            rigidBodyMock.setNextKinematicTranslation.mock.calls[0];
+        expect(Math.hypot(x, z)).toBeCloseTo(STEP_DISTANCE, 6);
+    });
+
+    it("asks the character controller how far it can move", () => {
+        renderWithTransforms(<Character />);
+        keyboardState.forward = true;
+
+        runPhysicsStep();
+
+        expect(
+            characterControllerMock.computeColliderMovement
+        ).toHaveBeenCalledWith(
+            colliderMock,
+            expect.objectContaining({ z: expect.closeTo(-STEP_DISTANCE, 6) }),
+            rapierModuleMock.QueryFilterFlags.EXCLUDE_SENSORS,
+            PLAYER_GROUPS
+        );
+    });
+
+    it("stays put when the controller reports a blocked path", () => {
+        renderWithTransforms(<Character />);
+        Object.assign(bodyTranslation, { x: 2, y: 0, z: 3 });
+        characterControllerMock.computedMovement.mockReturnValueOnce({
+            x: 0,
+            y: 0,
+            z: 0,
+        });
+        keyboardState.forward = true;
+
+        runPhysicsStep();
+
+        expect(rigidBodyMock.setNextKinematicTranslation).toHaveBeenCalledWith({
+            x: 2,
+            y: 0,
+            z: 3,
+        });
     });
 
     it("ignores movement keys while input is disabled", () => {
         renderWithTransforms(<Character inputEnabled={false} />);
         keyboardState.forward = true;
 
-        runFrameCallbacks(0, 1 / 60);
+        runPhysicsStep();
 
+        expect(
+            rigidBodyMock.setNextKinematicTranslation
+        ).not.toHaveBeenCalled();
         expect(movementState.setPosition).not.toHaveBeenCalled();
     });
 });

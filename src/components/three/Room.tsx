@@ -1,10 +1,7 @@
-import { memo, useEffect, useRef } from "react";
-import { useFrame } from "@react-three/fiber";
-import * as THREE from "three";
+import { memo, useEffect } from "react";
 // #if DEBUG
 import { useControls } from "leva";
 // #endif
-import { useMovement } from "@/lib/stores/useMovement";
 import { useScene } from "@/lib/contexts/SceneContext";
 import { useMessage } from "@/lib/contexts/MessageContext";
 import Desk from "@/components/three/Desk";
@@ -15,6 +12,7 @@ import BassGroup from "@/components/three/BassGroup";
 import SkateboardGroup from "@/components/three/SkateboardGroup";
 import Baseboards from "@/components/three/Baseboards";
 import Rug from "@/components/three/Rug";
+import Obstacle from "@/components/three/Obstacle";
 import { INTRO_MESSAGE } from "@/lib/constants/sceneMessages";
 import {
     useSurfaceTextures,
@@ -158,15 +156,6 @@ const Room = memo(({ onReady }: RoomProps) => {
         onReady?.();
     }, [onReady, setMessage]);
 
-    // Keep a stable vector reference and mutate it in the frame loop so
-    // movement updates do not force React rerenders of the room subtree.
-    const proximityPositionRef = useRef<THREE.Vector3>(new THREE.Vector3());
-
-    useFrame(() => {
-        const { position } = useMovement.getState();
-        proximityPositionRef.current.set(position.x, position.y, position.z);
-    });
-
     return (
         <group>
             {/* Floor */}
@@ -189,14 +178,18 @@ const Room = memo(({ onReady }: RoomProps) => {
                     color={wallColor}
                 />
             </mesh>
+            <Obstacle
+                size={[roomSize, wallHeight, wallThickness]}
+                position={[0, wallHeight / 2, -roomSize / 2]}
+            />
 
             <Rug />
             <Baseboards />
 
-            <BassGroup proximityPosition={proximityPositionRef.current} />
+            <BassGroup />
 
             {/* Desk and Computer Setup */}
-            <Desk proximityPosition={proximityPositionRef.current} />
+            <Desk />
 
             {/* South Wall */}
             <mesh position={[0, wallHeight / 2, roomSize / 2]} receiveShadow>
@@ -208,6 +201,10 @@ const Room = memo(({ onReady }: RoomProps) => {
                     color={wallColor}
                 />
             </mesh>
+            <Obstacle
+                size={[roomSize, wallHeight, wallThickness]}
+                position={[0, wallHeight / 2, roomSize / 2]}
+            />
 
             <Door />
 
@@ -221,8 +218,12 @@ const Room = memo(({ onReady }: RoomProps) => {
                     color={wallColor}
                 />
             </mesh>
+            <Obstacle
+                size={[wallThickness, wallHeight, roomSize]}
+                position={[roomSize / 2, wallHeight / 2, 0]}
+            />
 
-            <SkateboardGroup proximityPosition={proximityPositionRef.current} />
+            <SkateboardGroup />
 
             <Pinboard />
             <Shelf />
@@ -237,6 +238,10 @@ const Room = memo(({ onReady }: RoomProps) => {
                     color={wallColor}
                 />
             </mesh>
+            <Obstacle
+                size={[wallThickness, wallHeight, roomSize]}
+                position={[-roomSize / 2, wallHeight / 2, 0]}
+            />
 
             {/* Ceiling: a single-sided plane facing down, so it's culled
                 whenever the camera rises above it. It doesn't cast shadows,

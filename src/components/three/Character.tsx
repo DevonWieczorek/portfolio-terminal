@@ -1,6 +1,15 @@
-import { memo, useRef, useEffect, useMemo } from "react";
+import { memo, useRef, useEffect, useMemo, useState } from "react";
 import { useFrame } from "@react-three/fiber";
 import { RoundedBox, useKeyboardControls } from "@react-three/drei";
+import {
+    CapsuleCollider,
+    RigidBody,
+    useBeforePhysicsStep,
+    useRapier,
+    type RapierCollider,
+    type RapierContext,
+    type RapierRigidBody,
+} from "@react-three/rapier";
 import * as THREE from "three";
 // #if DEBUG
 import { useControls } from "leva";
@@ -10,6 +19,7 @@ import { useScene } from "@/lib/contexts/SceneContext";
 import { useExperience } from "@/lib/stores/useExperience";
 import { useMessage } from "@/lib/contexts/MessageContext";
 import { INTRO_MESSAGE } from "@/lib/constants/sceneMessages";
+import { PHYSICS_TIMESTEP, PLAYER_GROUPS } from "@/lib/constants/physics";
 import { getFacingRotation, toCameraRelative } from "@/utils/movement";
 
 enum Controls {
@@ -19,8 +29,10 @@ enum Controls {
     rightward = "rightward",
 }
 
-const POSITION_EPSILON = 1e-5;
-const CHARACTER_RADIUS = 0.5;
+type CharacterController = ReturnType<
+    RapierContext["world"]["createCharacterController"]
+>;
+
 // The avatar's box geometry spans from the bottom of the legs (y = -1.3) to
 // the top of the head (y = 2.4) in local units.
 const MODEL_FEET_Y = -1.3;
@@ -30,6 +42,12 @@ const SHOULDER_Y = 1.1;
 const HIP_Y = -0.3;
 const ARM_LENGTH = 1.2;
 const LEG_LENGTH = 1;
+// The collision capsule is as wide as the torso. Swinging arms can brush
+// walls, but a capsule wide enough for them would hold the avatar too far
+// from whatever it walks up to.
+const MODEL_TORSO_HALF_WIDTH = 0.5;
+// Gap the character controller keeps between the capsule and obstacles
+const CONTROLLER_OFFSET = 0.01;
 // Slight bevel so edges catch highlights like the room's models do
 const EDGE_RADIUS = 0.06;
 
@@ -39,9 +57,6 @@ const MAX_LIMB_SWING = 0.6;
 const BOB_HEIGHT = 0.1;
 const WALK_BLEND_RATE = 10;
 const TURN_RATE = 6;
-// Caps a single frame's step so a long stall (e.g. a background tab) can't
-// tunnel the character through the desk
-const MAX_FRAME_DELTA = 0.1;
 const BREATH_FREQUENCY = 2;
 // Idle swell, as a fraction of body height. The walking squash and stretch
 // amount comes from SceneContext.
@@ -112,18 +127,23 @@ interface CharacterProps {
 
 const Character = memo(({ inputEnabled = true }: CharacterProps) => {
     const characterRef = useRef<THREE.Group>(null);
+    const rigidBodyRef = useRef<RapierRigidBody>(null);
+    const colliderRef = useRef<RapierCollider>(null);
+    const controllerRef = useRef<CharacterController | null>(null);
+    const { world, rapier } = useRapier();
     const [subscribe, getKeys] = useKeyboardControls<Controls>();
-    // Subscribe only to the slices used by this component.
-    const position = useMovement(state => state.position);
+    // Read once: after mount the rigid body owns the position, and the store
+    // only mirrors it for the camera
+    const [spawnPosition] = useState<Coordinate>(() => {
+        const { x, z } = useMovement.getState().position;
+        return [x, 0, z];
+    });
     const setPosition = useMovement(state => state.setPosition);
     const {
         characterSpeed,
         characterStepSquash,
-        characterBoundary,
         characterHeight,
         characterAppearance,
-        desk,
-        floorColliders,
     } = useScene();
     const { message, clearMessage } = useMessage();
     // Use individual selectors to prevent unnecessary rerenders
@@ -197,17 +217,21 @@ const Character = memo(({ inputEnabled = true }: CharacterProps) => {
 
     // Scale the avatar to the configured height and lift it so its feet rest
     // on the floor. The movement store's y is the reference height used by the
-    // camera and interaction boxes, so it isn't used to place the body.
+    // camera, so it isn't used to place the body.
     const characterScale = height / MODEL_HEIGHT;
     const bodyY = -MODEL_FEET_Y * characterScale;
-
-    // Room boundaries from context
-    const boundary = characterBoundary / 2;
+    const capsuleRadius = MODEL_TORSO_HALF_WIDTH * characterScale;
+    // Half the length of the capsule's straight section, between its caps
+    const capsuleHalfHeight = height / 2 - capsuleRadius;
 
     // Current rotation target
     const targetRotation = useRef(0);
     const currentRotation = useRef(0);
     const hasClearedIntro = useRef(false);
+    // Written by the physics step, read by the render loop's animation
+    const isMovingRef = useRef(false);
+    const desiredMovement = useMemo(() => ({ x: 0, y: 0, z: 0 }), []);
+    const nextTranslation = useMemo(() => ({ x: 0, y: 0, z: 0 }), []);
 
     const bodyRef = useRef<THREE.Group>(null);
     const leftArmRef = useRef<THREE.Group>(null);
@@ -222,6 +246,16 @@ const Character = memo(({ inputEnabled = true }: CharacterProps) => {
         () => ({ uOpacity: { value: BLOB_SHADOW_OPACITY } }),
         []
     );
+
+    useEffect(() => {
+        const controller = world.createCharacterController(CONTROLLER_OFFSET);
+        controllerRef.current = controller;
+
+        return () => {
+            world.removeCharacterController(controller);
+            controllerRef.current = null;
+        };
+    }, [world]);
 
     useEffect(() => {
         const initialRotation = Math.PI;
@@ -259,51 +293,6 @@ const Character = memo(({ inputEnabled = true }: CharacterProps) => {
         return unsubscribe;
     }, [subscribe]);
     // #endif
-
-    // Desk collision detection function
-    const checkDeskCollision = (x: number, z: number) => {
-        // The desk is anchored at its back-left corner
-        const cornerX = desk?.position?.x ?? 0;
-        const cornerZ = desk?.position?.z ?? 0;
-        const footprint = desk?.footprint;
-
-        // Check collision with the arm of the L-desk along the back wall
-        const horizX1 = cornerX;
-        const horizX2 = cornerX + (footprint?.width ?? 0);
-        const horizZ1 = cornerZ;
-        const horizZ2 = cornerZ + (footprint?.backArmDepth ?? 0);
-
-        // Check collision with the arm of the L-desk along the side wall
-        const vertX1 = cornerX;
-        const vertX2 = cornerX + (footprint?.sideArmWidth ?? 0);
-        const vertZ1 = cornerZ;
-        const vertZ2 = cornerZ + (footprint?.depth ?? 0);
-
-        // Check if character overlaps with horizontal desk section
-        const horizCollision =
-            x + CHARACTER_RADIUS > horizX1 &&
-            x - CHARACTER_RADIUS < horizX2 &&
-            z + CHARACTER_RADIUS > horizZ1 &&
-            z - CHARACTER_RADIUS < horizZ2;
-
-        // Check if character overlaps with vertical desk section
-        const vertCollision =
-            x + CHARACTER_RADIUS > vertX1 &&
-            x - CHARACTER_RADIUS < vertX2 &&
-            z + CHARACTER_RADIUS > vertZ1 &&
-            z - CHARACTER_RADIUS < vertZ2;
-
-        return horizCollision || vertCollision;
-    };
-
-    const checkFurnitureCollision = (x: number, z: number) =>
-        floorColliders.some(
-            ({ minX, maxX, minZ, maxZ }) =>
-                x + CHARACTER_RADIUS > minX &&
-                x - CHARACTER_RADIUS < maxX &&
-                z + CHARACTER_RADIUS > minZ &&
-                z - CHARACTER_RADIUS < maxZ
-        );
 
     // Animates the limbs: a walk cycle while moving that eases into an idle
     // breathing loop when standing still
@@ -345,54 +334,70 @@ const Character = memo(({ inputEnabled = true }: CharacterProps) => {
         }
     };
 
-    // Movement and collision detection
-    useFrame((state, delta) => {
-        if (!characterRef.current) return;
+    // Movement runs before each physics step rather than each rendered
+    // frame, so it advances at the same fixed rate on any display
+    useBeforePhysicsStep(() => {
+        const rigidBody = rigidBodyRef.current;
+        const collider = colliderRef.current;
+        const controller = controllerRef.current;
+        isMovingRef.current = false;
 
-        if (!allowMovement) {
-            animateBody(false, state.clock.elapsedTime, delta);
+        if (!allowMovement || !rigidBody || !collider || !controller) {
             return;
         }
 
         const keys = getKeys();
-        const step = speed * Math.min(delta, MAX_FRAME_DELTA);
-        // Reuse position object to avoid creating new object every frame
-        const newPosition = { x: position.x, y: position.y, z: position.z };
-
         // Input in camera space: -z is "into the screen", +x is screen right
         const inputX = Number(keys.rightward) - Number(keys.leftward);
         const inputZ = Number(keys.backward) - Number(keys.forward);
-        const isMoving = inputX !== 0 || inputZ !== 0;
 
-        if (isMoving) {
-            // Rotate input by the camera's orbit so controls follow the view.
-            // Read via getState to avoid rerendering on every camera turn.
-            const move = toCameraRelative(
-                inputX,
-                inputZ,
-                useMovement.getState().cameraYaw
-            );
-
-            newPosition.x += move.x * step;
-            newPosition.z += move.z * step;
-            targetRotation.current = getFacingRotation(move);
+        if (inputX === 0 && inputZ === 0) {
+            return;
         }
 
-        // Collision detection - keep character within room boundaries
-        newPosition.x = Math.max(-boundary, Math.min(boundary, newPosition.x));
-        newPosition.z = Math.max(-boundary, Math.min(boundary, newPosition.z));
+        // Rotate input by the camera's orbit so controls follow the view.
+        // Read via getState to avoid rerendering on every camera turn.
+        const move = toCameraRelative(
+            inputX,
+            inputZ,
+            useMovement.getState().cameraYaw
+        );
+        // Normalized so diagonals aren't faster than straight lines
+        const step = (speed * PHYSICS_TIMESTEP) / Math.hypot(move.x, move.z);
+        desiredMovement.x = move.x * step;
+        desiredMovement.z = move.z * step;
 
-        // Check furniture collision and revert if colliding
-        if (
-            checkDeskCollision(newPosition.x, newPosition.z) ||
-            checkFurnitureCollision(newPosition.x, newPosition.z)
-        ) {
-            // If collision detected, don't move to new position
-            newPosition.x = position.x;
-            newPosition.z = position.z;
-        }
+        // Sweeps the capsule along the desired path and returns how far it
+        // can go, sliding along anything it hits instead of stopping dead
+        controller.computeColliderMovement(
+            collider,
+            desiredMovement,
+            rapier.QueryFilterFlags.EXCLUDE_SENSORS,
+            PLAYER_GROUPS
+        );
+        const movement = controller.computedMovement();
+        const current = rigidBody.translation();
+        nextTranslation.x = current.x + movement.x;
+        nextTranslation.y = current.y;
+        nextTranslation.z = current.z + movement.z;
+        rigidBody.setNextKinematicTranslation(nextTranslation);
 
-        // Smooth rotation interpolation
+        isMovingRef.current = true;
+        targetRotation.current = getFacingRotation(move);
+        setPosition({
+            x: nextTranslation.x,
+            y: useMovement.getState().position.y,
+            z: nextTranslation.z,
+        });
+    });
+
+    // Visual-only: turning and the walk cycle run every rendered frame
+    useFrame((state, delta) => {
+        const character = characterRef.current;
+        const isMoving = isMovingRef.current;
+
+        if (!character) return;
+
         if (isMoving) {
             if (!hasClearedIntro.current && message === INTRO_MESSAGE) {
                 clearMessage();
@@ -422,112 +427,119 @@ const Character = memo(({ inputEnabled = true }: CharacterProps) => {
                 Math.sin(currentRotation.current),
                 Math.cos(currentRotation.current)
             );
-            characterRef.current.rotation.y = currentRotation.current;
+            character.rotation.y = currentRotation.current;
         }
 
-        // Ignore tiny float jitter so the movement store only updates on real moves.
-        const positionChanged =
-            Math.abs(newPosition.x - position.x) > POSITION_EPSILON ||
-            Math.abs(newPosition.y - position.y) > POSITION_EPSILON ||
-            Math.abs(newPosition.z - position.z) > POSITION_EPSILON;
-
-        if (positionChanged) {
-            setPosition(newPosition);
-        }
-
-        characterRef.current.position.set(newPosition.x, bodyY, newPosition.z);
         animateBody(isMoving, state.clock.elapsedTime, delta);
     });
 
     return (
-        <group
-            ref={characterRef}
-            scale={[characterScale, characterScale, characterScale]}
-            position={[position.x, bodyY, position.z]}
+        // Kinematic: moved only by code, but other colliders still block it.
+        // colliders={false} stops Rapier from generating colliders from the
+        // body's meshes, so the capsule below is its only shape.
+        <RigidBody
+            ref={rigidBodyRef}
+            type="kinematicPosition"
+            colliders={false}
+            position={spawnPosition}
         >
-            {/* Soft contact shadow so the feet read as planted on the floor;
-                it sits outside the body group so it doesn't bob */}
-            <mesh
-                position={[0, MODEL_FEET_Y + 0.02, 0]}
-                rotation={[-Math.PI / 2, 0, 0]}
-                renderOrder={1}
+            <CapsuleCollider
+                ref={colliderRef}
+                args={[capsuleHalfHeight, capsuleRadius]}
+                position={[0, height / 2, 0]}
+                collisionGroups={PLAYER_GROUPS}
+            />
+            <group
+                ref={characterRef}
+                scale={[characterScale, characterScale, characterScale]}
+                position={[0, bodyY, 0]}
             >
-                <planeGeometry
-                    args={[BLOB_SHADOW_RADIUS * 2, BLOB_SHADOW_RADIUS * 2]}
-                />
-                <shaderMaterial
-                    uniforms={blobShadowUniforms}
-                    vertexShader={BLOB_SHADOW_VERTEX}
-                    fragmentShader={BLOB_SHADOW_FRAGMENT}
-                    transparent
-                    depthWrite={false}
-                />
-            </mesh>
+                {/* Soft contact shadow so the feet read as planted on the floor;
+                it sits outside the body group so it doesn't bob */}
+                <mesh
+                    position={[0, MODEL_FEET_Y + 0.02, 0]}
+                    rotation={[-Math.PI / 2, 0, 0]}
+                    renderOrder={1}
+                >
+                    <planeGeometry
+                        args={[BLOB_SHADOW_RADIUS * 2, BLOB_SHADOW_RADIUS * 2]}
+                    />
+                    <shaderMaterial
+                        uniforms={blobShadowUniforms}
+                        vertexShader={BLOB_SHADOW_VERTEX}
+                        fragmentShader={BLOB_SHADOW_FRAGMENT}
+                        transparent
+                        depthWrite={false}
+                    />
+                </mesh>
 
-            <group ref={bodyRef}>
-                <BodyPart
-                    size={[0.8, 0.8, 0.8]}
-                    position={[0, 2, 0]}
-                    color={skinColor}
-                    roughness={roughness}
-                />
+                <group ref={bodyRef}>
+                    <BodyPart
+                        size={[0.8, 0.8, 0.8]}
+                        position={[0, 2, 0]}
+                        color={skinColor}
+                        roughness={roughness}
+                    />
 
-                {FACE_FEATURES.map(({ position: featurePosition, size }) => (
-                    <mesh
-                        key={featurePosition.join(",")}
-                        position={featurePosition}
-                        receiveShadow
-                    >
-                        <boxGeometry args={size} />
-                        <meshStandardMaterial
-                            color={featureColor}
+                    {FACE_FEATURES.map(
+                        ({ position: featurePosition, size }) => (
+                            <mesh
+                                key={featurePosition.join(",")}
+                                position={featurePosition}
+                                receiveShadow
+                            >
+                                <boxGeometry args={size} />
+                                <meshStandardMaterial
+                                    color={featureColor}
+                                    roughness={roughness}
+                                />
+                            </mesh>
+                        )
+                    )}
+
+                    <BodyPart
+                        size={[1, 1.5, 0.5]}
+                        position={[0, 0.5, 0]}
+                        color={shirtColor}
+                        roughness={roughness}
+                    />
+
+                    <group ref={leftArmRef} position={[-0.8, SHOULDER_Y, 0]}>
+                        <BodyPart
+                            size={[0.3, ARM_LENGTH, 0.3]}
+                            position={[0, -ARM_LENGTH / 2, 0]}
+                            color={skinColor}
                             roughness={roughness}
                         />
-                    </mesh>
-                ))}
+                    </group>
+                    <group ref={rightArmRef} position={[0.8, SHOULDER_Y, 0]}>
+                        <BodyPart
+                            size={[0.3, ARM_LENGTH, 0.3]}
+                            position={[0, -ARM_LENGTH / 2, 0]}
+                            color={skinColor}
+                            roughness={roughness}
+                        />
+                    </group>
 
-                <BodyPart
-                    size={[1, 1.5, 0.5]}
-                    position={[0, 0.5, 0]}
-                    color={shirtColor}
-                    roughness={roughness}
-                />
-
-                <group ref={leftArmRef} position={[-0.8, SHOULDER_Y, 0]}>
-                    <BodyPart
-                        size={[0.3, ARM_LENGTH, 0.3]}
-                        position={[0, -ARM_LENGTH / 2, 0]}
-                        color={skinColor}
-                        roughness={roughness}
-                    />
-                </group>
-                <group ref={rightArmRef} position={[0.8, SHOULDER_Y, 0]}>
-                    <BodyPart
-                        size={[0.3, ARM_LENGTH, 0.3]}
-                        position={[0, -ARM_LENGTH / 2, 0]}
-                        color={skinColor}
-                        roughness={roughness}
-                    />
-                </group>
-
-                <group ref={leftLegRef} position={[-0.3, HIP_Y, 0]}>
-                    <BodyPart
-                        size={[0.3, LEG_LENGTH, 0.3]}
-                        position={[0, -LEG_LENGTH / 2, 0]}
-                        color={pantsColor}
-                        roughness={roughness}
-                    />
-                </group>
-                <group ref={rightLegRef} position={[0.3, HIP_Y, 0]}>
-                    <BodyPart
-                        size={[0.3, LEG_LENGTH, 0.3]}
-                        position={[0, -LEG_LENGTH / 2, 0]}
-                        color={pantsColor}
-                        roughness={roughness}
-                    />
+                    <group ref={leftLegRef} position={[-0.3, HIP_Y, 0]}>
+                        <BodyPart
+                            size={[0.3, LEG_LENGTH, 0.3]}
+                            position={[0, -LEG_LENGTH / 2, 0]}
+                            color={pantsColor}
+                            roughness={roughness}
+                        />
+                    </group>
+                    <group ref={rightLegRef} position={[0.3, HIP_Y, 0]}>
+                        <BodyPart
+                            size={[0.3, LEG_LENGTH, 0.3]}
+                            position={[0, -LEG_LENGTH / 2, 0]}
+                            color={pantsColor}
+                            roughness={roughness}
+                        />
+                    </group>
                 </group>
             </group>
-        </group>
+        </RigidBody>
     );
 });
 Character.displayName = "Character";

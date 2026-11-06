@@ -1,4 +1,3 @@
-import { Vector3 } from "three";
 export {};
 
 declare global {
@@ -17,6 +16,4 @@ declare global {
                 : DeepPartial<T[P]>
             : T[P];
     };
-
-    type PositionArray = Coordinate | Vector3;
 }
