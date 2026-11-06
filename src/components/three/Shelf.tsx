@@ -4,6 +4,7 @@ import { useGLTF } from "@react-three/drei";
 import { useControls } from "leva";
 // #endif
 import { useScene } from "@/lib/contexts/SceneContext";
+import Obstacle from "@/components/three/Obstacle";
 import { enableShadows } from "@/utils/three";
 
 type ShelfControls = {
@@ -60,13 +61,26 @@ const Shelf = memo(() => {
     shelfScale = shelf?.scale ?? 1;
     // #endif
 
+    // Width and thickness are sized for the default scale
+    const sizeScale = shelfScale / (shelf?.scale || 1);
+    const width = (shelf?.width ?? 0) * sizeScale;
+    const thickness = (shelf?.thickness ?? 0) * sizeScale;
+
     return (
-        <primitive
-            object={shelfModel.scene}
+        <group
             position={[shelf?.position?.x ?? 0, shelfY, shelfZ]}
             rotation={[0, shelf?.rotation?.y ?? 0, 0]}
-            scale={[shelfScale, shelfScale, shelfScale]}
-        />
+        >
+            <primitive
+                object={shelfModel.scene}
+                scale={[shelfScale, shelfScale, shelfScale]}
+            />
+            {/* The model's back is at its origin and its front faces +Z */}
+            <Obstacle
+                size={[width, shelfScale, thickness]}
+                position={[0, shelfScale / 2, thickness / 2]}
+            />
+        </group>
     );
 });
 Shelf.displayName = "Shelf";
