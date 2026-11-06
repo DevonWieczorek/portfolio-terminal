@@ -12,7 +12,6 @@ interface MovementState {
     cameraYaw: number;
     setPosition: (position: Position) => void;
     setCameraYaw: (cameraYaw: number) => void;
-    resetPosition: () => void;
 }
 
 const initialPosition: Position = {
@@ -35,6 +34,4 @@ export const useMovement = create<MovementState>(set => ({
         ),
 
     setCameraYaw: cameraYaw => set({ cameraYaw }),
-
-    resetPosition: () => set({ position: initialPosition }),
 }));
