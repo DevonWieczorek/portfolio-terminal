@@ -195,6 +195,7 @@ const DOOR_PROPORTIONS = { width: 0.572 };
 const DOOR_X: number = scaledFeet(8);
 const DOOR_LEFT: number = DOOR_X - (DOOR_PROPORTIONS.width * DOOR_HEIGHT) / 2;
 const DOOR_RIGHT: number = DOOR_X + (DOOR_PROPORTIONS.width * DOOR_HEIGHT) / 2;
+const DOOR_ZONE_DEPTH: number = scaledFeet(4);
 // The model's back sits at its origin, so this sets it flat on the south wall,
 // turned to face into the room
 const defaultDoorTraits: DeepPartial<ObjectTraits> = {
@@ -207,6 +208,17 @@ const defaultDoorTraits: DeepPartial<ObjectTraits> = {
     },
     rotation: {
         y: Math.PI,
+    },
+    // In the door's unscaled local space, where +Z points into the room
+    boxSize: {
+        x: DOOR_PROPORTIONS.width * DOOR_HEIGHT + scaledFeet(2),
+        y: DOOR_HEIGHT,
+        z: DOOR_ZONE_DEPTH,
+    },
+    boxAnchor: {
+        x: 0,
+        y: DOOR_HEIGHT / 2,
+        z: DOOR_ZONE_DEPTH / 2,
     },
 };
 
