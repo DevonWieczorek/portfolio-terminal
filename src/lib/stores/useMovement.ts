@@ -10,8 +10,11 @@ interface MovementState {
     position: Position;
     // Camera orbit angle (radians around Y) so movement can be camera-relative.
     cameraYaw: number;
+    // Direction the character is walking (radians around Y), null when standing still.
+    heading: number | null;
     setPosition: (position: Position) => void;
     setCameraYaw: (cameraYaw: number) => void;
+    setHeading: (heading: number | null) => void;
 }
 
 const initialPosition: Position = {
@@ -27,6 +30,7 @@ const hasPositionChanged = (current: Position, next: Position) =>
 export const useMovement = create<MovementState>(set => ({
     position: initialPosition,
     cameraYaw: 0,
+    heading: null,
 
     setPosition: position =>
         set(state =>
@@ -34,4 +38,8 @@ export const useMovement = create<MovementState>(set => ({
         ),
 
     setCameraYaw: cameraYaw => set({ cameraYaw }),
+
+    // Called every physics step, so skip publishing unchanged values.
+    setHeading: heading =>
+        set(state => (state.heading === heading ? state : { heading })),
 }));

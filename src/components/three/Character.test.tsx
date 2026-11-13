@@ -133,4 +133,16 @@ describe("Character", () => {
         ).not.toHaveBeenCalled();
         expect(movementState.setPosition).not.toHaveBeenCalled();
     });
+
+    it("publishes its walking heading for the camera to follow", () => {
+        renderWithTransforms(<Character />);
+        keyboardState.rightward = true;
+
+        runPhysicsStep();
+        expect(movementState.setHeading).toHaveBeenLastCalledWith(-Math.PI / 2);
+
+        keyboardState.rightward = false;
+        runPhysicsStep();
+        expect(movementState.setHeading).toHaveBeenLastCalledWith(null);
+    });
 });

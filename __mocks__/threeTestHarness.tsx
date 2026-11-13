@@ -157,6 +157,9 @@ export const sceneState = {
     characterHeight: 6,
     cameraPanSpeed: 0.2,
     cameraRotateSpeed: 0.03,
+    cameraRecenterDelay: 0.75,
+    cameraRecenterSpeed: 2.5,
+    cameraFollowSpeed: 0.8,
     characterAppearance: {
         skinColor: "#f7d0b4",
         shirtColor: "#6593c6",
@@ -262,8 +265,10 @@ export const messageState = {
 export const movementState = {
     position: { x: 0, y: 1, z: 0 },
     cameraYaw: 0,
+    heading: null as number | null,
     setPosition: jest.fn(),
     setCameraYaw: jest.fn(),
+    setHeading: jest.fn(),
 };
 
 export const experienceState = {
@@ -521,6 +526,7 @@ export function resetThreeTestState() {
     messageState.interaction = null;
     movementState.position = { x: 0, y: 1, z: 0 };
     movementState.cameraYaw = 0;
+    movementState.heading = null;
     progressState = { progress: 0, item: "" };
 }
 

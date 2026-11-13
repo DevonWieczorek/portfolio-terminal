@@ -139,6 +139,7 @@ const Character = memo(({ inputEnabled = true }: CharacterProps) => {
         return [x, 0, z];
     });
     const setPosition = useMovement(state => state.setPosition);
+    const setHeading = useMovement(state => state.setHeading);
     const {
         characterSpeed,
         characterStepSquash,
@@ -343,6 +344,7 @@ const Character = memo(({ inputEnabled = true }: CharacterProps) => {
         isMovingRef.current = false;
 
         if (!allowMovement || !rigidBody || !collider || !controller) {
+            setHeading(null);
             return;
         }
 
@@ -352,6 +354,7 @@ const Character = memo(({ inputEnabled = true }: CharacterProps) => {
         const inputZ = Number(keys.backward) - Number(keys.forward);
 
         if (inputX === 0 && inputZ === 0) {
+            setHeading(null);
             return;
         }
 
@@ -384,6 +387,7 @@ const Character = memo(({ inputEnabled = true }: CharacterProps) => {
 
         isMovingRef.current = true;
         targetRotation.current = getFacingRotation(move);
+        setHeading(targetRotation.current);
         setPosition({
             x: nextTranslation.x,
             y: useMovement.getState().position.y,
