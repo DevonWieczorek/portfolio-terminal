@@ -5,6 +5,24 @@
     max-height: calc(100vh - 20px);
     overflow-y: auto;
     z-index: 1001;
+
+    > div:last-child {
+        // Leva would translate its root inside this scroll box and get
+        // clipped, so DebugPanel moves the wrapper with the drag offset instead
+        transform: none !important;
+
+        // Leva's folder height animation breaks under React StrictMode (dev
+        // only), pinning folders at a stale height, so size them from their
+        // open state. The filter bar is also "toggled" but sits directly on
+        // the root, so the descendant selector skips it.
+        div:has(> [class*="toggled-true"]) {
+            height: auto !important;
+        }
+
+        div:has(> [class*="toggled-false"]) {
+            height: 0 !important;
+        }
+    }
 }
 
 .resizeHandle {

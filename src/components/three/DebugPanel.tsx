@@ -1,14 +1,24 @@
-import { memo, useCallback, useRef } from "react";
+import { memo, useCallback, useMemo, useRef } from "react";
 import type { PointerEvent as ReactPointerEvent } from "react";
 import { Leva } from "leva";
 import styles from "@/styles/DebugPanel.module.scss";
 
 const DEFAULT_WIDTH = 400;
 const MIN_WIDTH = 280;
-const TITLE_BAR = { drag: false };
 
 const DebugPanel = memo(() => {
     const panelRef = useRef<HTMLDivElement>(null);
+
+    // Leva reports its accumulated drag offset, so it maps straight to a translate
+    const titleBar = useMemo(
+        () => ({
+            onDrag: ({ x = 0, y = 0 }: { x?: number; y?: number }) => {
+                const panel = panelRef.current;
+                if (panel) panel.style.transform = `translate(${x}px, ${y}px)`;
+            },
+        }),
+        []
+    );
 
     // Width is written straight to the DOM so dragging never re-renders Leva
     const handlePointerDown = useCallback(
@@ -55,7 +65,7 @@ const DebugPanel = memo(() => {
                 aria-orientation="vertical"
                 aria-label="Resize debug panel"
             />
-            <Leva fill titleBar={TITLE_BAR} />
+            <Leva fill titleBar={titleBar} />
         </div>
     );
 });
