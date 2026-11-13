@@ -53,13 +53,16 @@ const LoadingScreen = memo(({ isReady, onReveal }: LoadingScreenProps) => {
     const [shownCount, setShownCount] = useState(0);
     const [phase, setPhase] = useState<Phase>("loading");
 
+    // Assets that load after the reveal starts, like the record player's
+    // music, belong to the room, not the boot log. Logging them would reopen
+    // the log and replay the reveal.
     useEffect(() => {
         const label = item ? labelForAsset(item) : null;
-        if (!label) {
+        if (!label || phase !== "loading") {
             return;
         }
         setLines(prev => (prev.includes(label) ? prev : [...prev, label]));
-    }, [item]);
+    }, [item, phase]);
 
     // Cached assets resolve in bursts, so print queued lines one at a time.
     useEffect(() => {

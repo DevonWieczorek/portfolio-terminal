@@ -128,6 +128,28 @@ describe("LoadingScreen", () => {
         expect(screen.getByRole("status")).toHaveClass("revealing");
     });
 
+    it("stays hidden when something loads after the reveal", () => {
+        const onReveal = jest.fn();
+        render(<LoadingScreen isReady onReveal={onReveal} />);
+
+        act(() => {
+            jest.advanceTimersByTime(
+                sceneState.loaderMinDuration + REVEAL_DURATION_MS
+            );
+        });
+        act(() => setProgress({ item: "/audio/a-cup-of-tea.mp3" }));
+        // Separate steps, so the effects after the line prints get to run
+        act(() => {
+            jest.advanceTimersByTime(LINE_STAGGER_MS);
+        });
+        act(() => {
+            jest.advanceTimersByTime(LINE_STAGGER_MS);
+        });
+
+        expect(screen.queryByRole("status")).not.toBeInTheDocument();
+        expect(onReveal).toHaveBeenCalledTimes(1);
+    });
+
     it("notifies when the reveal starts", () => {
         const onReveal = jest.fn();
         render(<LoadingScreen isReady onReveal={onReveal} />);
