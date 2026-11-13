@@ -15,6 +15,20 @@ interface ObjectTraits {
     footprint: Footprint;
 }
 
+// Turntable on the record shelf. Positions are in the shelf group's space,
+// which has the shelf's rotation but not its scale.
+interface RecordPlayerTraits {
+    turntable: Coordinates; // spindle top, in the shelf model's own units
+    spinSpeed: number; // radians per second at full speed
+    spinEase: number; // exponential ease rate (per second) of spin-up and run-down
+    tonearmPlayAngle: number; // pivot turn from parked to resting in the grooves
+    tonearmEase: number; // exponential ease rate (per second) of the arm swing
+    volume: number;
+    audioRefDistance: number; // distance before the music starts to fade out
+    boxSize: Coordinates;
+    boxAnchor: Coordinates;
+}
+
 // Light sources (screens) rendered in HDR so they bloom
 interface GlowTraits {
     intensity: number; // HDR multiplier; values above the bloom threshold glow
@@ -350,6 +364,35 @@ const defaultShelfTraits: DeepPartial<ObjectTraits> = {
     },
 };
 
+// The turntable's spindle in the shelf model's units. Must match the turntable
+// in .bin/generate-scene-models.mts, which builds cartoon_shelf.glb.
+const TURNTABLE = { x: -0.52, y: 1.08, z: SHELF_PROPORTIONS.depth / 2 };
+const RECORD_ZONE_DEPTH: number = scaledFeet(4);
+const RECORD_ZONE_REACH: number =
+    SHELF_PROPORTIONS.depth * SHELF_HEIGHT + RECORD_ZONE_DEPTH;
+const defaultRecordPlayerTraits: RecordPlayerTraits = {
+    turntable: TURNTABLE,
+    // 33 1/3 rpm
+    spinSpeed: (33.33 * Math.PI * 2) / 60,
+    spinEase: 1.5,
+    tonearmPlayAngle: -0.58,
+    tonearmEase: 4,
+    volume: 0.6,
+    audioRefDistance: scaledFeet(5),
+    // Reaches from the wall to a few feet past the shelf front, centered on
+    // the turntable, since the shelf itself is solid
+    boxSize: {
+        x: scaledFeet(4),
+        y: SHELF_HEIGHT * 2,
+        z: RECORD_ZONE_REACH,
+    },
+    boxAnchor: {
+        x: TURNTABLE.x * SHELF_HEIGHT,
+        y: SHELF_HEIGHT,
+        z: RECORD_ZONE_REACH / 2,
+    },
+};
+
 // Monitor height in feet
 const MONITOR_SCALE: number = scaledHeight(1.5);
 // Screen glass in the monitor model's own units (1 unit tall, centered, facing
@@ -521,6 +564,7 @@ interface SceneConfig {
     door: DeepPartial<ObjectTraits>;
     pinboard: DeepPartial<ObjectTraits>;
     shelf: DeepPartial<ObjectTraits>;
+    recordPlayer: RecordPlayerTraits;
     monitor: DeepPartial<ObjectTraits>;
     monitorScreen: DeepPartial<ObjectTraits & GlowTraits>;
     lighting: LightingSettings;
@@ -582,6 +626,7 @@ const defaultSceneConfig: SceneConfig = {
     door: defaultDoorTraits,
     pinboard: defaultPinboardTraits,
     shelf: defaultShelfTraits,
+    recordPlayer: defaultRecordPlayerTraits,
     monitor: defaultMonitorTraits,
     monitorScreen: defaultMonitorScreenTraits,
     lighting: defaultLightingSettings,

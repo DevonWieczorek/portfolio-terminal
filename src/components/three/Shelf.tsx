@@ -5,6 +5,7 @@ import { useControls } from "leva";
 // #endif
 import { useScene } from "@/lib/contexts/SceneContext";
 import Obstacle from "@/components/three/Obstacle";
+import RecordPlayer from "@/components/three/RecordPlayer";
 import { enableShadows } from "@/utils/three";
 
 type ShelfControls = {
@@ -80,6 +81,7 @@ const Shelf = memo(() => {
                 size={[width, shelfScale, thickness]}
                 position={[0, shelfScale / 2, thickness / 2]}
             />
+            <RecordPlayer model={shelfModel.scene} scale={shelfScale} />
         </group>
     );
 });
