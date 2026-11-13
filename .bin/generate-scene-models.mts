@@ -1086,7 +1086,8 @@ const buildShelf = () => {
         );
     }
 
-    // Turntable on top: plinth, platter, record, label and tonearm
+    // Turntable on top: plinth, platter, record, label and tonearm. The
+    // spindle position must match TURNTABLE in SceneContext.
     {
         const x = -0.48;
         const z = depth / 2;
@@ -1101,46 +1102,56 @@ const buildShelf = () => {
             )
         );
         const top = 1 + plinthHeight;
-        shelf.add(
+
+        // Everything that turns with the record, centered on the spindle so
+        // the scene can spin it in place. The label stripe makes the turn
+        // visible on an otherwise round, flat record.
+        const spin = new THREE.Group();
+        spin.name = "TurntableSpin";
+        spin.position.set(x - 0.04, top, z);
+        spin.add(
             cylinder(
                 "TurntablePlatter",
                 0.155,
                 0.155,
                 0.02,
-                [x - 0.04, top + 0.01, z],
+                [0, 0.01, 0],
                 darkMaterial
-            )
-        );
-        shelf.add(
+            ),
             cylinder(
                 "TurntableRecord",
                 0.148,
                 0.148,
                 0.008,
-                [x - 0.04, top + 0.024, z],
+                [0, 0.024, 0],
                 nearBlack
-            )
-        );
-        shelf.add(
+            ),
             cylinder(
                 "TurntableLabel",
                 0.05,
                 0.05,
                 0.01,
-                [x - 0.04, top + 0.025, z],
+                [0, 0.025, 0],
                 material("TurntableLabel", "#F09A8C")
-            )
-        );
-        shelf.add(
+            ),
+            roundedBox(
+                "TurntableLabelStripe",
+                [0.034, 0.004, 0.012],
+                [0.022, 0.03, 0],
+                0.002,
+                offWhite
+            ),
             cylinder(
                 "TurntableSpindle",
                 0.006,
                 0.006,
                 0.03,
-                [x - 0.04, top + 0.03, z],
+                [0, 0.03, 0],
                 offWhite
             )
         );
+        shelf.add(spin);
+
         const pivot = new THREE.Vector3(x + 0.17, top + 0.05, z - 0.12);
         shelf.add(
             cylinder(
@@ -1152,9 +1163,15 @@ const buildShelf = () => {
                 darkMaterial
             )
         );
-        const head = new THREE.Vector3(x + 0.04, top + 0.04, z + 0.08);
-        shelf.add(strand("Tonearm", pivot, head, 0.006, offWhite));
-        shelf.add(
+        // The arm is authored parked, pointing straight toward the front and
+        // clear of the record. Turning the pivot by `tonearmPlayAngle` in
+        // SceneContext sets the head down in the grooves.
+        const arm = new THREE.Group();
+        arm.name = "TonearmPivot";
+        arm.position.copy(pivot);
+        const head = new THREE.Vector3(0, -0.01, 0.2385);
+        arm.add(
+            strand("Tonearm", new THREE.Vector3(), head, 0.006, offWhite),
             roundedBox(
                 "TonearmHead",
                 [0.03, 0.015, 0.045],
@@ -1163,12 +1180,14 @@ const buildShelf = () => {
                 darkMaterial
             )
         );
+        shelf.add(arm);
         const button = cylinder(
             "TurntableButton",
             0.018,
             0.018,
             0.012,
-            [x + 0.17, top + 0.006, z + 0.12],
+            // Front-left corner, clear of the parked tonearm
+            [x - 0.19, top + 0.006, z + 0.14],
             material("TurntableButton", "#5DBB63", { roughness: 0.5 })
         );
         shelf.add(button);

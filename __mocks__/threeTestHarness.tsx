@@ -199,6 +199,17 @@ export const sceneState = {
         position: { x: -14.35, y: 0, z: 7 },
         rotation: { y: Math.PI / 2 },
     },
+    recordPlayer: {
+        turntable: { x: -0.52, y: 1.08, z: 0.215 },
+        spinSpeed: 3.49,
+        spinEase: 1.5,
+        tonearmPlayAngle: -0.58,
+        tonearmEase: 4,
+        volume: 0.6,
+        audioRefDistance: 5,
+        boxSize: { x: 4, y: 6, z: 5.29 },
+        boxAnchor: { x: -1.56, y: 3, z: 2.645 },
+    },
     monitor: {
         scale: 1.2,
         position: { x: -0.5, y: 1.5, z: 2.6 },
