@@ -11,9 +11,7 @@ describe("BassGroup", () => {
     });
 
     it("renders four bass models", () => {
-        const { container } = render(
-            <BassGroup proximityPosition={[0, 0, 0]} />
-        );
+        const { container } = render(<BassGroup />);
 
         expect(container.querySelectorAll("primitive")).toHaveLength(4);
     });

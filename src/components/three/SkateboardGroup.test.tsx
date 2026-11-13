@@ -11,9 +11,7 @@ describe("SkateboardGroup", () => {
     });
 
     it("renders four skateboard models", () => {
-        const { container } = render(
-            <SkateboardGroup proximityPosition={[0, 0, 0]} />
-        );
+        const { container } = render(<SkateboardGroup />);
 
         expect(container.querySelectorAll("primitive")).toHaveLength(4);
     });

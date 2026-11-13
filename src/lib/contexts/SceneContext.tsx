@@ -54,14 +54,6 @@ interface Footprint {
     sideArmWidth: number; // width of the arm against the side wall
 }
 
-// Axis-aligned rectangle of floor the character can't walk into
-interface FloorRect {
-    minX: number;
-    maxX: number;
-    minZ: number;
-    maxZ: number;
-}
-
 interface RoomDimensions {
     width: number; // feet
     depth: number; // feet
@@ -334,6 +326,8 @@ const SHELF_Z: number = scaledFeet(7);
 // Against the west wall toward the southwest corner, facing into the room
 const defaultShelfTraits: DeepPartial<ObjectTraits> = {
     scale: SHELF_HEIGHT,
+    width: SHELF_PROPORTIONS.width * SHELF_HEIGHT,
+    thickness: SHELF_PROPORTIONS.depth * SHELF_HEIGHT,
     position: {
         x: SHELF_WALL_X,
         y: feetFromFloor(0),
@@ -343,16 +337,6 @@ const defaultShelfTraits: DeepPartial<ObjectTraits> = {
         y: rotationY.counterclockwise,
     },
 };
-
-// Furniture the character walks around, besides the desk
-const defaultFloorColliders: FloorRect[] = [
-    {
-        minX: SHELF_WALL_X,
-        maxX: SHELF_WALL_X + SHELF_PROPORTIONS.depth * SHELF_HEIGHT,
-        minZ: SHELF_Z - (SHELF_PROPORTIONS.width * SHELF_HEIGHT) / 2,
-        maxZ: SHELF_Z + (SHELF_PROPORTIONS.width * SHELF_HEIGHT) / 2,
-    },
-];
 
 // Monitor height in feet
 const MONITOR_SCALE: number = scaledHeight(1.5);
@@ -522,7 +506,6 @@ interface SceneConfig {
     door: DeepPartial<ObjectTraits>;
     pinboard: DeepPartial<ObjectTraits>;
     shelf: DeepPartial<ObjectTraits>;
-    floorColliders: FloorRect[];
     monitor: DeepPartial<ObjectTraits>;
     monitorScreen: DeepPartial<ObjectTraits & GlowTraits>;
     lighting: LightingSettings;
@@ -581,7 +564,6 @@ const defaultSceneConfig: SceneConfig = {
     door: defaultDoorTraits,
     pinboard: defaultPinboardTraits,
     shelf: defaultShelfTraits,
-    floorColliders: defaultFloorColliders,
     monitor: defaultMonitorTraits,
     monitorScreen: defaultMonitorScreenTraits,
     lighting: defaultLightingSettings,

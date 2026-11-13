@@ -15,8 +15,16 @@ interface MessageContextValue {
     message: string;
     interaction: MessageInteraction | null;
     setMessage: (text: string, interaction?: MessageInteraction | null) => void;
-    clearMessage: () => void;
+    // With `text`, clears only if that message is the one showing
+    clearMessage: (text?: string) => void;
 }
+
+interface MessageState {
+    message: string;
+    interaction: MessageInteraction | null;
+}
+
+const EMPTY_MESSAGE: MessageState = { message: "", interaction: null };
 
 const MessageContext = createContext<MessageContextValue | undefined>(
     undefined
@@ -27,22 +35,24 @@ interface MessageProviderProps {
 }
 
 export function MessageProvider({ children }: MessageProviderProps) {
-    const [message, setMessageState] = useState<string>("");
-    const [interaction, setInteraction] = useState<MessageInteraction | null>(
-        null
-    );
+    const [{ message, interaction }, setState] =
+        useState<MessageState>(EMPTY_MESSAGE);
 
     const setMessage = useCallback(
         (text: string, nextInteraction: MessageInteraction | null = null) => {
-            setMessageState(text);
-            setInteraction(nextInteraction);
+            setState({ message: text, interaction: nextInteraction });
         },
         []
     );
 
-    const clearMessage = useCallback(() => {
-        setMessageState("");
-        setInteraction(null);
+    // Compares against the latest state, not the last render's, so it's safe
+    // to call from effect cleanups
+    const clearMessage = useCallback((text?: string) => {
+        setState(current =>
+            text === undefined || current.message === text
+                ? EMPTY_MESSAGE
+                : current
+        );
     }, []);
 
     const value = useMemo(

@@ -1,22 +1,15 @@
-import { memo, useCallback, useEffect, useMemo, useRef } from "react";
+import { memo, useCallback, useEffect, useMemo } from "react";
 import { Vector3, type Group, type Quaternion } from "three";
 import { useGLTF } from "@react-three/drei";
 // #if DEBUG
 import { useControls } from "leva";
 // #endif
 import { useScene } from "@/lib/contexts/SceneContext";
-import InteractiveBox from "@/components/three/InteractiveBox";
+import InteractionZone from "@/components/three/InteractionZone";
 import MonitorScreen from "@/components/three/MonitorScreen";
-// #if DEBUG
-import type { InteractiveBounds } from "@/components/three/InteractiveBox";
-// #endif
 import { useExperience } from "@/lib/stores/useExperience";
 import { enableShadows } from "@/utils/three";
 import type { CameraTarget } from "@/lib/stores/useExperience";
-
-type MonitorProps = {
-    proximityPosition: PositionArray;
-};
 
 type MonitorControls = {
     monitorScale: number;
@@ -40,7 +33,7 @@ const MONITOR_LOOK_AT_HEIGHT = 0.9;
 const MONITOR_APPROACH_YAW_OFFSET = 0;
 const MONITOR_MODEL_PATH = "/models/cartoon_monitor.glb";
 
-const Monitor = memo(({ proximityPosition }: MonitorProps) => {
+const Monitor = memo(() => {
     const { monitor } = useScene();
     const monitorModel = useGLTF(MONITOR_MODEL_PATH);
 
@@ -48,12 +41,6 @@ const Monitor = memo(({ proximityPosition }: MonitorProps) => {
         enableShadows(monitorModel.scene);
     }, [monitorModel.scene]);
     const enterTerminal = useExperience(state => state.enterTerminal);
-    // #if DEBUG
-    const shouldSeedBoxControlsRef = useRef(true);
-    const setControlsRef = useRef<
-        ((value: Partial<MonitorControls>) => void) | null
-    >(null);
-    // #endif
 
     // Memoize Vector3 instances to prevent recreation
     // Monitor model faces local +Z; using that normal keeps the transition
@@ -83,9 +70,22 @@ const Monitor = memo(({ proximityPosition }: MonitorProps) => {
     let monitorInteractiveCenter: Coordinate;
 
     // #if DEBUG
-    const [monitorControls, setMonitorControls] = useControls(
+    ({
+        monitorScale,
+        monitorRotationY,
+        monitorX,
+        monitorY,
+        monitorZ,
+        monitorBoxSizeX,
+        monitorBoxSizeY,
+        monitorBoxSizeZ,
+        monitorBoxAnchorX,
+        monitorBoxAnchorY,
+        monitorBoxAnchorZ,
+        monitorApproachYawOffset,
+    } = useControls(
         "Monitor",
-        () => ({
+        {
             monitorScale: {
                 value: monitor?.scale ?? 1,
                 min: 0.1,
@@ -159,28 +159,9 @@ const Monitor = memo(({ proximityPosition }: MonitorProps) => {
                 max: Math.PI,
                 step: 0.01,
             },
-        }),
+        },
         { collapsed: true }
-    ) as [
-        MonitorControls,
-        (value: Partial<MonitorControls>) => void,
-        <T extends keyof MonitorControls>(path: T) => MonitorControls[T],
-    ];
-    ({
-        monitorScale,
-        monitorRotationY,
-        monitorX,
-        monitorY,
-        monitorZ,
-        monitorBoxSizeX,
-        monitorBoxSizeY,
-        monitorBoxSizeZ,
-        monitorBoxAnchorX,
-        monitorBoxAnchorY,
-        monitorBoxAnchorZ,
-        monitorApproachYawOffset,
-    } = monitorControls);
-    setControlsRef.current = setMonitorControls;
+    ) as MonitorControls);
     monitorInteractiveSize = [
         monitorBoxSizeX,
         monitorBoxSizeY,
@@ -217,27 +198,6 @@ const Monitor = memo(({ proximityPosition }: MonitorProps) => {
         monitorBoxAnchorY,
         monitorBoxAnchorZ,
     ];
-    // #endif
-
-    // #if DEBUG
-    const handleBoundsResolved = useCallback((bounds: InteractiveBounds) => {
-        const setControls = setControlsRef.current;
-
-        if (!shouldSeedBoxControlsRef.current || !setControls) {
-            return;
-        }
-
-        setControls({
-            monitorBoxSizeX: bounds.size[0],
-            monitorBoxSizeY: bounds.size[1],
-            monitorBoxSizeZ: bounds.size[2],
-            monitorBoxAnchorX: bounds.center[0],
-            monitorBoxAnchorY: bounds.center[1],
-            monitorBoxAnchorZ: bounds.center[2],
-        });
-
-        shouldSeedBoxControlsRef.current = false;
-    }, []);
     // #endif
 
     const computeCameraTarget = useCallback(
@@ -329,14 +289,10 @@ const Monitor = memo(({ proximityPosition }: MonitorProps) => {
                 />
                 <MonitorScreen />
             </group>
-            <InteractiveBox
+            <InteractionZone
                 message={MONITOR_MESSAGE}
-                proximityPosition={proximityPosition}
                 onEnter={handleEnter}
                 computeCameraTarget={computeCameraTarget}
-                // #if DEBUG
-                onResolvedBounds={handleBoundsResolved}
-                // #endif
                 size={monitorInteractiveSize}
                 center={monitorInteractiveCenter}
             />
