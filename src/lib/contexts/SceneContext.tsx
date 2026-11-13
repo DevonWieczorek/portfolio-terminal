@@ -489,6 +489,9 @@ interface SceneConfig {
     characterHeight: number;
     cameraPanSpeed: number;
     cameraRotateSpeed: number;
+    cameraRecenterDelay: number; // seconds after W/A/S/D release before the camera takes over again
+    cameraRecenterSpeed: number; // exponential ease rate (per second) of the W/S pan back onto the character
+    cameraFollowSpeed: number; // exponential ease rate (per second) of the swing behind the walking character
     characterAppearance: CharacterAppearance;
     cameraOffset: {
         x: number;
@@ -546,6 +549,9 @@ const defaultSceneConfig: SceneConfig = {
     characterStepSquash: 0.04,
     cameraPanSpeed: 0.2,
     cameraRotateSpeed: 0.03,
+    cameraRecenterDelay: 0.75,
+    cameraRecenterSpeed: 2.5,
+    cameraFollowSpeed: 0.8,
     // Low and aimed above the character so the far wall (and the basses on
     // it) stays in frame instead of the camera looking down at the floor
     cameraOffset: {

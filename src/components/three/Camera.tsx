@@ -17,11 +17,23 @@ enum CameraControls {
 }
 
 const Y_AXIS = new THREE.Vector3(0, 1, 0);
+// Below this the pan recentering snaps to zero instead of easing forever.
+const RECENTER_EPSILON = 1e-4;
+// Walking toward the camera (beyond this angle off its view) doesn't swing
+// it around, otherwise it would whip 180° whenever the character turns back.
+const MAX_FOLLOW_ANGLE = Math.PI * 0.7;
+
+// Wraps an angle to [-PI, PI] so the camera takes the short way around.
+const wrapAngle = (angle: number) =>
+    Math.atan2(Math.sin(angle), Math.cos(angle));
 
 type CameraViewControls = {
     cameraHeight: number;
     cameraDistance: number;
     lookAtHeight: number;
+    recenterDelay: number;
+    recenterSpeed: number;
+    followSpeed: number;
 };
 
 export default function Camera() {
@@ -36,6 +48,9 @@ export default function Camera() {
         cameraBuffer,
         cameraPanSpeed,
         cameraRotateSpeed,
+        cameraRecenterDelay,
+        cameraRecenterSpeed,
+        cameraFollowSpeed,
         characterBoundary,
         cameraOffset: cameraOffsetConfig,
         cameraLookAtHeight,
@@ -56,10 +71,22 @@ export default function Camera() {
     const maxZoom = zoomSettings.max;
     const zoomSpeed = zoomSettings.speed;
 
-    let cameraHeight: number, cameraDistance: number, lookAtHeight: number;
+    let cameraHeight: number,
+        cameraDistance: number,
+        lookAtHeight: number,
+        recenterDelay: number,
+        recenterSpeed: number,
+        followSpeed: number;
 
     // #if DEBUG
-    ({ cameraHeight, cameraDistance, lookAtHeight } = useControls(
+    ({
+        cameraHeight,
+        cameraDistance,
+        lookAtHeight,
+        recenterDelay,
+        recenterSpeed,
+        followSpeed,
+    } = useControls(
         "Camera",
         {
             cameraHeight: {
@@ -80,6 +107,24 @@ export default function Camera() {
                 max: 10,
                 step: 0.1,
             },
+            recenterDelay: {
+                value: cameraRecenterDelay,
+                min: 0,
+                max: 5,
+                step: 0.05,
+            },
+            recenterSpeed: {
+                value: cameraRecenterSpeed,
+                min: 0,
+                max: 10,
+                step: 0.1,
+            },
+            followSpeed: {
+                value: cameraFollowSpeed,
+                min: 0,
+                max: 5,
+                step: 0.05,
+            },
         },
         { collapsed: true }
     ) as CameraViewControls);
@@ -89,6 +134,9 @@ export default function Camera() {
     cameraHeight = cameraOffsetConfig.y;
     cameraDistance = cameraOffsetConfig.z;
     lookAtHeight = cameraLookAtHeight;
+    recenterDelay = cameraRecenterDelay;
+    recenterSpeed = cameraRecenterSpeed;
+    followSpeed = cameraFollowSpeed;
     // #endif
 
     // Camera follow settings from context
@@ -120,6 +168,8 @@ export default function Camera() {
     const panOffset = useRef(new THREE.Vector2());
     // A/D orbit angle (radians) around the vertical axis through the focus point.
     const orbitAngle = useRef(0);
+    // Seconds since W/A/S/D were last held; drives the recenter delay.
+    const idleTime = useRef(0);
 
     useEffect(() => {
         modeRef.current = mode;
@@ -163,7 +213,7 @@ export default function Camera() {
         };
     }, [minZoom, maxZoom, zoomSpeed]);
 
-    useFrame(() => {
+    useFrame((_state, delta) => {
         // Reuse the same vector instance to avoid per-frame allocations.
         // A/D orbit the camera; W/S pan along the direction it's facing.
         // Only while the player can move around the scene.
@@ -184,6 +234,40 @@ export default function Camera() {
                 const step = panDirection * cameraPanSpeed;
                 panOffset.current.x -= Math.sin(orbitAngle.current) * step;
                 panOffset.current.y -= Math.cos(orbitAngle.current) * step;
+            }
+
+            // Shortly after the player lets go of W/A/S/D, the camera takes
+            // over again: the pan settles back onto the character and the view
+            // swings around behind it as it walks, like a game camera.
+            if (rotateDirection !== 0 || panDirection !== 0) {
+                idleTime.current = 0;
+            } else {
+                idleTime.current += delta;
+            }
+
+            if (idleTime.current >= recenterDelay) {
+                if (panOffset.current.lengthSq() > 0) {
+                    // Frame-rate independent exponential ease toward zero.
+                    panOffset.current.multiplyScalar(
+                        Math.exp(-recenterSpeed * delta)
+                    );
+                    if (panOffset.current.lengthSq() < RECENTER_EPSILON ** 2) {
+                        panOffset.current.set(0, 0);
+                    }
+                }
+
+                // Read via getState so walking doesn't rerender the camera.
+                const { heading } = useMovement.getState();
+                if (heading !== null) {
+                    const diff = wrapAngle(heading - orbitAngle.current);
+                    if (Math.abs(diff) < MAX_FOLLOW_ANGLE) {
+                        orbitAngle.current = wrapAngle(
+                            orbitAngle.current +
+                                diff * (1 - Math.exp(-followSpeed * delta))
+                        );
+                        setCameraYaw(orbitAngle.current);
+                    }
+                }
             }
         }
 
