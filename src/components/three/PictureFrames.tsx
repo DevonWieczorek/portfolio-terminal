@@ -26,7 +26,8 @@ type PictureFrameControls = {
     framesBoxAnchorZ: number;
 };
 
-const INSPECT_MESSAGE = "Press ENTER to take a closer look at the photos.";
+const INSPECT_MESSAGE =
+    "Who's that handsome fella? Press ENTER to take a closer look at the photos.";
 const EXIT_MESSAGE = "Press ESC to step back.";
 
 interface FramePhotoProps {
