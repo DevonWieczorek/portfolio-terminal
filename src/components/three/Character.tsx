@@ -17,6 +17,7 @@ import { useControls } from "leva";
 import { useMovement } from "@/lib/stores/useMovement";
 import { useScene } from "@/lib/contexts/SceneContext";
 import { useExperience } from "@/lib/stores/useExperience";
+import { useMusic } from "@/lib/stores/useMusic";
 import { useMessage } from "@/lib/contexts/MessageContext";
 import { INTRO_MESSAGE } from "@/lib/constants/sceneMessages";
 import { PHYSICS_TIMESTEP, PLAYER_GROUPS } from "@/lib/constants/physics";
@@ -40,6 +41,8 @@ const MODEL_HEIGHT = 3.7;
 // Limbs hang from these joints so they swing from the shoulder and hip
 const SHOULDER_Y = 1.1;
 const HIP_Y = -0.3;
+// The head tips from the base of its box when nodding
+const NECK_Y = 1.6;
 const ARM_LENGTH = 1.2;
 const LEG_LENGTH = 1;
 // The collision capsule is as wide as the torso. Swinging arms can brush
@@ -61,6 +64,9 @@ const BREATH_FREQUENCY = 2;
 // Idle swell, as a fraction of body height. The walking squash and stretch
 // amount comes from SceneContext.
 const BREATH_SQUASH = 0.025;
+// Nodding along to the record player, in radians
+const NOD_ANGLE = 0.2;
+const NOD_BLEND_RATE = 6;
 
 const BLOB_SHADOW_RADIUS = 1;
 const BLOB_SHADOW_OPACITY = 0.35;
@@ -239,9 +245,14 @@ const Character = memo(({ inputEnabled = true }: CharacterProps) => {
     const rightArmRef = useRef<THREE.Group>(null);
     const leftLegRef = useRef<THREE.Group>(null);
     const rightLegRef = useRef<THREE.Group>(null);
+    const headRef = useRef<THREE.Group>(null);
     const stridePhase = useRef(0);
     // 0 when standing still, 1 at full stride, eased between the two
     const walkBlend = useRef(0);
+    // 0 when not nodding, 1 at full nod, eased between the two
+    const nodBlend = useRef(0);
+    // Keeps the beat while the nod fades out after the music stops
+    const lastTempo = useRef(0);
 
     const blobShadowUniforms = useMemo(
         () => ({ uOpacity: { value: BLOB_SHADOW_OPACITY } }),
@@ -296,7 +307,8 @@ const Character = memo(({ inputEnabled = true }: CharacterProps) => {
     // #endif
 
     // Animates the limbs: a walk cycle while moving that eases into an idle
-    // breathing loop when standing still
+    // breathing loop when standing still, plus a head nod in time with the
+    // music while it stands still
     const animateBody = (isMoving: boolean, elapsed: number, delta: number) => {
         walkBlend.current = THREE.MathUtils.damp(
             walkBlend.current,
@@ -332,6 +344,24 @@ const Character = memo(({ inputEnabled = true }: CharacterProps) => {
             // Scaling pivots on the body's origin, so shift it to keep the
             // feet planted
             bodyRef.current.position.y = bob * blend - MODEL_FEET_Y * stretch;
+        }
+
+        // Read via getState so the music doesn't rerender the avatar
+        const { tempo, trackTime } = useMusic.getState();
+        if (tempo !== null) {
+            lastTempo.current = tempo;
+        }
+        nodBlend.current = THREE.MathUtils.damp(
+            nodBlend.current,
+            tempo !== null && !isMoving ? 1 : 0,
+            NOD_BLEND_RATE,
+            delta
+        );
+        if (headRef.current) {
+            const beat = (trackTime * lastTempo.current) / 60;
+            // Snaps down on each beat and floats back up between them
+            const nod = 1 - Math.abs(Math.sin(Math.PI * beat));
+            headRef.current.rotation.x = -NOD_ANGLE * nod * nodBlend.current;
         }
     };
 
@@ -478,28 +508,32 @@ const Character = memo(({ inputEnabled = true }: CharacterProps) => {
                 </mesh>
 
                 <group ref={bodyRef}>
-                    <BodyPart
-                        size={[0.8, 0.8, 0.8]}
-                        position={[0, 2, 0]}
-                        color={skinColor}
-                        roughness={roughness}
-                    />
+                    <group ref={headRef} position={[0, NECK_Y, 0]}>
+                        <group position={[0, -NECK_Y, 0]}>
+                            <BodyPart
+                                size={[0.8, 0.8, 0.8]}
+                                position={[0, 2, 0]}
+                                color={skinColor}
+                                roughness={roughness}
+                            />
 
-                    {FACE_FEATURES.map(
-                        ({ position: featurePosition, size }) => (
-                            <mesh
-                                key={featurePosition.join(",")}
-                                position={featurePosition}
-                                receiveShadow
-                            >
-                                <boxGeometry args={size} />
-                                <meshStandardMaterial
-                                    color={featureColor}
-                                    roughness={roughness}
-                                />
-                            </mesh>
-                        )
-                    )}
+                            {FACE_FEATURES.map(
+                                ({ position: featurePosition, size }) => (
+                                    <mesh
+                                        key={featurePosition.join(",")}
+                                        position={featurePosition}
+                                        receiveShadow
+                                    >
+                                        <boxGeometry args={size} />
+                                        <meshStandardMaterial
+                                            color={featureColor}
+                                            roughness={roughness}
+                                        />
+                                    </mesh>
+                                )
+                            )}
+                        </group>
+                    </group>
 
                     <BodyPart
                         size={[1, 1.5, 0.5]}

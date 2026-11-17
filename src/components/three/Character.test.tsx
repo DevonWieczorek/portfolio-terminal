@@ -12,10 +12,12 @@ import {
     rapierModuleMock,
     resetThreeTestState,
     rigidBodyMock,
+    runFrameCallbacks,
     runPhysicsStep,
     sceneState,
 } from "../../../__mocks__/threeTestHarness";
 import { PHYSICS_TIMESTEP, PLAYER_GROUPS } from "@/lib/constants/physics";
+import { useMusic } from "@/lib/stores/useMusic";
 import Character from "./Character";
 
 // Refs resolve to DOM nodes under the mocked renderer, so give each group the
@@ -42,9 +44,23 @@ const renderWithTransforms = (ui: React.ReactElement) => {
 
 const STEP_DISTANCE = sceneState.characterSpeed * PHYSICS_TIMESTEP;
 
+// The head pivots at its neck, the only group placed there
+const getHead = (container: HTMLElement) =>
+    container.querySelector<HTMLElement & THREE.Group>(
+        'group[position="0,1.6,0"]'
+    );
+
+const runFrames = (count: number) => {
+    for (let i = 0; i < count; i++) {
+        runFrameCallbacks();
+    }
+};
+
 describe("Character", () => {
     beforeEach(() => {
         resetThreeTestState();
+        // A whole beat in, where the nod is at its lowest
+        useMusic.setState({ tempo: null, trackTime: 60 / 70 });
     });
 
     it("renders character geometry", () => {
@@ -144,5 +160,44 @@ describe("Character", () => {
         keyboardState.rightward = false;
         runPhysicsStep();
         expect(movementState.setHeading).toHaveBeenLastCalledWith(null);
+    });
+
+    it("holds its head still while there's no music", () => {
+        const { container } = renderWithTransforms(<Character />);
+
+        runFrames(60);
+
+        expect(getHead(container)?.rotation.x).toBeCloseTo(0, 5);
+    });
+
+    it("nods along while the music plays", () => {
+        useMusic.setState({ tempo: 70 });
+        const { container } = renderWithTransforms(<Character />);
+
+        runFrames(60);
+
+        expect(getHead(container)?.rotation.x).toBeLessThan(-0.15);
+    });
+
+    it("stops nodding while walking", () => {
+        useMusic.setState({ tempo: 70 });
+        const { container } = renderWithTransforms(<Character />);
+        keyboardState.forward = true;
+
+        runPhysicsStep();
+        runFrames(60);
+
+        expect(getHead(container)?.rotation.x).toBeCloseTo(0, 2);
+    });
+
+    it("eases its head back up once the music stops", () => {
+        useMusic.setState({ tempo: 70 });
+        const { container } = renderWithTransforms(<Character />);
+        runFrames(60);
+
+        useMusic.setState({ tempo: null });
+        runFrames(60);
+
+        expect(getHead(container)?.rotation.x).toBeCloseTo(0, 2);
     });
 });
