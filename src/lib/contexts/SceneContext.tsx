@@ -57,6 +57,30 @@ interface PictureFrameTraits {
     inspectDistance: number; // how far from the wall the camera stops
 }
 
+// Window cut through the south wall, centered on `position` in the wall's
+// plane. The opening is width x height; the trim frames it on the inside.
+interface WindowTraits {
+    position: { x: number; y: number };
+    width: number;
+    height: number;
+    casingWidth: number; // trim around the opening on the wall's face
+    casingDepth: number; // how far the trim stands off the wall
+    jambThickness: number; // lining of the opening through the wall
+    mullionWidth: number; // bars splitting the opening into panes
+    sillDepth: number; // how far the sill juts into the room
+    sillThickness: number;
+    color: string;
+}
+
+// Sky and sunlight follow the visitor's local clock
+interface DayCycleSettings {
+    sunrise: number; // local hour (0-24)
+    sunset: number;
+    maxSunElevation: number; // radians above the horizon at midday
+    sunIntensity: number; // at full sun, before the window's angle cuts it
+    sunDistance: number; // how far outside the window the sunlight is cast from
+}
+
 // Light sources (screens) rendered in HDR so they bloom
 interface GlowTraits {
     intensity: number; // HDR multiplier; values above the bloom threshold glow
@@ -514,6 +538,34 @@ const defaultPictureFrameTraits: PictureFrameTraits = {
     ],
 };
 
+// Picture window on the south wall, centered between the west wall and the
+// door. Its casing tops out level with the door's so the trim lines up.
+const WINDOW_CASING: number = scaledFeet(0.45);
+const WINDOW_HEIGHT: number = scaledHeight(4.6);
+const defaultWindowTraits: WindowTraits = {
+    position: {
+        x: (wallFaces.left + DOOR_LEFT) / 2,
+        y: DOOR_HEIGHT - WINDOW_CASING - WINDOW_HEIGHT / 2,
+    },
+    width: scaledFeet(8),
+    height: WINDOW_HEIGHT,
+    casingWidth: WINDOW_CASING,
+    casingDepth: BASEBOARD_THICKNESS,
+    jambThickness: scaledFeet(0.12),
+    mullionWidth: scaledFeet(0.22),
+    sillDepth: scaledFeet(0.5),
+    sillThickness: scaledFeet(0.18),
+    color: defaultBaseboardTraits.color,
+};
+
+const defaultDayCycleSettings: DayCycleSettings = {
+    sunrise: 6.5,
+    sunset: 19.5,
+    maxSunElevation: 0.95,
+    sunIntensity: 3,
+    sunDistance: 30,
+};
+
 // Monitor height in feet
 const MONITOR_SCALE: number = scaledHeight(1.5);
 // Screen glass in the monitor model's own units (1 unit tall, centered, facing
@@ -690,6 +742,8 @@ interface SceneConfig {
     monitor: DeepPartial<ObjectTraits>;
     monitorScreen: DeepPartial<ObjectTraits & GlowTraits>;
     lighting: LightingSettings;
+    roomWindow: WindowTraits;
+    dayCycle: DayCycleSettings;
     effects: EffectsSettings;
     bass: DeepPartial<ObjectTraits>;
     deck: DeepPartial<ObjectTraits>;
@@ -753,6 +807,8 @@ const defaultSceneConfig: SceneConfig = {
     monitor: defaultMonitorTraits,
     monitorScreen: defaultMonitorScreenTraits,
     lighting: defaultLightingSettings,
+    roomWindow: defaultWindowTraits,
+    dayCycle: defaultDayCycleSettings,
     effects: defaultEffectsSettings,
     bass: defaultBassTraits,
     deck: defaultDeckTraits,
