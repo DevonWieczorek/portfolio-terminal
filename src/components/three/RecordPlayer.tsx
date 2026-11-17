@@ -13,6 +13,7 @@ import {
 import { useControls } from "leva";
 // #endif
 import { useScene } from "@/lib/contexts/SceneContext";
+import { useMusic } from "@/lib/stores/useMusic";
 import InteractionZone from "@/components/three/InteractionZone";
 
 type RecordPlayerControls = {
@@ -41,6 +42,8 @@ interface RecordPlayerProps {
 // MP3 because every browser can decode it through Web Audio; AAC is not
 // supported everywhere
 const RECORD_AUDIO_PATH = "/audio/a-cup-of-tea.mp3";
+// Measured from the track, whose first beat lands at its start
+const RECORD_TEMPO = 70;
 const DROP_MESSAGE = "Press ENTER to drop the needle.";
 const LIFT_MESSAGE = "Press ENTER to lift the needle.";
 // The music waits until the arm has swung this close to the record
@@ -70,6 +73,11 @@ const RecordPlayer = memo(function RecordPlayer({
     const hasRequestedAudio = useRef(false);
     const audioRef = useRef<PositionalAudioImpl>(null);
     const motion = useRef({ armAngle: 0, spinSpeed: 0 });
+    // Where the track is, counted on the audio clock so it keeps time even
+    // while frames stall in a background tab
+    const playback = useRef({ trackTime: 0, contextTime: 0 });
+    const setTempo = useMusic(state => state.setTempo);
+    const setTrackTime = useMusic(state => state.setTrackTime);
     const parts = useMemo(
         () => ({
             spin: model.getObjectByName("TurntableSpin"),
@@ -208,6 +216,7 @@ const RecordPlayer = memo(function RecordPlayer({
         }
 
         const sound = audioRef.current;
+        const track = playback.current;
         sound?.setBuffer(audio.buffer).setLoop(true);
         camera.add(audio.listener);
         return () => {
@@ -215,8 +224,10 @@ const RecordPlayer = memo(function RecordPlayer({
             if (sound?.isPlaying) {
                 sound.stop();
             }
+            track.trackTime = 0;
+            setTempo(null);
         };
-    }, [audio, camera]);
+    }, [audio, camera, setTempo]);
 
     useEffect(() => {
         audioRef.current?.setVolume(volume);
@@ -256,6 +267,17 @@ const RecordPlayer = memo(function RecordPlayer({
 
         if (!isPlaying && sound?.isPlaying) {
             sound.pause();
+            setTempo(null);
+        }
+
+        if (sound?.isPlaying && sound.buffer) {
+            const { currentTime } = sound.context;
+            const track = playback.current;
+            track.trackTime =
+                (track.trackTime + currentTime - track.contextTime) %
+                sound.buffer.duration;
+            track.contextTime = currentTime;
+            setTrackTime(track.trackTime);
         }
 
         if (
@@ -293,6 +315,8 @@ const RecordPlayer = memo(function RecordPlayer({
             Math.abs(state.armAngle - tonearmPlayAngle) < NEEDLE_DOWN_TOLERANCE;
         if (isPlaying && isNeedleDown && sound?.buffer && !sound.isPlaying) {
             sound.play();
+            playback.current.contextTime = sound.context.currentTime;
+            setTempo(RECORD_TEMPO);
         }
     });
 
