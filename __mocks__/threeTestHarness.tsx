@@ -4,7 +4,7 @@ import * as THREE from "three";
 const originalConsoleError = console.error;
 const originalConsoleWarn = console.warn;
 
-type FrameState = { clock: { elapsedTime: number } };
+type FrameState = { clock?: { elapsedTime: number }; camera?: unknown };
 type FrameCallback = (state: FrameState, delta: number) => void;
 
 export const frameCallbacks: FrameCallback[] = [];
@@ -192,6 +192,32 @@ export const sceneState = {
         position: { x: -14.5, y: 6.2, z: -11.1 },
         rotation: { y: Math.PI / 2 },
     },
+    pictureFrames: {
+        position: { x: -14.5, y: 6.2, z: -2.1 },
+        rotation: { y: Math.PI / 2 },
+        scale: 1,
+        photoLongSide: 1.4,
+        aspectRatio: 4 / 3,
+        matWidth: 0.16,
+        frameWidth: 0.12,
+        frameDepth: 0.1,
+        frameColor: "#A8774F",
+        matColor: "#FAF7F0",
+        emptyColor: "#C9D3CC",
+        frames: [
+            {
+                orientation: "portrait",
+                position: { x: -1.1, y: 1.1 },
+                image: "/img/frames/photo-1.jpg",
+            },
+            { orientation: "landscape", position: { x: 0.9, y: 0.9 } },
+            { orientation: "landscape", position: { x: -0.9, y: -0.9 } },
+            { orientation: "portrait", position: { x: 1.1, y: -1.1 } },
+        ],
+        boxSize: { x: 6, y: 6.2, z: 4 },
+        boxAnchor: { x: 0, y: -3.1, z: 2 },
+        inspectDistance: 6.5,
+    },
     shelf: {
         scale: 3,
         width: 5.4,
@@ -283,13 +309,15 @@ export const movementState = {
 };
 
 export const experienceState = {
-    mode: "scene" as "scene" | "terminal",
-    targetMode: "scene" as "scene" | "terminal",
+    mode: "scene" as "scene" | "terminal" | "inspect",
+    targetMode: "scene" as "scene" | "terminal" | "inspect",
     isTransitioning: false,
     cameraOverride: null,
     isBlackout: false,
     enterTerminal: jest.fn(),
     exitTerminal: jest.fn(),
+    enterInspect: jest.fn(),
+    exitInspect: jest.fn(),
     startBlackout: jest.fn(),
     completeTransition: jest.fn(),
 };
@@ -483,8 +511,11 @@ jest.mock("@/lib/stores/useMovement", () => ({
 }));
 
 jest.mock("@/lib/stores/useExperience", () => ({
-    useExperience: (selector?: (state: typeof experienceState) => unknown) =>
-        useExperienceMock(selector),
+    useExperience: Object.assign(
+        (selector?: (state: typeof experienceState) => unknown) =>
+            useExperienceMock(selector),
+        { getState: () => experienceState }
+    ),
 }));
 
 jest.mock("@/components/Terminal", () => ({

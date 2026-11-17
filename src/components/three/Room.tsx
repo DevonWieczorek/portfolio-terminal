@@ -7,6 +7,7 @@ import { useMessage } from "@/lib/contexts/MessageContext";
 import Desk from "@/components/three/Desk";
 import Door from "@/components/three/Door";
 import Pinboard from "@/components/three/Pinboard";
+import PictureFrames from "@/components/three/PictureFrames";
 import Shelf from "@/components/three/Shelf";
 import BassGroup from "@/components/three/BassGroup";
 import SkateboardGroup from "@/components/three/SkateboardGroup";
@@ -226,6 +227,7 @@ const Room = memo(({ onReady }: RoomProps) => {
             <SkateboardGroup />
 
             <Pinboard />
+            <PictureFrames />
             <Shelf />
 
             {/* West Wall */}

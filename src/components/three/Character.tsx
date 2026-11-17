@@ -22,6 +22,7 @@ import { useMessage } from "@/lib/contexts/MessageContext";
 import { INTRO_MESSAGE } from "@/lib/constants/sceneMessages";
 import { PHYSICS_TIMESTEP, PLAYER_GROUPS } from "@/lib/constants/physics";
 import { getFacingRotation, toCameraRelative } from "@/utils/movement";
+import { useCameraSeeThrough } from "@/hooks/use-camera-see-through";
 
 enum Controls {
     forward = "forward",
@@ -51,6 +52,9 @@ const LEG_LENGTH = 1;
 const MODEL_TORSO_HALF_WIDTH = 0.5;
 // Gap the character controller keeps between the capsule and obstacles
 const CONTROLLER_OFFSET = 0.01;
+// Out past the swinging arms, in model units: the character fades out of a
+// camera shot whose line of sight passes this close to its center
+const SEE_THROUGH_REACH = 1.2;
 // Slight bevel so edges catch highlights like the room's models do
 const EDGE_RADIUS = 0.06;
 
@@ -230,6 +234,8 @@ const Character = memo(({ inputEnabled = true }: CharacterProps) => {
     const capsuleRadius = MODEL_TORSO_HALF_WIDTH * characterScale;
     // Half the length of the capsule's straight section, between its caps
     const capsuleHalfHeight = height / 2 - capsuleRadius;
+
+    useCameraSeeThrough(characterRef, SEE_THROUGH_REACH * characterScale);
 
     // Current rotation target
     const targetRotation = useRef(0);

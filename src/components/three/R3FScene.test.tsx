@@ -38,4 +38,16 @@ describe("R3FScene", () => {
         expect(messageState.clearMessage).toHaveBeenCalled();
         expect(messageState.interaction.onEnter).toHaveBeenCalled();
     });
+
+    it("leaves an inspect view when Escape is pressed", () => {
+        experienceState.mode = "inspect";
+        experienceState.targetMode = "inspect";
+
+        render(<R3FScene />);
+
+        fireEvent.keyDown(window, { key: "Escape" });
+
+        expect(experienceState.exitInspect).toHaveBeenCalled();
+        expect(experienceState.exitTerminal).not.toHaveBeenCalled();
+    });
 });

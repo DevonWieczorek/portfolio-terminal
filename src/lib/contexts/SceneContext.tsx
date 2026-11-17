@@ -29,6 +29,34 @@ interface RecordPlayerTraits {
     boxAnchor: Coordinates;
 }
 
+// One frame in the gallery, centered at `position` in the gallery group's
+// wall-plane space (+X runs left to right as seen from the room)
+interface PictureFrameSlot {
+    orientation: "portrait" | "landscape";
+    position: { x: number; y: number };
+    image?: string; // path under /public; the slot shows a blank print without one
+}
+
+interface PictureFrameTraits {
+    position: Coordinates;
+    rotation: { y: number };
+    scale: number; // multiplier on the whole gallery
+    photoLongSide: number;
+    aspectRatio: number; // long side over short side
+    matWidth: number;
+    frameWidth: number;
+    frameDepth: number;
+    frameColor: string;
+    matColor: string;
+    emptyColor: string;
+    frames: PictureFrameSlot[];
+    // Interaction zone in the gallery group's unscaled space, where +Z points
+    // into the room
+    boxSize: Coordinates;
+    boxAnchor: Coordinates;
+    inspectDistance: number; // how far from the wall the camera stops
+}
+
 // Light sources (screens) rendered in HDR so they bloom
 interface GlowTraits {
     intensity: number; // HDR multiplier; values above the bloom threshold glow
@@ -330,6 +358,9 @@ const defaultDeskTraits: DeepPartial<ObjectTraits> = {
 // Pinboard height in feet, hung on the west wall above the desk's side arm.
 // The model is centered on its origin with its back on the wall.
 const PINBOARD_HEIGHT: number = scaledHeight(3.4);
+// Width as a multiple of the height. Must match PINBOARD in
+// .bin/generate-scene-models.mts, which builds cartoon_pinboard.glb.
+const PINBOARD_PROPORTIONS = { width: 1.5 };
 const defaultPinboardTraits: DeepPartial<ObjectTraits> = {
     scale: PINBOARD_HEIGHT,
     position: {
@@ -391,6 +422,96 @@ const defaultRecordPlayerTraits: RecordPlayerTraits = {
         y: SHELF_HEIGHT,
         z: RECORD_ZONE_REACH / 2,
     },
+};
+
+// Gallery of phone photos on the west wall, between the pinboard and the
+// record shelf. Phone cameras shoot 4:3. Rows are staggered (portrait then
+// landscape on top, the reverse below) so both rows have the same width,
+// with the top row resting on the center line and the bottom row hanging
+// from it.
+const PHOTO_ASPECT: number = 4 / 3;
+const PHOTO_LONG: number = scaledFeet(1.4);
+const PHOTO_SHORT: number = PHOTO_LONG / PHOTO_ASPECT;
+const PHOTO_MAT: number = scaledFeet(0.16);
+const PHOTO_FRAME: number = scaledFeet(0.12);
+const PHOTO_BORDER: number = (PHOTO_MAT + PHOTO_FRAME) * 2;
+const FRAME_SHORT: number = PHOTO_SHORT + PHOTO_BORDER;
+const FRAME_LONG: number = PHOTO_LONG + PHOTO_BORDER;
+const GALLERY_GAP: number = scaledFeet(0.3);
+const GALLERY_HALF_WIDTH: number = (FRAME_SHORT + GALLERY_GAP + FRAME_LONG) / 2;
+const GALLERY_Y: number = defaultPinboardTraits.position?.y ?? 0;
+const GALLERY_ZONE_DEPTH: number = scaledFeet(4);
+const PINBOARD_EDGE_Z: number =
+    (defaultPinboardTraits.position?.z ?? 0) +
+    (PINBOARD_PROPORTIONS.width * PINBOARD_HEIGHT) / 2;
+const SHELF_EDGE_Z: number =
+    SHELF_Z - (SHELF_PROPORTIONS.width * SHELF_HEIGHT) / 2;
+const defaultPictureFrameTraits: PictureFrameTraits = {
+    position: {
+        x: wallFaces.left,
+        y: GALLERY_Y,
+        z: (PINBOARD_EDGE_Z + SHELF_EDGE_Z) / 2,
+    },
+    // As wide as the gallery plus a foot either side, reaching from the wall
+    // down to the floor so the character's body overlaps it
+    boxSize: {
+        x: GALLERY_HALF_WIDTH * 2 + scaledFeet(2),
+        y: GALLERY_Y,
+        z: GALLERY_ZONE_DEPTH,
+    },
+    boxAnchor: {
+        x: 0,
+        y: -GALLERY_Y / 2,
+        z: GALLERY_ZONE_DEPTH / 2,
+    },
+    // Far enough back to frame the whole gallery in the 45° field of view
+    inspectDistance: scaledFeet(6.5),
+    rotation: {
+        y: rotationY.counterclockwise,
+    },
+    scale: 1,
+    photoLongSide: PHOTO_LONG,
+    aspectRatio: PHOTO_ASPECT,
+    matWidth: PHOTO_MAT,
+    frameWidth: PHOTO_FRAME,
+    frameDepth: scaledFeet(0.1),
+    frameColor: "#A8774F",
+    matColor: "#FAF7F0",
+    emptyColor: "#C9D3CC",
+    frames: [
+        {
+            orientation: "portrait",
+            position: {
+                x: -GALLERY_HALF_WIDTH + FRAME_SHORT / 2,
+                y: GALLERY_GAP / 2 + FRAME_LONG / 2,
+            },
+            image: "/img/frames/portrait_1.jpeg",
+        },
+        {
+            orientation: "landscape",
+            position: {
+                x: GALLERY_HALF_WIDTH - FRAME_LONG / 2,
+                y: GALLERY_GAP / 2 + FRAME_SHORT / 2,
+            },
+            image: "/img/frames/landscape_1.jpeg",
+        },
+        {
+            orientation: "landscape",
+            position: {
+                x: -GALLERY_HALF_WIDTH + FRAME_LONG / 2,
+                y: -GALLERY_GAP / 2 - FRAME_SHORT / 2,
+            },
+            image: "/img/frames/landscape_2.jpeg",
+        },
+        {
+            orientation: "portrait",
+            position: {
+                x: GALLERY_HALF_WIDTH - FRAME_SHORT / 2,
+                y: -GALLERY_GAP / 2 - FRAME_LONG / 2,
+            },
+            image: "/img/frames/portrait_2.jpeg",
+        },
+    ],
 };
 
 // Monitor height in feet
@@ -563,6 +684,7 @@ interface SceneConfig {
     desk: DeepPartial<ObjectTraits>;
     door: DeepPartial<ObjectTraits>;
     pinboard: DeepPartial<ObjectTraits>;
+    pictureFrames: PictureFrameTraits;
     shelf: DeepPartial<ObjectTraits>;
     recordPlayer: RecordPlayerTraits;
     monitor: DeepPartial<ObjectTraits>;
@@ -625,6 +747,7 @@ const defaultSceneConfig: SceneConfig = {
     desk: defaultDeskTraits,
     door: defaultDoorTraits,
     pinboard: defaultPinboardTraits,
+    pictureFrames: defaultPictureFrameTraits,
     shelf: defaultShelfTraits,
     recordPlayer: defaultRecordPlayerTraits,
     monitor: defaultMonitorTraits,
