@@ -167,6 +167,12 @@ export const sceneState = {
         featureColor: "#2b2623",
         roughness: 0.75,
     },
+    footsteps: {
+        volume: 0.5,
+        refDistance: 10,
+        pitchVariation: 250,
+        rugVolume: 0.45,
+    },
     cameraOffset: { x: 0, y: 5, z: 18 },
     cameraLookAtHeight: 3.5,
     loaderMinDuration: 5000,

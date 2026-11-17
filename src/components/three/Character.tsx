@@ -18,11 +18,13 @@ import { useMovement } from "@/lib/stores/useMovement";
 import { useScene } from "@/lib/contexts/SceneContext";
 import { useExperience } from "@/lib/stores/useExperience";
 import { useMusic } from "@/lib/stores/useMusic";
+import { useAudio } from "@/lib/stores/useAudio";
 import { useMessage } from "@/lib/contexts/MessageContext";
 import { INTRO_MESSAGE } from "@/lib/constants/sceneMessages";
 import { PHYSICS_TIMESTEP, PLAYER_GROUPS } from "@/lib/constants/physics";
 import { getFacingRotation, toCameraRelative } from "@/utils/movement";
 import { useCameraSeeThrough } from "@/hooks/use-camera-see-through";
+import { createFootstepBuffer } from "@/utils/footstep";
 
 enum Controls {
     forward = "forward",
@@ -108,6 +110,10 @@ type CharacterControls = {
     pantsColor: string;
     featureColor: string;
     roughness: number;
+    footstepVolume: number;
+    footstepRefDistance: number;
+    footstepPitchVariation: number;
+    footstepRugVolume: number;
 };
 
 type BodyPartProps = {
@@ -155,6 +161,8 @@ const Character = memo(({ inputEnabled = true }: CharacterProps) => {
         characterStepSquash,
         characterHeight,
         characterAppearance,
+        footsteps,
+        rug,
     } = useScene();
     const { message, clearMessage } = useMessage();
     // Use individual selectors to prevent unnecessary rerenders
@@ -170,7 +178,11 @@ const Character = memo(({ inputEnabled = true }: CharacterProps) => {
         shirtColor: string,
         pantsColor: string,
         featureColor: string,
-        roughness: number;
+        roughness: number,
+        footstepVolume: number,
+        footstepRefDistance: number,
+        footstepPitchVariation: number,
+        footstepRugVolume: number;
 
     // #if DEBUG
     ({
@@ -182,6 +194,10 @@ const Character = memo(({ inputEnabled = true }: CharacterProps) => {
         pantsColor,
         featureColor,
         roughness,
+        footstepVolume,
+        footstepRefDistance,
+        footstepPitchVariation,
+        footstepRugVolume,
     } = useControls(
         "Character",
         {
@@ -213,6 +229,31 @@ const Character = memo(({ inputEnabled = true }: CharacterProps) => {
                 max: 1,
                 step: 0.05,
             },
+            footstepVolume: {
+                value: footsteps.volume,
+                min: 0,
+                max: 2,
+                step: 0.01,
+            },
+            footstepRefDistance: {
+                value: footsteps.refDistance,
+                min: 0.5,
+                max: 30,
+                step: 0.1,
+            },
+            footstepPitchVariation: {
+                value: footsteps.pitchVariation,
+                min: 0,
+                max: 1200,
+                step: 10,
+                label: "footstepPitch ± (cents)",
+            },
+            footstepRugVolume: {
+                value: footsteps.rugVolume,
+                min: 0,
+                max: 1,
+                step: 0.01,
+            },
         },
         { collapsed: true }
     ) as CharacterControls);
@@ -224,6 +265,10 @@ const Character = memo(({ inputEnabled = true }: CharacterProps) => {
     stepSquash = characterStepSquash;
     ({ skinColor, shirtColor, pantsColor, featureColor, roughness } =
         characterAppearance);
+    footstepVolume = footsteps.volume;
+    footstepRefDistance = footsteps.refDistance;
+    footstepPitchVariation = footsteps.pitchVariation;
+    footstepRugVolume = footsteps.rugVolume;
     // #endif
 
     // Scale the avatar to the configured height and lift it so its feet rest
@@ -259,11 +304,42 @@ const Character = memo(({ inputEnabled = true }: CharacterProps) => {
     const nodBlend = useRef(0);
     // Keeps the beat while the nod fades out after the music stops
     const lastTempo = useRef(0);
+    const footstepRef = useRef<THREE.PositionalAudio>(null);
+    // Counts foot plants, so each new one plays a step
+    const lastStep = useRef(0);
+    const listener = useAudio(state => state.listener);
+    // Synthesized once the visitor's first input unlocks audio
+    const footstepBuffer = useMemo(
+        () => (listener ? createFootstepBuffer(listener.context) : null),
+        [listener]
+    );
 
     const blobShadowUniforms = useMemo(
         () => ({ uOpacity: { value: BLOB_SHADOW_OPACITY } }),
         []
     );
+
+    useEffect(() => {
+        footstepRef.current?.setRefDistance(footstepRefDistance);
+    }, [footstepBuffer, footstepRefDistance]);
+
+    // A foot plants each time the stride passes a half cycle, as the bob
+    // bottoms out. The rug muffles the steps, and a random detune keeps them
+    // from sounding mechanical.
+    const playFootstep = () => {
+        const sound = footstepRef.current;
+        if (!sound?.buffer) return;
+
+        const { x, z } = useMovement.getState().position;
+        const isOnRug =
+            Math.abs(x - rug.position.x) < rug.width / 2 &&
+            Math.abs(z - rug.position.z) < rug.depth / 2;
+
+        if (sound.isPlaying) sound.stop();
+        sound.setVolume(footstepVolume * (isOnRug ? footstepRugVolume : 1));
+        sound.setDetune((Math.random() * 2 - 1) * footstepPitchVariation);
+        sound.play();
+    };
 
     useEffect(() => {
         const controller = world.createCharacterController(CONTROLLER_OFFSET);
@@ -324,6 +400,11 @@ const Character = memo(({ inputEnabled = true }: CharacterProps) => {
         );
         if (isMoving) {
             stridePhase.current += STRIDE_FREQUENCY * delta;
+            const step = Math.floor(stridePhase.current / Math.PI);
+            if (step !== lastStep.current) {
+                lastStep.current = step;
+                playFootstep();
+            }
         }
 
         const blend = walkBlend.current;
@@ -512,6 +593,15 @@ const Character = memo(({ inputEnabled = true }: CharacterProps) => {
                         depthWrite={false}
                     />
                 </mesh>
+
+                {listener && footstepBuffer && (
+                    <positionalAudio
+                        ref={footstepRef}
+                        args={[listener]}
+                        buffer={footstepBuffer}
+                        position={[0, MODEL_FEET_Y, 0]}
+                    />
+                )}
 
                 <group ref={bodyRef}>
                     <group ref={headRef} position={[0, NECK_Y, 0]}>

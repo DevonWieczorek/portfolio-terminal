@@ -1,8 +1,6 @@
 import { memo, useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { useFrame, useThree } from "@react-three/fiber";
+import { useFrame } from "@react-three/fiber";
 import {
-    AudioContext as ThreeAudioContext,
-    AudioListener,
     AudioLoader,
     LoadingManager,
     MathUtils,
@@ -14,6 +12,7 @@ import { useControls } from "leva";
 // #endif
 import { useScene } from "@/lib/contexts/SceneContext";
 import { useMusic } from "@/lib/stores/useMusic";
+import { useAudio } from "@/lib/stores/useAudio";
 import InteractionZone from "@/components/three/InteractionZone";
 
 type RecordPlayerControls = {
@@ -50,26 +49,15 @@ const LIFT_MESSAGE = "Press ENTER to lift the needle.";
 const NEEDLE_DOWN_TOLERANCE = 0.02;
 const AT_REST = 1e-3;
 
-// Browsers only start audio from a user gesture, and three creates its shared
-// context lazily, so create and resume it while the key press is handled
-const unlockAudio = () => {
-    if (typeof window === "undefined" || !("AudioContext" in window)) {
-        return;
-    }
-    void ThreeAudioContext.getContext().resume();
-};
-
 const RecordPlayer = memo(function RecordPlayer({
     model,
     scale,
 }: RecordPlayerProps) {
     const { recordPlayer } = useScene();
-    const { camera } = useThree();
     const [isPlaying, setIsPlaying] = useState(false);
-    const [audio, setAudio] = useState<{
-        listener: AudioListener;
-        buffer: AudioBuffer;
-    } | null>(null);
+    const [buffer, setBuffer] = useState<AudioBuffer | null>(null);
+    const listener = useAudio(state => state.listener);
+    const unlockAudio = useAudio(state => state.unlock);
     const hasRequestedAudio = useRef(false);
     const audioRef = useRef<PositionalAudioImpl>(null);
     const motion = useRef({ armAngle: 0, spinSpeed: 0 });
@@ -208,34 +196,33 @@ const RecordPlayer = memo(function RecordPlayer({
     recordBoxAnchorZ = recordPlayer.boxAnchor.z;
     // #endif
 
-    // The listener rides on the camera, so the music pans and fades as the
-    // view moves around the room
+    // The shared listener rides on the camera, so the music pans and fades
+    // as the view moves around the room
+    const hasAudio = listener !== null && buffer !== null;
     useEffect(() => {
-        if (!audio) {
+        if (!listener || !buffer) {
             return;
         }
 
         const sound = audioRef.current;
         const track = playback.current;
-        sound?.setBuffer(audio.buffer).setLoop(true);
-        camera.add(audio.listener);
+        sound?.setBuffer(buffer).setLoop(true);
         return () => {
-            camera.remove(audio.listener);
             if (sound?.isPlaying) {
                 sound.stop();
             }
             track.trackTime = 0;
             setTempo(null);
         };
-    }, [audio, camera, setTempo]);
+    }, [listener, buffer, setTempo]);
 
     useEffect(() => {
         audioRef.current?.setVolume(volume);
-    }, [audio, volume]);
+    }, [hasAudio, volume]);
 
     useEffect(() => {
         audioRef.current?.setRefDistance(audioRefDistance);
-    }, [audio, audioRefDistance]);
+    }, [hasAudio, audioRefDistance]);
 
     const handleEnter = useCallback(() => {
         unlockAudio();
@@ -252,11 +239,11 @@ const RecordPlayer = memo(function RecordPlayer({
         // only tracks the room's initial load
         new AudioLoader(new LoadingManager())
             .loadAsync(RECORD_AUDIO_PATH)
-            .then(buffer => setAudio({ listener: new AudioListener(), buffer }))
+            .then(setBuffer)
             .catch(error =>
                 console.warn(`Could not load ${RECORD_AUDIO_PATH}`, error)
             );
-    }, []);
+    }, [unlockAudio]);
 
     // The arm swings over and the platter spins up together, and the music
     // starts once the needle lands. Lifting the arm cuts the music at once
@@ -324,10 +311,10 @@ const RecordPlayer = memo(function RecordPlayer({
 
     return (
         <>
-            {audio && (
+            {hasAudio && (
                 <positionalAudio
                     ref={audioRef}
-                    args={[audio.listener]}
+                    args={[listener]}
                     position={[
                         turntable.x * scale,
                         turntable.y * scale,
