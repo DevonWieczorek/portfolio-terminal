@@ -464,6 +464,7 @@ const defaultPictureFrameTraits: PictureFrameTraits = {
                 x: -GALLERY_HALF_WIDTH + FRAME_SHORT / 2,
                 y: GALLERY_GAP / 2 + FRAME_LONG / 2,
             },
+            image: "/img/frames/portrait_2.jpeg",
         },
         {
             orientation: "landscape",
@@ -471,6 +472,7 @@ const defaultPictureFrameTraits: PictureFrameTraits = {
                 x: GALLERY_HALF_WIDTH - FRAME_LONG / 2,
                 y: GALLERY_GAP / 2 + FRAME_SHORT / 2,
             },
+            image: "/img/frames/landscape_2.jpeg",
         },
         {
             orientation: "landscape",
@@ -478,6 +480,7 @@ const defaultPictureFrameTraits: PictureFrameTraits = {
                 x: -GALLERY_HALF_WIDTH + FRAME_LONG / 2,
                 y: -GALLERY_GAP / 2 - FRAME_SHORT / 2,
             },
+            image: "/img/frames/landscape_1.jpeg",
         },
         {
             orientation: "portrait",
@@ -485,6 +488,7 @@ const defaultPictureFrameTraits: PictureFrameTraits = {
                 x: GALLERY_HALF_WIDTH - FRAME_SHORT / 2,
                 y: -GALLERY_GAP / 2 - FRAME_LONG / 2,
             },
+            image: "/img/frames/portrait_1.jpeg",
         },
     ],
 };
