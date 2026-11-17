@@ -2,7 +2,8 @@ import { create } from "zustand";
 
 const BLACKOUT_DURATION = 400;
 
-export type ExperienceMode = "scene" | "terminal";
+// "inspect" holds the camera on an object up close, with no terminal
+export type ExperienceMode = "scene" | "terminal" | "inspect";
 
 export type VectorTuple = Coordinate;
 
@@ -19,6 +20,8 @@ interface ExperienceState {
     isBlackout: boolean;
     enterTerminal: (target: CameraTarget) => void;
     exitTerminal: () => void;
+    enterInspect: (target: CameraTarget) => void;
+    exitInspect: () => void;
     startBlackout: () => void;
     completeTransition: () => void;
 }
@@ -65,6 +68,33 @@ export const useExperience = create<ExperienceState>((set, get) => {
                     isTransitioning: true,
                     cameraOverride: state.cameraOverride,
                     isBlackout: false,
+                };
+            }),
+        enterInspect: target =>
+            set(state => {
+                if (state.mode !== "scene" || state.isTransitioning) {
+                    return state;
+                }
+
+                return {
+                    targetMode: "inspect",
+                    isTransitioning: true,
+                    cameraOverride: target,
+                };
+            }),
+        exitInspect: () =>
+            set(state => {
+                if (state.mode !== "inspect" || state.isTransitioning) {
+                    return state;
+                }
+
+                // Hands control straight back so the avatar can move while
+                // the camera glides back behind it on its usual follow
+                return {
+                    mode: "scene",
+                    targetMode: "scene",
+                    isTransitioning: false,
+                    cameraOverride: null,
                 };
             }),
         startBlackout: () => {

@@ -350,10 +350,10 @@ export default function Camera() {
             adjustedCameraX !== idealCameraX || adjustedCameraZ !== idealCameraZ
                 ? 0.08
                 : 0.05;
+        // Held while entering or staying in the terminal or an inspect view,
+        // and released as soon as the camera heads back to the scene
         const shouldUseOverride =
-            Boolean(cameraOverride) &&
-            (mode === "terminal" ||
-                (isTransitioning && targetMode === "terminal"));
+            Boolean(cameraOverride) && targetMode !== "scene";
 
         if (cameraOverride) {
             overridePosition.set(...cameraOverride.position);

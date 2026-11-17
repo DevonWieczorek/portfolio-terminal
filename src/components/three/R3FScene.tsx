@@ -62,6 +62,7 @@ const R3FSceneContent = memo(() => {
     const targetMode = useExperience(state => state.targetMode);
     const isBlackout = useExperience(state => state.isBlackout);
     const exitTerminal = useExperience(state => state.exitTerminal);
+    const exitInspect = useExperience(state => state.exitInspect);
     const [, setSelectedOption] = useState<string>("");
 
     useEffect(() => {
@@ -89,6 +90,15 @@ const R3FSceneContent = memo(() => {
                 event.preventDefault();
                 exitTerminal();
             }
+
+            if (
+                event.key === "Escape" &&
+                mode === "inspect" &&
+                !isTransitioning
+            ) {
+                event.preventDefault();
+                exitInspect();
+            }
         };
 
         window.addEventListener("keydown", handleKeyDown);
@@ -96,7 +106,14 @@ const R3FSceneContent = memo(() => {
         return () => {
             window.removeEventListener("keydown", handleKeyDown);
         };
-    }, [interaction, mode, isTransitioning, clearMessage, exitTerminal]);
+    }, [
+        interaction,
+        mode,
+        isTransitioning,
+        clearMessage,
+        exitTerminal,
+        exitInspect,
+    ]);
 
     const canvasClassName = useMemo(() => {
         const classes = [styles.canvasLayer];

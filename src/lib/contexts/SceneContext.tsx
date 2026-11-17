@@ -50,6 +50,11 @@ interface PictureFrameTraits {
     matColor: string;
     emptyColor: string;
     frames: PictureFrameSlot[];
+    // Interaction zone in the gallery group's unscaled space, where +Z points
+    // into the room
+    boxSize: Coordinates;
+    boxAnchor: Coordinates;
+    inspectDistance: number; // how far from the wall the camera stops
 }
 
 // Light sources (screens) rendered in HDR so they bloom
@@ -434,6 +439,8 @@ const FRAME_SHORT: number = PHOTO_SHORT + PHOTO_BORDER;
 const FRAME_LONG: number = PHOTO_LONG + PHOTO_BORDER;
 const GALLERY_GAP: number = scaledFeet(0.3);
 const GALLERY_HALF_WIDTH: number = (FRAME_SHORT + GALLERY_GAP + FRAME_LONG) / 2;
+const GALLERY_Y: number = defaultPinboardTraits.position?.y ?? 0;
+const GALLERY_ZONE_DEPTH: number = scaledFeet(4);
 const PINBOARD_EDGE_Z: number =
     (defaultPinboardTraits.position?.z ?? 0) +
     (PINBOARD_PROPORTIONS.width * PINBOARD_HEIGHT) / 2;
@@ -442,9 +449,23 @@ const SHELF_EDGE_Z: number =
 const defaultPictureFrameTraits: PictureFrameTraits = {
     position: {
         x: wallFaces.left,
-        y: defaultPinboardTraits.position?.y ?? 0,
+        y: GALLERY_Y,
         z: (PINBOARD_EDGE_Z + SHELF_EDGE_Z) / 2,
     },
+    // As wide as the gallery plus a foot either side, reaching from the wall
+    // down to the floor so the character's body overlaps it
+    boxSize: {
+        x: GALLERY_HALF_WIDTH * 2 + scaledFeet(2),
+        y: GALLERY_Y,
+        z: GALLERY_ZONE_DEPTH,
+    },
+    boxAnchor: {
+        x: 0,
+        y: -GALLERY_Y / 2,
+        z: GALLERY_ZONE_DEPTH / 2,
+    },
+    // Far enough back to frame the whole gallery in the 45° field of view
+    inspectDistance: scaledFeet(6.5),
     rotation: {
         y: rotationY.counterclockwise,
     },
@@ -464,7 +485,7 @@ const defaultPictureFrameTraits: PictureFrameTraits = {
                 x: -GALLERY_HALF_WIDTH + FRAME_SHORT / 2,
                 y: GALLERY_GAP / 2 + FRAME_LONG / 2,
             },
-            image: "/img/frames/portrait_2.jpeg",
+            image: "/img/frames/portrait_1.jpeg",
         },
         {
             orientation: "landscape",
@@ -472,7 +493,7 @@ const defaultPictureFrameTraits: PictureFrameTraits = {
                 x: GALLERY_HALF_WIDTH - FRAME_LONG / 2,
                 y: GALLERY_GAP / 2 + FRAME_SHORT / 2,
             },
-            image: "/img/frames/landscape_2.jpeg",
+            image: "/img/frames/landscape_1.jpeg",
         },
         {
             orientation: "landscape",
@@ -480,7 +501,7 @@ const defaultPictureFrameTraits: PictureFrameTraits = {
                 x: -GALLERY_HALF_WIDTH + FRAME_LONG / 2,
                 y: -GALLERY_GAP / 2 - FRAME_SHORT / 2,
             },
-            image: "/img/frames/landscape_1.jpeg",
+            image: "/img/frames/landscape_2.jpeg",
         },
         {
             orientation: "portrait",
@@ -488,7 +509,7 @@ const defaultPictureFrameTraits: PictureFrameTraits = {
                 x: GALLERY_HALF_WIDTH - FRAME_SHORT / 2,
                 y: -GALLERY_GAP / 2 - FRAME_LONG / 2,
             },
-            image: "/img/frames/portrait_1.jpeg",
+            image: "/img/frames/portrait_2.jpeg",
         },
     ],
 };

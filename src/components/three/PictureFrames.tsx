@@ -1,10 +1,15 @@
-import { memo, useMemo } from "react";
+import { memo, useCallback, useEffect, useMemo } from "react";
 import { RoundedBox, useTexture } from "@react-three/drei";
 import * as THREE from "three";
 // #if DEBUG
 import { useControls } from "leva";
 // #endif
 import { useScene } from "@/lib/contexts/SceneContext";
+import { useMessage } from "@/lib/contexts/MessageContext";
+import { useExperience, type CameraTarget } from "@/lib/stores/useExperience";
+import InteractionZone, {
+    type ComputeCameraTargetParams,
+} from "@/components/three/InteractionZone";
 
 type PictureFrameControls = {
     pictureFramesY: number;
@@ -12,7 +17,17 @@ type PictureFrameControls = {
     pictureFramesScale: number;
     pictureFrameColor: string;
     pictureMatColor: string;
+    inspectDistance: number;
+    framesBoxSizeX: number;
+    framesBoxSizeY: number;
+    framesBoxSizeZ: number;
+    framesBoxAnchorX: number;
+    framesBoxAnchorY: number;
+    framesBoxAnchorZ: number;
 };
+
+const INSPECT_MESSAGE = "Press ENTER to take a closer look at the photos.";
+const EXIT_MESSAGE = "Press ESC to step back.";
 
 interface FramePhotoProps {
     image: string;
@@ -65,13 +80,28 @@ const PictureFrames = memo(() => {
         frameDepth,
         emptyColor,
         frames,
+        boxSize,
+        boxAnchor,
     } = pictureFrames;
+    const { setMessage, clearMessage } = useMessage();
+    const mode = useExperience(state => state.mode);
+    const isTransitioning = useExperience(state => state.isTransitioning);
+    const enterInspect = useExperience(state => state.enterInspect);
+    const cameraPosition = useMemo(() => new THREE.Vector3(), []);
+    const lookAtPosition = useMemo(() => new THREE.Vector3(), []);
 
     let pictureFramesY: number,
         pictureFramesZ: number,
         pictureFramesScale: number,
         pictureFrameColor: string,
-        pictureMatColor: string;
+        pictureMatColor: string,
+        inspectDistance: number;
+    let framesBoxSizeX: number,
+        framesBoxSizeY: number,
+        framesBoxSizeZ: number,
+        framesBoxAnchorX: number,
+        framesBoxAnchorY: number,
+        framesBoxAnchorZ: number;
 
     // #if DEBUG
     ({
@@ -80,6 +110,13 @@ const PictureFrames = memo(() => {
         pictureFramesScale,
         pictureFrameColor,
         pictureMatColor,
+        inspectDistance,
+        framesBoxSizeX,
+        framesBoxSizeY,
+        framesBoxSizeZ,
+        framesBoxAnchorX,
+        framesBoxAnchorY,
+        framesBoxAnchorZ,
     } = useControls(
         "Picture Frames",
         {
@@ -103,6 +140,48 @@ const PictureFrames = memo(() => {
             },
             pictureFrameColor: pictureFrames.frameColor,
             pictureMatColor: pictureFrames.matColor,
+            inspectDistance: {
+                value: pictureFrames.inspectDistance,
+                min: 1,
+                max: 20,
+                step: 0.01,
+            },
+            framesBoxSizeX: {
+                value: boxSize.x,
+                min: 0.1,
+                max: 20,
+                step: 0.01,
+            },
+            framesBoxSizeY: {
+                value: boxSize.y,
+                min: 0.1,
+                max: 20,
+                step: 0.01,
+            },
+            framesBoxSizeZ: {
+                value: boxSize.z,
+                min: 0.1,
+                max: 20,
+                step: 0.01,
+            },
+            framesBoxAnchorX: {
+                value: boxAnchor.x,
+                min: -10,
+                max: 10,
+                step: 0.01,
+            },
+            framesBoxAnchorY: {
+                value: boxAnchor.y,
+                min: -10,
+                max: 10,
+                step: 0.01,
+            },
+            framesBoxAnchorZ: {
+                value: boxAnchor.z,
+                min: -10,
+                max: 10,
+                step: 0.01,
+            },
         },
         { collapsed: true }
     ) as PictureFrameControls);
@@ -114,7 +193,56 @@ const PictureFrames = memo(() => {
     pictureFramesScale = pictureFrames.scale;
     pictureFrameColor = pictureFrames.frameColor;
     pictureMatColor = pictureFrames.matColor;
+    inspectDistance = pictureFrames.inspectDistance;
+    framesBoxSizeX = boxSize.x;
+    framesBoxSizeY = boxSize.y;
+    framesBoxSizeZ = boxSize.z;
+    framesBoxAnchorX = boxAnchor.x;
+    framesBoxAnchorY = boxAnchor.y;
+    framesBoxAnchorZ = boxAnchor.z;
     // #endif
+
+    // The zone shares the gallery's origin, at the center of the frames, so
+    // the camera backs straight out from the wall and looks at that center
+    const computeCameraTarget = useCallback(
+        ({ group }: ComputeCameraTargetParams) => {
+            lookAtPosition.set(0, 0, 0);
+            group.localToWorld(lookAtPosition);
+            cameraPosition.set(0, 0, inspectDistance);
+            group.localToWorld(cameraPosition);
+
+            return {
+                position: [
+                    cameraPosition.x,
+                    cameraPosition.y,
+                    cameraPosition.z,
+                ],
+                lookAt: [lookAtPosition.x, lookAtPosition.y, lookAtPosition.z],
+            } satisfies CameraTarget;
+        },
+        [cameraPosition, inspectDistance, lookAtPosition]
+    );
+
+    const handleEnter = useCallback(
+        (target?: CameraTarget) => {
+            if (target) {
+                enterInspect(target);
+            }
+        },
+        [enterInspect]
+    );
+
+    // The zone's own message hides outside the scene, so this one takes over
+    // once the camera has settled on the photos
+    const isInspecting = mode === "inspect" && !isTransitioning;
+    useEffect(() => {
+        if (!isInspecting) {
+            return;
+        }
+
+        setMessage(EXIT_MESSAGE);
+        return () => clearMessage(EXIT_MESSAGE);
+    }, [clearMessage, isInspecting, setMessage]);
 
     const photoShortSide = photoLongSide / aspectRatio;
     const matDepth = frameDepth * 0.3;
@@ -124,87 +252,99 @@ const PictureFrames = memo(() => {
         <group
             position={[position.x, pictureFramesY, pictureFramesZ]}
             rotation={[0, rotation.y, 0]}
-            scale={pictureFramesScale}
         >
-            {frames.map(({ orientation, position: slot, image }, index) => {
-                const isPortrait = orientation === "portrait";
-                const photoWidth = isPortrait ? photoShortSide : photoLongSide;
-                const photoHeight = isPortrait ? photoLongSide : photoShortSide;
-                const innerWidth = photoWidth + matWidth * 2;
-                const innerHeight = photoHeight + matWidth * 2;
-                const outerWidth = innerWidth + frameWidth * 2;
-                const photoZ = matDepth + 0.002;
+            <InteractionZone
+                message={INSPECT_MESSAGE}
+                size={[framesBoxSizeX, framesBoxSizeY, framesBoxSizeZ]}
+                center={[framesBoxAnchorX, framesBoxAnchorY, framesBoxAnchorZ]}
+                onEnter={handleEnter}
+                computeCameraTarget={computeCameraTarget}
+            />
+            <group scale={pictureFramesScale}>
+                {frames.map(({ orientation, position: slot, image }, index) => {
+                    const isPortrait = orientation === "portrait";
+                    const photoWidth = isPortrait
+                        ? photoShortSide
+                        : photoLongSide;
+                    const photoHeight = isPortrait
+                        ? photoLongSide
+                        : photoShortSide;
+                    const innerWidth = photoWidth + matWidth * 2;
+                    const innerHeight = photoHeight + matWidth * 2;
+                    const outerWidth = innerWidth + frameWidth * 2;
+                    const photoZ = matDepth + 0.002;
 
-                // Top and bottom rails span the full width; the stiles fit
-                // between them
-                const rails: [Coordinate, Coordinate][] = [
-                    [
-                        [outerWidth, frameWidth, frameDepth],
-                        [0, (innerHeight + frameWidth) / 2, 0],
-                    ],
-                    [
-                        [outerWidth, frameWidth, frameDepth],
-                        [0, -(innerHeight + frameWidth) / 2, 0],
-                    ],
-                    [
-                        [frameWidth, innerHeight, frameDepth],
-                        [-(innerWidth + frameWidth) / 2, 0, 0],
-                    ],
-                    [
-                        [frameWidth, innerHeight, frameDepth],
-                        [(innerWidth + frameWidth) / 2, 0, 0],
-                    ],
-                ];
+                    // Top and bottom rails span the full width; the stiles fit
+                    // between them
+                    const rails: [Coordinate, Coordinate][] = [
+                        [
+                            [outerWidth, frameWidth, frameDepth],
+                            [0, (innerHeight + frameWidth) / 2, 0],
+                        ],
+                        [
+                            [outerWidth, frameWidth, frameDepth],
+                            [0, -(innerHeight + frameWidth) / 2, 0],
+                        ],
+                        [
+                            [frameWidth, innerHeight, frameDepth],
+                            [-(innerWidth + frameWidth) / 2, 0, 0],
+                        ],
+                        [
+                            [frameWidth, innerHeight, frameDepth],
+                            [(innerWidth + frameWidth) / 2, 0, 0],
+                        ],
+                    ];
 
-                return (
-                    <group key={index} position={[slot.x, slot.y, 0]}>
-                        {rails.map(([size, [x, y]], railIndex) => (
-                            <RoundedBox
-                                key={railIndex}
-                                args={size}
-                                radius={bevel}
-                                smoothness={2}
-                                position={[x, y, frameDepth / 2]}
-                                castShadow
-                                receiveShadow
-                            >
-                                <meshStandardMaterial
-                                    color={pictureFrameColor}
-                                    roughness={0.75}
-                                />
-                            </RoundedBox>
-                        ))}
-                        {/* Recessed behind the frame's front face */}
-                        <mesh position={[0, 0, matDepth / 2]} receiveShadow>
-                            <boxGeometry
-                                args={[innerWidth, innerHeight, matDepth]}
-                            />
-                            <meshStandardMaterial
-                                color={pictureMatColor}
-                                roughness={0.9}
-                            />
-                        </mesh>
-                        {image ? (
-                            <FramePhoto
-                                image={image}
-                                width={photoWidth}
-                                height={photoHeight}
-                                z={photoZ}
-                            />
-                        ) : (
-                            <mesh position={[0, 0, photoZ]} receiveShadow>
-                                <planeGeometry
-                                    args={[photoWidth, photoHeight]}
+                    return (
+                        <group key={index} position={[slot.x, slot.y, 0]}>
+                            {rails.map(([size, [x, y]], railIndex) => (
+                                <RoundedBox
+                                    key={railIndex}
+                                    args={size}
+                                    radius={bevel}
+                                    smoothness={2}
+                                    position={[x, y, frameDepth / 2]}
+                                    castShadow
+                                    receiveShadow
+                                >
+                                    <meshStandardMaterial
+                                        color={pictureFrameColor}
+                                        roughness={0.75}
+                                    />
+                                </RoundedBox>
+                            ))}
+                            {/* Recessed behind the frame's front face */}
+                            <mesh position={[0, 0, matDepth / 2]} receiveShadow>
+                                <boxGeometry
+                                    args={[innerWidth, innerHeight, matDepth]}
                                 />
                                 <meshStandardMaterial
-                                    color={emptyColor}
-                                    roughness={0.85}
+                                    color={pictureMatColor}
+                                    roughness={0.9}
                                 />
                             </mesh>
-                        )}
-                    </group>
-                );
-            })}
+                            {image ? (
+                                <FramePhoto
+                                    image={image}
+                                    width={photoWidth}
+                                    height={photoHeight}
+                                    z={photoZ}
+                                />
+                            ) : (
+                                <mesh position={[0, 0, photoZ]} receiveShadow>
+                                    <planeGeometry
+                                        args={[photoWidth, photoHeight]}
+                                    />
+                                    <meshStandardMaterial
+                                        color={emptyColor}
+                                        roughness={0.85}
+                                    />
+                                </mesh>
+                            )}
+                        </group>
+                    );
+                })}
+            </group>
         </group>
     );
 });
