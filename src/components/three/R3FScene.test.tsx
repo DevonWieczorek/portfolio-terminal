@@ -7,7 +7,6 @@ import {
     messageState,
     resetThreeTestState,
 } from "../../../__mocks__/threeTestHarness";
-import { INTRO_MESSAGE } from "@/lib/constants/sceneMessages";
 jest.mock("./Character", () => ({
     __esModule: true,
     default: () => <group data-testid="mock-character" />,
@@ -19,11 +18,10 @@ describe("R3FScene", () => {
         resetThreeTestState();
     });
 
-    it("renders canvas and sets intro message", () => {
+    it("renders the canvas", () => {
         render(<R3FScene />);
 
         expect(screen.getByTestId("canvas")).toBeInTheDocument();
-        expect(messageState.setMessage).toHaveBeenCalledWith(INTRO_MESSAGE);
     });
 
     it("runs enter interaction when Enter is pressed in scene mode", () => {

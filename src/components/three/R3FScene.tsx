@@ -22,6 +22,7 @@ import { MessageProvider, useMessage } from "@/lib/contexts/MessageContext";
 import Message from "@/components/three/Message";
 import DebugPanel from "@/components/three/DebugPanel";
 import LoadingScreen from "@/components/three/LoadingScreen";
+import ControlsTutorial from "@/components/three/ControlsTutorial";
 import Terminal from "@/components/Terminal";
 import { useExperience } from "@/lib/stores/useExperience";
 import { PHYSICS_TIMESTEP } from "@/lib/constants/physics";
@@ -56,6 +57,7 @@ const R3FSceneContent = memo(() => {
     const [showCanvas, setShowCanvas] = useState(false);
     const [isRoomReady, setIsRoomReady] = useState(false);
     const [isRoomRevealed, setIsRoomRevealed] = useState(false);
+    const [isTutorialOpen, setIsTutorialOpen] = useState(false);
     const { message, interaction, clearMessage } = useMessage();
     // Use individual selectors to prevent unnecessary rerenders
     const mode = useExperience(state => state.mode);
@@ -74,6 +76,7 @@ const R3FSceneContent = memo(() => {
         const handleKeyDown = (event: KeyboardEvent) => {
             if (
                 event.key === "Enter" &&
+                !isTutorialOpen &&
                 interaction?.onEnter &&
                 mode === "scene" &&
                 !isTransitioning
@@ -109,6 +112,7 @@ const R3FSceneContent = memo(() => {
         };
     }, [
         interaction,
+        isTutorialOpen,
         mode,
         isTransitioning,
         clearMessage,
@@ -153,7 +157,12 @@ const R3FSceneContent = memo(() => {
     }, []);
     const handleRoomRevealed = useCallback(() => {
         setIsRoomRevealed(true);
+        setIsTutorialOpen(true);
     }, []);
+    const openTutorial = useCallback(() => setIsTutorialOpen(true), []);
+    const closeTutorial = useCallback(() => setIsTutorialOpen(false), []);
+    const canOpenTutorial =
+        isRoomRevealed && mode === "scene" && !isTransitioning;
 
     useEffect(() => {
         if (isTransitioning && targetMode === "terminal") {
@@ -236,7 +245,13 @@ const R3FSceneContent = memo(() => {
                     isBlackout ? styles.blackoutVisible : "",
                 ].join(" ")}
             />
-            <Message text={isRoomReady ? message : ""} />
+            <ControlsTutorial
+                isOpen={isTutorialOpen}
+                canOpen={canOpenTutorial}
+                onOpen={openTutorial}
+                onClose={closeTutorial}
+            />
+            <Message text={isRoomReady && !isTutorialOpen ? message : ""} />
         </div>
     );
 });

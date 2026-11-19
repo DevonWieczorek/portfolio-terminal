@@ -1,0 +1,328 @@
+$ink: #2b2622;
+$paper: #fff8ec;
+$keycap: #fdfbf6;
+$accent: #e8505b;
+$accent-dark: #c43c47;
+$success: #3fae6a;
+$muted: #8a8178;
+$outline: 3px;
+$lift: 6px;
+$bounce: cubic-bezier(0.34, 1.56, 0.64, 1);
+$font: var(--font-cartoon), "Comic Sans MS", system-ui, sans-serif;
+
+.card {
+    position: fixed;
+    top: clamp(1rem, 4vh, 2.5rem);
+    left: 50%;
+    z-index: 1000;
+    width: min(760px, calc(100vw - 2rem));
+    padding: 1.25rem 1.5rem 1.1rem;
+    box-sizing: border-box;
+    background: $paper;
+    color: $ink;
+    border: $outline solid $ink;
+    border-radius: 1.5rem;
+    box-shadow:
+        0 $lift 0 $ink,
+        0 calc(#{$lift} + 12px) 28px rgba($ink, 0.25);
+    font-family: $font;
+    text-align: center;
+    transform: translateX(-50%);
+    animation: cardIn 0.5s $bounce both;
+}
+
+.closing {
+    animation: cardOut var(--exit-duration) ease-in forwards;
+    pointer-events: none;
+}
+
+.kicker {
+    display: inline-block;
+    margin: 0 0 0.4rem;
+    padding: 0.15rem 0.75rem;
+    background: $accent;
+    color: $paper;
+    border-radius: 999px;
+    font-size: 0.75rem;
+    font-weight: 700;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+}
+
+.title {
+    margin: 0;
+    font-size: clamp(1.4rem, 2.4vw, 1.9rem);
+    font-weight: 700;
+    line-height: 1.15;
+}
+
+.subtitle {
+    margin: 0.3rem 0 1rem;
+    font-size: 1rem;
+    color: rgba($ink, 0.75);
+}
+
+.steps {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 0.75rem;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+}
+
+.step {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 0.5rem;
+    padding: 0.9rem 0.5rem 0.7rem;
+    background: rgba($ink, 0.04);
+    border: 2px dashed rgba($ink, 0.2);
+    border-radius: 1rem;
+    transition:
+        background-color 0.2s ease,
+        border-color 0.2s ease;
+    animation: stepIn 0.4s $bounce both;
+    animation-delay: calc(0.15s + var(--index) * 0.07s);
+}
+
+.tried {
+    background: rgba($success, 0.12);
+    border-style: solid;
+    border-color: $success;
+}
+
+.check {
+    position: absolute;
+    top: -0.6rem;
+    right: -0.6rem;
+    display: grid;
+    place-items: center;
+    width: 1.6rem;
+    height: 1.6rem;
+    background: $success;
+    color: $paper;
+    border: 2px solid $ink;
+    border-radius: 50%;
+    font-size: 0.9rem;
+    font-weight: 700;
+    opacity: 0;
+    transform: scale(0.4);
+    transition:
+        opacity 0.15s ease,
+        transform 0.3s $bounce;
+
+    .tried & {
+        opacity: 1;
+        transform: scale(1);
+    }
+}
+
+.keys {
+    display: flex;
+    gap: 0.35rem;
+}
+
+// Inverted-T, like the keys on a keyboard
+.arrowKeys {
+    display: grid;
+    grid-template-areas:
+        ". up ."
+        "left down right";
+    gap: 0.25rem;
+
+    // Keys are listed up, left, down, right
+    > :nth-child(1) {
+        grid-area: up;
+    }
+    > :nth-child(2) {
+        grid-area: left;
+    }
+    > :nth-child(3) {
+        grid-area: down;
+    }
+    > :nth-child(4) {
+        grid-area: right;
+    }
+}
+
+.key {
+    display: inline-grid;
+    place-items: center;
+    min-width: 2.2rem;
+    height: 2.2rem;
+    padding: 0 0.4rem;
+    box-sizing: border-box;
+    background: $keycap;
+    color: $ink;
+    border: 2px solid $ink;
+    border-radius: 0.55rem;
+    box-shadow: 0 4px 0 $ink;
+    font-family: $font;
+    font-size: 1rem;
+    font-weight: 700;
+    line-height: 1;
+    transform: translateY(-2px);
+    transition:
+        transform 0.08s ease-out,
+        box-shadow 0.08s ease-out,
+        background-color 0.08s ease-out;
+}
+
+.pressed {
+    background: $accent;
+    color: $paper;
+    box-shadow: 0 0 0 $ink;
+    transform: translateY(2px);
+}
+
+.label {
+    font-size: 1rem;
+    font-weight: 700;
+}
+
+.hint {
+    margin-top: -0.4rem;
+    font-size: 0.8rem;
+    color: $muted;
+}
+
+.tip {
+    margin: 1rem auto 0;
+    max-width: 34rem;
+    font-size: 0.95rem;
+    line-height: 1.6;
+}
+
+.inlineKey {
+    display: inline-block;
+    padding: 0.05rem 0.4rem;
+    background: $keycap;
+    color: $ink;
+    border: 2px solid $ink;
+    border-radius: 0.4rem;
+    box-shadow: 0 2px 0 $ink;
+    font-family: $font;
+    font-size: 0.85em;
+    font-weight: 700;
+    line-height: 1.3;
+}
+
+.footer {
+    display: flex;
+    justify-content: center;
+    min-height: 2.6rem;
+    margin-top: 0.85rem;
+}
+
+.start {
+    padding: 0.4rem 1rem;
+    background: none;
+    border: none;
+    color: $ink;
+    font-family: $font;
+    font-size: 1rem;
+    font-weight: 700;
+    cursor: pointer;
+    animation: pulse 1.4s ease-in-out infinite;
+
+    &:hover,
+    &:focus-visible {
+        color: $accent-dark;
+    }
+}
+
+.done {
+    margin: 0;
+    padding-top: 0.4rem;
+    color: $success;
+    font-size: 1.1rem;
+    font-weight: 700;
+    animation: stepIn 0.4s $bounce both;
+}
+
+.reopen {
+    position: fixed;
+    top: 1rem;
+    left: 1rem;
+    z-index: 999;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.35rem 0.8rem 0.35rem 0.4rem;
+    background: $paper;
+    color: $ink;
+    border: $outline solid $ink;
+    border-radius: 999px;
+    box-shadow: 0 4px 0 $ink;
+    font-family: $font;
+    font-size: 0.95rem;
+    font-weight: 700;
+    cursor: pointer;
+    animation: stepIn 0.4s $bounce both;
+    transition: transform 0.2s $bounce;
+
+    .key {
+        min-width: 1.7rem;
+        height: 1.7rem;
+        font-size: 0.85rem;
+        box-shadow: 0 2px 0 $ink;
+        transform: none;
+    }
+
+    &:hover,
+    &:focus-visible {
+        transform: translateY(-2px) rotate(-2deg);
+    }
+}
+
+@keyframes cardIn {
+    from {
+        opacity: 0;
+        transform: translate(-50%, -1.5rem) scale(0.85);
+    }
+}
+
+@keyframes cardOut {
+    to {
+        opacity: 0;
+        transform: translate(-50%, -1rem) scale(0.95);
+    }
+}
+
+@keyframes stepIn {
+    from {
+        opacity: 0;
+        transform: translateY(0.6rem) scale(0.8);
+    }
+}
+
+@keyframes pulse {
+    0%,
+    100% {
+        opacity: 1;
+    }
+    50% {
+        opacity: 0.45;
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .card,
+    .closing,
+    .step,
+    .done,
+    .reopen,
+    .start {
+        animation: none;
+    }
+
+    .check,
+    .key,
+    .reopen {
+        transition: none;
+    }
+}
