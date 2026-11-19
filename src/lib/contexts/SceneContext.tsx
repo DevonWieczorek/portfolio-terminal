@@ -78,6 +78,14 @@ interface CharacterAppearance {
     roughness: number;
 }
 
+// Synthesized footsteps played from the character's feet on each step
+interface FootstepSettings {
+    volume: number;
+    refDistance: number; // distance before the steps start to fade out
+    pitchVariation: number; // random detune per step, in cents
+    rugVolume: number; // multiplier while walking on the rug, which muffles them
+}
+
 interface EffectsSettings {
     bloomIntensity: number;
     bloomThreshold: number;
@@ -669,6 +677,7 @@ interface SceneConfig {
     cameraRecenterSpeed: number; // exponential ease rate (per second) of the W/S pan back onto the character
     cameraFollowSpeed: number; // exponential ease rate (per second) of the swing behind the walking character
     characterAppearance: CharacterAppearance;
+    footsteps: FootstepSettings;
     cameraOffset: {
         x: number;
         y: number;
@@ -720,6 +729,12 @@ const defaultSceneConfig: SceneConfig = {
         pantsColor: "#091634",
         featureColor: "#000",
         roughness: 0.75,
+    },
+    footsteps: {
+        volume: 0.5,
+        refDistance: scaledFeet(10),
+        pitchVariation: 250,
+        rugVolume: 0.45,
     },
     characterBoundary: ROOM_SIZE - 2.25,
     cameraBuffer: 2,
