@@ -14,6 +14,7 @@ import SkateboardGroup from "@/components/three/SkateboardGroup";
 import Baseboards from "@/components/three/Baseboards";
 import Rug from "@/components/three/Rug";
 import Obstacle from "@/components/three/Obstacle";
+import WindowWall from "@/components/three/WindowWall";
 import { INTRO_MESSAGE } from "@/lib/constants/sceneMessages";
 import {
     useSurfaceTextures,
@@ -192,16 +193,15 @@ const Room = memo(({ onReady }: RoomProps) => {
             {/* Desk and Computer Setup */}
             <Desk />
 
-            {/* South Wall */}
-            <mesh position={[0, wallHeight / 2, roomSize / 2]} receiveShadow>
-                <boxGeometry args={[roomSize, wallHeight, wallThickness]} />
-                <SurfaceMaterial
-                    textures={wallTextures}
-                    roughness={wallRoughness}
-                    normalScale={wallNormalScale}
-                    color={wallColor}
-                />
-            </mesh>
+            {/* South Wall, with the window. The obstacle stays solid, since
+                the sill is too high to climb through anyway. */}
+            <WindowWall
+                textures={wallTextures}
+                tileSize={wallTileSize}
+                roughness={wallRoughness}
+                normalScale={wallNormalScale}
+                color={wallColor}
+            />
             <Obstacle
                 size={[roomSize, wallHeight, wallThickness]}
                 position={[0, wallHeight / 2, roomSize / 2]}

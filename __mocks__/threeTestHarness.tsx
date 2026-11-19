@@ -28,13 +28,26 @@ const useGLTFModuleMock = Object.assign((path: string) => useGLTFMock(path), {
     preload: useGLTFPreloadMock,
 });
 
-const createTextureMock = () => ({
+type TextureMock = {
+    wrapS: number;
+    wrapT: number;
+    repeat: { set: jest.Mock };
+    anisotropy: number;
+    colorSpace: string;
+    needsUpdate: boolean;
+    dispose: jest.Mock;
+    clone: () => TextureMock;
+};
+
+const createTextureMock = (): TextureMock => ({
     wrapS: 0,
     wrapT: 0,
     repeat: { set: jest.fn() },
     anisotropy: 1,
     colorSpace: "",
     needsUpdate: false,
+    dispose: jest.fn(),
+    clone: () => createTextureMock(),
 });
 
 // Mirrors drei: a single path returns one texture, a map of paths returns a
@@ -268,6 +281,25 @@ export const sceneState = {
             { x: 7, y: 11.5, z: -7 },
             { x: 7, y: 11.5, z: 7 },
         ],
+    },
+    roomWindow: {
+        position: { x: -4.3, y: 4.9 },
+        width: 8,
+        height: 4.6,
+        casingWidth: 0.45,
+        casingDepth: 0.15,
+        jambThickness: 0.12,
+        mullionWidth: 0.22,
+        sillDepth: 0.5,
+        sillThickness: 0.18,
+        color: "#FFFDF7",
+    },
+    dayCycle: {
+        sunrise: 6.5,
+        sunset: 19.5,
+        maxSunElevation: 0.95,
+        sunIntensity: 2,
+        sunDistance: 30,
     },
     effects: {
         bloomIntensity: 1.2,
