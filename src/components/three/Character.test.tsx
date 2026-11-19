@@ -50,6 +50,17 @@ const getHead = (container: HTMLElement) =>
         'group[position="0,1.6,0"]'
     );
 
+const getGroupAt = (container: HTMLElement, position: string) =>
+    container.querySelector<HTMLElement & THREE.Group>(
+        `group[position="${position}"]`
+    );
+const getLeftArm = (container: HTMLElement) =>
+    getGroupAt(container, "-0.8,1.1,0");
+const getRightArm = (container: HTMLElement) =>
+    getGroupAt(container, "0.8,1.1,0");
+// The sway group pivots at the feet
+const getSway = (container: HTMLElement) => getGroupAt(container, "0,-1.3,0");
+
 const runFrames = (count: number) => {
     for (let i = 0; i < count; i++) {
         runFrameCallbacks();
@@ -199,5 +210,34 @@ describe("Character", () => {
         runFrames(60);
 
         expect(getHead(container)?.rotation.x).toBeCloseTo(0, 2);
+    });
+
+    it("throws its arms up and sways while the music plays", () => {
+        useMusic.setState({ tempo: 70 });
+        const { container } = renderWithTransforms(<Character />);
+
+        runFrames(60);
+
+        // Overhead in a V: each arm rotated well past horizontal, outward
+        expect(getLeftArm(container)?.rotation.z).toBeLessThan(-2);
+        expect(getRightArm(container)?.rotation.z).toBeGreaterThan(2);
+        // On the beat, the body leans to one side
+        expect(Math.abs(getSway(container)?.rotation.z ?? 0)).toBeGreaterThan(
+            0.05
+        );
+    });
+
+    it("drops its arms and stands up straight to walk", () => {
+        useMusic.setState({ tempo: 70 });
+        const { container } = renderWithTransforms(<Character />);
+        runFrames(60);
+
+        keyboardState.forward = true;
+        runPhysicsStep();
+        runFrames(90);
+
+        expect(getLeftArm(container)?.rotation.z).toBeCloseTo(0, 1);
+        expect(getRightArm(container)?.rotation.z).toBeCloseTo(0, 1);
+        expect(getSway(container)?.rotation.z).toBeCloseTo(0, 2);
     });
 });
