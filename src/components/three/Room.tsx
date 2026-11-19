@@ -3,7 +3,6 @@ import { memo, useEffect } from "react";
 import { useControls } from "leva";
 // #endif
 import { useScene } from "@/lib/contexts/SceneContext";
-import { useMessage } from "@/lib/contexts/MessageContext";
 import Desk from "@/components/three/Desk";
 import Door from "@/components/three/Door";
 import Pinboard from "@/components/three/Pinboard";
@@ -15,7 +14,6 @@ import Baseboards from "@/components/three/Baseboards";
 import Rug from "@/components/three/Rug";
 import Obstacle from "@/components/three/Obstacle";
 import WindowWall from "@/components/three/WindowWall";
-import { INTRO_MESSAGE } from "@/lib/constants/sceneMessages";
 import {
     useSurfaceTextures,
     type SurfaceTextures,
@@ -47,7 +45,6 @@ const Room = memo(({ onReady }: RoomProps) => {
         wallSurface,
         ceilingSurface,
     } = useScene();
-    const { setMessage } = useMessage();
 
     let floorTileSize: number,
         floorRoughness: number,
@@ -154,9 +151,8 @@ const Room = memo(({ onReady }: RoomProps) => {
     );
 
     useEffect(() => {
-        setMessage(INTRO_MESSAGE);
         onReady?.();
-    }, [onReady, setMessage]);
+    }, [onReady]);
 
     return (
         <group>

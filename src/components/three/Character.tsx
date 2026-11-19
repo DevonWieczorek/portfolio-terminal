@@ -19,8 +19,6 @@ import { useScene } from "@/lib/contexts/SceneContext";
 import { useExperience } from "@/lib/stores/useExperience";
 import { useMusic } from "@/lib/stores/useMusic";
 import { useAudio } from "@/lib/stores/useAudio";
-import { useMessage } from "@/lib/contexts/MessageContext";
-import { INTRO_MESSAGE } from "@/lib/constants/sceneMessages";
 import { PHYSICS_TIMESTEP, PLAYER_GROUPS } from "@/lib/constants/physics";
 import { getFacingRotation, toCameraRelative } from "@/utils/movement";
 import { useCameraSeeThrough } from "@/hooks/use-camera-see-through";
@@ -164,7 +162,6 @@ const Character = memo(({ inputEnabled = true }: CharacterProps) => {
         footsteps,
         rug,
     } = useScene();
-    const { message, clearMessage } = useMessage();
     // Use individual selectors to prevent unnecessary rerenders
     const mode = useExperience(state => state.mode);
     const isTransitioning = useExperience(state => state.isTransitioning);
@@ -285,7 +282,6 @@ const Character = memo(({ inputEnabled = true }: CharacterProps) => {
     // Current rotation target
     const targetRotation = useRef(0);
     const currentRotation = useRef(0);
-    const hasClearedIntro = useRef(false);
     // Written by the physics step, read by the render loop's animation
     const isMovingRef = useRef(false);
     const desiredMovement = useMemo(() => ({ x: 0, y: 0, z: 0 }), []);
@@ -520,11 +516,6 @@ const Character = memo(({ inputEnabled = true }: CharacterProps) => {
         if (!character) return;
 
         if (isMoving) {
-            if (!hasClearedIntro.current && message === INTRO_MESSAGE) {
-                clearMessage();
-                hasClearedIntro.current = true;
-            }
-
             const rotationDiff =
                 targetRotation.current - currentRotation.current;
 
