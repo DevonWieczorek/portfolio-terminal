@@ -44,6 +44,7 @@ export default function Camera() {
     const setCameraYaw = useMovement(state => state.setCameraYaw);
     const {
         roomSize,
+        wallHeight,
         wallThickness,
         cameraBuffer,
         cameraPanSpeed,
@@ -342,8 +343,12 @@ export default function Camera() {
             focusZ + lookAtOffset.z
         );
 
-        // Ensure camera stays at reasonable height
-        targetPosition.current.y = Math.max(3, targetPosition.current.y);
+        // Stay above the floor, and under the ceiling: the ceiling is only
+        // visible from below, so above it the view escapes the room
+        targetPosition.current.y = Math.min(
+            wallHeight - cameraBuffer,
+            Math.max(3, targetPosition.current.y)
+        );
 
         // Smooth camera movement with slightly faster response for boundary situations
         const baseLerpSpeed =
