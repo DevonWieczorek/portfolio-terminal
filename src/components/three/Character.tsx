@@ -68,21 +68,6 @@ const BREATH_FREQUENCY = 2;
 // Idle swell, as a fraction of body height. The walking squash and stretch
 // amount comes from SceneContext.
 const BREATH_SQUASH = 0.025;
-// Dancing to the record player while standing still. Angles in radians,
-// heights in local model units.
-const NOD_ANGLE = 0.2;
-const DANCE_BLEND_RATE = 4;
-// Arms rotate up from hanging at their sides into a V overhead
-const ARMS_UP_ANGLE = 2.6;
-// Both arms wave the same way, one side per beat, like a concert crowd
-const ARM_WAVE_ANGLE = 0.3;
-// The body leans with the arms, pivoting at the feet so they stay planted
-const SWAY_ANGLE = 0.08;
-// The head tilts slightly against the lean, which keeps it bouncy rather
-// than stiff
-const HEAD_COUNTER_TILT = 0.6;
-// Knees dip on every beat
-const BEAT_BOUNCE = 0.04;
 
 const BLOB_SHADOW_RADIUS = 1;
 const BLOB_SHADOW_OPACITY = 0.35;
@@ -124,6 +109,13 @@ type CharacterControls = {
     footstepRefDistance: number;
     footstepPitchVariation: number;
     footstepRugVolume: number;
+    danceBlendRate: number;
+    danceNodAngle: number;
+    danceArmsUpAngle: number;
+    danceArmWaveAngle: number;
+    danceSwayAngle: number;
+    danceHeadCounterTilt: number;
+    danceBeatBounce: number;
 };
 
 type BodyPartProps = {
@@ -172,6 +164,7 @@ const Character = memo(({ inputEnabled = true }: CharacterProps) => {
         characterHeight,
         characterAppearance,
         footsteps,
+        characterDance,
         rug,
     } = useScene();
     // Use individual selectors to prevent unnecessary rerenders
@@ -191,7 +184,14 @@ const Character = memo(({ inputEnabled = true }: CharacterProps) => {
         footstepVolume: number,
         footstepRefDistance: number,
         footstepPitchVariation: number,
-        footstepRugVolume: number;
+        footstepRugVolume: number,
+        danceBlendRate: number,
+        danceNodAngle: number,
+        danceArmsUpAngle: number,
+        danceArmWaveAngle: number,
+        danceSwayAngle: number,
+        danceHeadCounterTilt: number,
+        danceBeatBounce: number;
 
     // #if DEBUG
     ({
@@ -207,6 +207,13 @@ const Character = memo(({ inputEnabled = true }: CharacterProps) => {
         footstepRefDistance,
         footstepPitchVariation,
         footstepRugVolume,
+        danceBlendRate,
+        danceNodAngle,
+        danceArmsUpAngle,
+        danceArmWaveAngle,
+        danceSwayAngle,
+        danceHeadCounterTilt,
+        danceBeatBounce,
     } = useControls(
         "Character",
         {
@@ -263,6 +270,48 @@ const Character = memo(({ inputEnabled = true }: CharacterProps) => {
                 max: 1,
                 step: 0.01,
             },
+            danceBlendRate: {
+                value: characterDance.blendRate,
+                min: 0.5,
+                max: 20,
+                step: 0.5,
+            },
+            danceNodAngle: {
+                value: characterDance.nodAngle,
+                min: 0,
+                max: 1,
+                step: 0.01,
+            },
+            danceArmsUpAngle: {
+                value: characterDance.armsUpAngle,
+                min: 0,
+                max: Math.PI,
+                step: 0.05,
+            },
+            danceArmWaveAngle: {
+                value: characterDance.armWaveAngle,
+                min: 0,
+                max: 1,
+                step: 0.01,
+            },
+            danceSwayAngle: {
+                value: characterDance.swayAngle,
+                min: 0,
+                max: 0.5,
+                step: 0.005,
+            },
+            danceHeadCounterTilt: {
+                value: characterDance.headCounterTilt,
+                min: 0,
+                max: 2,
+                step: 0.05,
+            },
+            danceBeatBounce: {
+                value: characterDance.beatBounce,
+                min: 0,
+                max: 0.2,
+                step: 0.005,
+            },
         },
         { collapsed: true }
     ) as CharacterControls);
@@ -278,6 +327,13 @@ const Character = memo(({ inputEnabled = true }: CharacterProps) => {
     footstepRefDistance = footsteps.refDistance;
     footstepPitchVariation = footsteps.pitchVariation;
     footstepRugVolume = footsteps.rugVolume;
+    danceBlendRate = characterDance.blendRate;
+    danceNodAngle = characterDance.nodAngle;
+    danceArmsUpAngle = characterDance.armsUpAngle;
+    danceArmWaveAngle = characterDance.armWaveAngle;
+    danceSwayAngle = characterDance.swayAngle;
+    danceHeadCounterTilt = characterDance.headCounterTilt;
+    danceBeatBounce = characterDance.beatBounce;
     // #endif
 
     // Scale the avatar to the configured height and lift it so its feet rest
@@ -424,7 +480,7 @@ const Character = memo(({ inputEnabled = true }: CharacterProps) => {
         danceBlend.current = THREE.MathUtils.damp(
             danceBlend.current,
             tempo !== null && !isMoving ? 1 : 0,
-            DANCE_BLEND_RATE,
+            danceBlendRate,
             delta
         );
         const dance = danceBlend.current;
@@ -448,9 +504,9 @@ const Character = memo(({ inputEnabled = true }: CharacterProps) => {
         const stretch =
             stepStretch * blend +
             breathStretch * (1 - blend) * (1 - dance) -
-            onBeat * BEAT_BOUNCE * dance;
-        const armRaise = ARMS_UP_ANGLE * armsUp;
-        const armWave = ARM_WAVE_ANGLE * sway;
+            onBeat * danceBeatBounce * dance;
+        const armRaise = danceArmsUpAngle * armsUp;
+        const armWave = danceArmWaveAngle * sway;
 
         if (leftArmRef.current) {
             leftArmRef.current.rotation.x = swing;
@@ -462,7 +518,7 @@ const Character = memo(({ inputEnabled = true }: CharacterProps) => {
         }
         if (leftLegRef.current) leftLegRef.current.rotation.x = -swing;
         if (rightLegRef.current) rightLegRef.current.rotation.x = swing;
-        if (swayRef.current) swayRef.current.rotation.z = SWAY_ANGLE * sway;
+        if (swayRef.current) swayRef.current.rotation.z = danceSwayAngle * sway;
         if (bodyRef.current) {
             // Thin out as it stretches so the volume reads as constant
             bodyRef.current.scale.set(
@@ -475,8 +531,9 @@ const Character = memo(({ inputEnabled = true }: CharacterProps) => {
             bodyRef.current.position.y = bob * blend - MODEL_FEET_Y * stretch;
         }
         if (headRef.current) {
-            headRef.current.rotation.x = -NOD_ANGLE * onBeat * dance;
-            headRef.current.rotation.z = -SWAY_ANGLE * HEAD_COUNTER_TILT * sway;
+            headRef.current.rotation.x = -danceNodAngle * onBeat * dance;
+            headRef.current.rotation.z =
+                -danceSwayAngle * danceHeadCounterTilt * sway;
         }
     };
 

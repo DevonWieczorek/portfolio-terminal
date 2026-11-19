@@ -110,6 +110,18 @@ interface FootstepSettings {
     rugVolume: number; // multiplier while walking on the rug, which muffles them
 }
 
+// Dancing to the record player while standing still. Angles in radians,
+// heights as a fraction of body height.
+interface DanceSettings {
+    blendRate: number; // exponential ease rate (per second) in and out of the dance
+    nodAngle: number; // head nod on each beat
+    armsUpAngle: number; // arms rotate up from hanging at the sides into a V overhead
+    armWaveAngle: number; // both arms wave the same way, one side per beat
+    swayAngle: number; // body lean with the arms, pivoting at the feet
+    headCounterTilt: number; // head tilt against the lean, as a fraction of it
+    beatBounce: number; // knee dip on every beat
+}
+
 interface EffectsSettings {
     bloomIntensity: number;
     bloomThreshold: number;
@@ -730,6 +742,7 @@ interface SceneConfig {
     cameraFollowSpeed: number; // exponential ease rate (per second) of the swing behind the walking character
     characterAppearance: CharacterAppearance;
     footsteps: FootstepSettings;
+    characterDance: DanceSettings;
     cameraOffset: {
         x: number;
         y: number;
@@ -789,6 +802,15 @@ const defaultSceneConfig: SceneConfig = {
         refDistance: scaledFeet(10),
         pitchVariation: 250,
         rugVolume: 0.45,
+    },
+    characterDance: {
+        blendRate: 4,
+        nodAngle: 0.2,
+        armsUpAngle: 2.6,
+        armWaveAngle: 0.3,
+        swayAngle: 0.08,
+        headCounterTilt: 0.6,
+        beatBounce: 0.04,
     },
     characterBoundary: ROOM_SIZE - 2.25,
     cameraBuffer: 2,
