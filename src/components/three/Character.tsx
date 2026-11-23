@@ -68,9 +68,6 @@ const BREATH_FREQUENCY = 2;
 // Idle swell, as a fraction of body height. The walking squash and stretch
 // amount comes from SceneContext.
 const BREATH_SQUASH = 0.025;
-// Nodding along to the record player, in radians
-const NOD_ANGLE = 0.2;
-const NOD_BLEND_RATE = 6;
 
 const BLOB_SHADOW_RADIUS = 1;
 const BLOB_SHADOW_OPACITY = 0.35;
@@ -112,6 +109,13 @@ type CharacterControls = {
     footstepRefDistance: number;
     footstepPitchVariation: number;
     footstepRugVolume: number;
+    danceBlendRate: number;
+    danceNodAngle: number;
+    danceArmsUpAngle: number;
+    danceArmWaveAngle: number;
+    danceSwayAngle: number;
+    danceHeadCounterTilt: number;
+    danceBeatBounce: number;
 };
 
 type BodyPartProps = {
@@ -160,6 +164,7 @@ const Character = memo(({ inputEnabled = true }: CharacterProps) => {
         characterHeight,
         characterAppearance,
         footsteps,
+        characterDance,
         rug,
     } = useScene();
     // Use individual selectors to prevent unnecessary rerenders
@@ -179,7 +184,14 @@ const Character = memo(({ inputEnabled = true }: CharacterProps) => {
         footstepVolume: number,
         footstepRefDistance: number,
         footstepPitchVariation: number,
-        footstepRugVolume: number;
+        footstepRugVolume: number,
+        danceBlendRate: number,
+        danceNodAngle: number,
+        danceArmsUpAngle: number,
+        danceArmWaveAngle: number,
+        danceSwayAngle: number,
+        danceHeadCounterTilt: number,
+        danceBeatBounce: number;
 
     // #if DEBUG
     ({
@@ -195,6 +207,13 @@ const Character = memo(({ inputEnabled = true }: CharacterProps) => {
         footstepRefDistance,
         footstepPitchVariation,
         footstepRugVolume,
+        danceBlendRate,
+        danceNodAngle,
+        danceArmsUpAngle,
+        danceArmWaveAngle,
+        danceSwayAngle,
+        danceHeadCounterTilt,
+        danceBeatBounce,
     } = useControls(
         "Character",
         {
@@ -251,6 +270,48 @@ const Character = memo(({ inputEnabled = true }: CharacterProps) => {
                 max: 1,
                 step: 0.01,
             },
+            danceBlendRate: {
+                value: characterDance.blendRate,
+                min: 0.5,
+                max: 20,
+                step: 0.5,
+            },
+            danceNodAngle: {
+                value: characterDance.nodAngle,
+                min: 0,
+                max: 1,
+                step: 0.01,
+            },
+            danceArmsUpAngle: {
+                value: characterDance.armsUpAngle,
+                min: 0,
+                max: Math.PI,
+                step: 0.05,
+            },
+            danceArmWaveAngle: {
+                value: characterDance.armWaveAngle,
+                min: 0,
+                max: 1,
+                step: 0.01,
+            },
+            danceSwayAngle: {
+                value: characterDance.swayAngle,
+                min: 0,
+                max: 0.5,
+                step: 0.005,
+            },
+            danceHeadCounterTilt: {
+                value: characterDance.headCounterTilt,
+                min: 0,
+                max: 2,
+                step: 0.05,
+            },
+            danceBeatBounce: {
+                value: characterDance.beatBounce,
+                min: 0,
+                max: 0.2,
+                step: 0.005,
+            },
         },
         { collapsed: true }
     ) as CharacterControls);
@@ -266,6 +327,13 @@ const Character = memo(({ inputEnabled = true }: CharacterProps) => {
     footstepRefDistance = footsteps.refDistance;
     footstepPitchVariation = footsteps.pitchVariation;
     footstepRugVolume = footsteps.rugVolume;
+    danceBlendRate = characterDance.blendRate;
+    danceNodAngle = characterDance.nodAngle;
+    danceArmsUpAngle = characterDance.armsUpAngle;
+    danceArmWaveAngle = characterDance.armWaveAngle;
+    danceSwayAngle = characterDance.swayAngle;
+    danceHeadCounterTilt = characterDance.headCounterTilt;
+    danceBeatBounce = characterDance.beatBounce;
     // #endif
 
     // Scale the avatar to the configured height and lift it so its feet rest
@@ -287,6 +355,7 @@ const Character = memo(({ inputEnabled = true }: CharacterProps) => {
     const desiredMovement = useMemo(() => ({ x: 0, y: 0, z: 0 }), []);
     const nextTranslation = useMemo(() => ({ x: 0, y: 0, z: 0 }), []);
 
+    const swayRef = useRef<THREE.Group>(null);
     const bodyRef = useRef<THREE.Group>(null);
     const leftArmRef = useRef<THREE.Group>(null);
     const rightArmRef = useRef<THREE.Group>(null);
@@ -296,9 +365,9 @@ const Character = memo(({ inputEnabled = true }: CharacterProps) => {
     const stridePhase = useRef(0);
     // 0 when standing still, 1 at full stride, eased between the two
     const walkBlend = useRef(0);
-    // 0 when not nodding, 1 at full nod, eased between the two
-    const nodBlend = useRef(0);
-    // Keeps the beat while the nod fades out after the music stops
+    // 0 when not dancing, 1 at full groove, eased between the two
+    const danceBlend = useRef(0);
+    // Keeps the beat while the dance fades out after the music stops
     const lastTempo = useRef(0);
     const footstepRef = useRef<THREE.PositionalAudio>(null);
     // Counts foot plants, so each new one plays a step
@@ -385,7 +454,7 @@ const Character = memo(({ inputEnabled = true }: CharacterProps) => {
     // #endif
 
     // Animates the limbs: a walk cycle while moving that eases into an idle
-    // breathing loop when standing still, plus a head nod in time with the
+    // breathing loop when standing still, plus a dance in time with the
     // music while it stands still
     const animateBody = (isMoving: boolean, elapsed: number, delta: number) => {
         walkBlend.current = THREE.MathUtils.damp(
@@ -403,6 +472,27 @@ const Character = memo(({ inputEnabled = true }: CharacterProps) => {
             }
         }
 
+        // Read via getState so the music doesn't rerender the avatar
+        const { tempo, trackTime } = useMusic.getState();
+        if (tempo !== null) {
+            lastTempo.current = tempo;
+        }
+        danceBlend.current = THREE.MathUtils.damp(
+            danceBlend.current,
+            tempo !== null && !isMoving ? 1 : 0,
+            danceBlendRate,
+            delta
+        );
+        const dance = danceBlend.current;
+        // Eases the arms out of their start too, so they float up instead
+        // of jumping
+        const armsUp = THREE.MathUtils.smootherstep(dance, 0, 1);
+        const beat = (trackTime * lastTempo.current) / 60;
+        // Snaps down on each beat and floats back up between them
+        const onBeat = 1 - Math.abs(Math.sin(Math.PI * beat));
+        // A full left-right sway every two beats, at each side on the beat
+        const sway = Math.sin(Math.PI * (beat - 0.5)) * dance;
+
         const blend = walkBlend.current;
         const swing = Math.sin(stridePhase.current) * MAX_LIMB_SWING * blend;
         const stepHeight = Math.abs(Math.sin(stridePhase.current));
@@ -411,12 +501,24 @@ const Character = memo(({ inputEnabled = true }: CharacterProps) => {
         const stepStretch = (stepHeight * 2 - 1) * stepSquash;
         const breathStretch =
             Math.sin(elapsed * BREATH_FREQUENCY) * BREATH_SQUASH;
-        const stretch = stepStretch * blend + breathStretch * (1 - blend);
+        const stretch =
+            stepStretch * blend +
+            breathStretch * (1 - blend) * (1 - dance) -
+            onBeat * danceBeatBounce * dance;
+        const armRaise = danceArmsUpAngle * armsUp;
+        const armWave = danceArmWaveAngle * sway;
 
-        if (leftArmRef.current) leftArmRef.current.rotation.x = swing;
-        if (rightArmRef.current) rightArmRef.current.rotation.x = -swing;
+        if (leftArmRef.current) {
+            leftArmRef.current.rotation.x = swing;
+            leftArmRef.current.rotation.z = -armRaise + armWave;
+        }
+        if (rightArmRef.current) {
+            rightArmRef.current.rotation.x = -swing;
+            rightArmRef.current.rotation.z = armRaise + armWave;
+        }
         if (leftLegRef.current) leftLegRef.current.rotation.x = -swing;
         if (rightLegRef.current) rightLegRef.current.rotation.x = swing;
+        if (swayRef.current) swayRef.current.rotation.z = danceSwayAngle * sway;
         if (bodyRef.current) {
             // Thin out as it stretches so the volume reads as constant
             bodyRef.current.scale.set(
@@ -428,23 +530,10 @@ const Character = memo(({ inputEnabled = true }: CharacterProps) => {
             // feet planted
             bodyRef.current.position.y = bob * blend - MODEL_FEET_Y * stretch;
         }
-
-        // Read via getState so the music doesn't rerender the avatar
-        const { tempo, trackTime } = useMusic.getState();
-        if (tempo !== null) {
-            lastTempo.current = tempo;
-        }
-        nodBlend.current = THREE.MathUtils.damp(
-            nodBlend.current,
-            tempo !== null && !isMoving ? 1 : 0,
-            NOD_BLEND_RATE,
-            delta
-        );
         if (headRef.current) {
-            const beat = (trackTime * lastTempo.current) / 60;
-            // Snaps down on each beat and floats back up between them
-            const nod = 1 - Math.abs(Math.sin(Math.PI * beat));
-            headRef.current.rotation.x = -NOD_ANGLE * nod * nodBlend.current;
+            headRef.current.rotation.x = -danceNodAngle * onBeat * dance;
+            headRef.current.rotation.z =
+                -danceSwayAngle * danceHeadCounterTilt * sway;
         }
     };
 
@@ -594,73 +683,88 @@ const Character = memo(({ inputEnabled = true }: CharacterProps) => {
                     />
                 )}
 
-                <group ref={bodyRef}>
-                    <group ref={headRef} position={[0, NECK_Y, 0]}>
-                        <group position={[0, -NECK_Y, 0]}>
+                {/* Pivots at the feet, so swaying to the music leans the
+                whole body without sliding the feet */}
+                <group ref={swayRef} position={[0, MODEL_FEET_Y, 0]}>
+                    <group position={[0, -MODEL_FEET_Y, 0]}>
+                        <group ref={bodyRef}>
+                            <group ref={headRef} position={[0, NECK_Y, 0]}>
+                                <group position={[0, -NECK_Y, 0]}>
+                                    <BodyPart
+                                        size={[0.8, 0.8, 0.8]}
+                                        position={[0, 2, 0]}
+                                        color={skinColor}
+                                        roughness={roughness}
+                                    />
+
+                                    {FACE_FEATURES.map(
+                                        ({
+                                            position: featurePosition,
+                                            size,
+                                        }) => (
+                                            <mesh
+                                                key={featurePosition.join(",")}
+                                                position={featurePosition}
+                                                receiveShadow
+                                            >
+                                                <boxGeometry args={size} />
+                                                <meshStandardMaterial
+                                                    color={featureColor}
+                                                    roughness={roughness}
+                                                />
+                                            </mesh>
+                                        )
+                                    )}
+                                </group>
+                            </group>
+
                             <BodyPart
-                                size={[0.8, 0.8, 0.8]}
-                                position={[0, 2, 0]}
-                                color={skinColor}
+                                size={[1, 1.5, 0.5]}
+                                position={[0, 0.5, 0]}
+                                color={shirtColor}
                                 roughness={roughness}
                             />
 
-                            {FACE_FEATURES.map(
-                                ({ position: featurePosition, size }) => (
-                                    <mesh
-                                        key={featurePosition.join(",")}
-                                        position={featurePosition}
-                                        receiveShadow
-                                    >
-                                        <boxGeometry args={size} />
-                                        <meshStandardMaterial
-                                            color={featureColor}
-                                            roughness={roughness}
-                                        />
-                                    </mesh>
-                                )
-                            )}
+                            <group
+                                ref={leftArmRef}
+                                position={[-0.8, SHOULDER_Y, 0]}
+                            >
+                                <BodyPart
+                                    size={[0.3, ARM_LENGTH, 0.3]}
+                                    position={[0, -ARM_LENGTH / 2, 0]}
+                                    color={skinColor}
+                                    roughness={roughness}
+                                />
+                            </group>
+                            <group
+                                ref={rightArmRef}
+                                position={[0.8, SHOULDER_Y, 0]}
+                            >
+                                <BodyPart
+                                    size={[0.3, ARM_LENGTH, 0.3]}
+                                    position={[0, -ARM_LENGTH / 2, 0]}
+                                    color={skinColor}
+                                    roughness={roughness}
+                                />
+                            </group>
+
+                            <group ref={leftLegRef} position={[-0.3, HIP_Y, 0]}>
+                                <BodyPart
+                                    size={[0.3, LEG_LENGTH, 0.3]}
+                                    position={[0, -LEG_LENGTH / 2, 0]}
+                                    color={pantsColor}
+                                    roughness={roughness}
+                                />
+                            </group>
+                            <group ref={rightLegRef} position={[0.3, HIP_Y, 0]}>
+                                <BodyPart
+                                    size={[0.3, LEG_LENGTH, 0.3]}
+                                    position={[0, -LEG_LENGTH / 2, 0]}
+                                    color={pantsColor}
+                                    roughness={roughness}
+                                />
+                            </group>
                         </group>
-                    </group>
-
-                    <BodyPart
-                        size={[1, 1.5, 0.5]}
-                        position={[0, 0.5, 0]}
-                        color={shirtColor}
-                        roughness={roughness}
-                    />
-
-                    <group ref={leftArmRef} position={[-0.8, SHOULDER_Y, 0]}>
-                        <BodyPart
-                            size={[0.3, ARM_LENGTH, 0.3]}
-                            position={[0, -ARM_LENGTH / 2, 0]}
-                            color={skinColor}
-                            roughness={roughness}
-                        />
-                    </group>
-                    <group ref={rightArmRef} position={[0.8, SHOULDER_Y, 0]}>
-                        <BodyPart
-                            size={[0.3, ARM_LENGTH, 0.3]}
-                            position={[0, -ARM_LENGTH / 2, 0]}
-                            color={skinColor}
-                            roughness={roughness}
-                        />
-                    </group>
-
-                    <group ref={leftLegRef} position={[-0.3, HIP_Y, 0]}>
-                        <BodyPart
-                            size={[0.3, LEG_LENGTH, 0.3]}
-                            position={[0, -LEG_LENGTH / 2, 0]}
-                            color={pantsColor}
-                            roughness={roughness}
-                        />
-                    </group>
-                    <group ref={rightLegRef} position={[0.3, HIP_Y, 0]}>
-                        <BodyPart
-                            size={[0.3, LEG_LENGTH, 0.3]}
-                            position={[0, -LEG_LENGTH / 2, 0]}
-                            color={pantsColor}
-                            roughness={roughness}
-                        />
                     </group>
                 </group>
             </group>
