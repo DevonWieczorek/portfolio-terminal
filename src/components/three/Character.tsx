@@ -18,6 +18,7 @@ import { useMovement } from "@/lib/stores/useMovement";
 import { useScene } from "@/lib/contexts/SceneContext";
 import { useExperience } from "@/lib/stores/useExperience";
 import { useMusic } from "@/lib/stores/useMusic";
+import { useReach } from "@/lib/stores/useReach";
 import { useAudio } from "@/lib/stores/useAudio";
 import { PHYSICS_TIMESTEP, PLAYER_GROUPS } from "@/lib/constants/physics";
 import { getFacingRotation, toCameraRelative } from "@/utils/movement";
@@ -40,6 +41,7 @@ type CharacterController = ReturnType<
 const MODEL_FEET_Y = -1.3;
 const MODEL_HEIGHT = 3.7;
 // Limbs hang from these joints so they swing from the shoulder and hip
+const SHOULDER_X = 0.8;
 const SHOULDER_Y = 1.1;
 const HIP_Y = -0.3;
 // The head tips from the base of its box when nodding
@@ -68,6 +70,9 @@ const BREATH_FREQUENCY = 2;
 // Idle swell, as a fraction of body height. The walking squash and stretch
 // amount comes from SceneContext.
 const BREATH_SQUASH = 0.025;
+
+// The arms hang straight down from the shoulder at rest
+const ARM_REST_DIRECTION = new THREE.Vector3(0, -1, 0);
 
 const BLOB_SHADOW_RADIUS = 1;
 const BLOB_SHADOW_OPACITY = 0.35;
@@ -116,6 +121,9 @@ type CharacterControls = {
     danceSwayAngle: number;
     danceHeadCounterTilt: number;
     danceBeatBounce: number;
+    reachTime: number;
+    reachHoldTime: number;
+    reachReturnTime: number;
 };
 
 type BodyPartProps = {
@@ -165,6 +173,7 @@ const Character = memo(({ inputEnabled = true }: CharacterProps) => {
         characterAppearance,
         footsteps,
         characterDance,
+        characterReach,
         rug,
     } = useScene();
     // Use individual selectors to prevent unnecessary rerenders
@@ -191,7 +200,10 @@ const Character = memo(({ inputEnabled = true }: CharacterProps) => {
         danceArmWaveAngle: number,
         danceSwayAngle: number,
         danceHeadCounterTilt: number,
-        danceBeatBounce: number;
+        danceBeatBounce: number,
+        reachTime: number,
+        reachHoldTime: number,
+        reachReturnTime: number;
 
     // #if DEBUG
     ({
@@ -214,6 +226,9 @@ const Character = memo(({ inputEnabled = true }: CharacterProps) => {
         danceSwayAngle,
         danceHeadCounterTilt,
         danceBeatBounce,
+        reachTime,
+        reachHoldTime,
+        reachReturnTime,
     } = useControls(
         "Character",
         {
@@ -312,6 +327,24 @@ const Character = memo(({ inputEnabled = true }: CharacterProps) => {
                 max: 0.2,
                 step: 0.005,
             },
+            reachTime: {
+                value: characterReach.reachTime,
+                min: 0.05,
+                max: 2,
+                step: 0.05,
+            },
+            reachHoldTime: {
+                value: characterReach.holdTime,
+                min: 0,
+                max: 2,
+                step: 0.05,
+            },
+            reachReturnTime: {
+                value: characterReach.returnTime,
+                min: 0.05,
+                max: 2,
+                step: 0.05,
+            },
         },
         { collapsed: true }
     ) as CharacterControls);
@@ -334,6 +367,9 @@ const Character = memo(({ inputEnabled = true }: CharacterProps) => {
     danceSwayAngle = characterDance.swayAngle;
     danceHeadCounterTilt = characterDance.headCounterTilt;
     danceBeatBounce = characterDance.beatBounce;
+    reachTime = characterReach.reachTime;
+    reachHoldTime = characterReach.holdTime;
+    reachReturnTime = characterReach.returnTime;
     // #endif
 
     // Scale the avatar to the configured height and lift it so its feet rest
@@ -372,6 +408,15 @@ const Character = memo(({ inputEnabled = true }: CharacterProps) => {
     const footstepRef = useRef<THREE.PositionalAudio>(null);
     // Counts foot plants, so each new one plays a step
     const lastStep = useRef(0);
+    // Seconds into the current reach; Infinity when not reaching
+    const reachClock = useRef(Infinity);
+    // Starts at the current request, so remounting doesn't replay an old one
+    const lastReachId = useRef(useReach.getState().requestId);
+    // +1 reaches with the arm on the model's +X side, -1 with the other
+    const reachSide = useRef(1);
+    const reachDirection = useMemo(() => new THREE.Vector3(), []);
+    const poseQuaternion = useMemo(() => new THREE.Quaternion(), []);
+    const reachQuaternion = useMemo(() => new THREE.Quaternion(), []);
     const listener = useAudio(state => state.listener);
     // Synthesized once the visitor's first input unlocks audio
     const footstepBuffer = useMemo(
@@ -508,14 +553,9 @@ const Character = memo(({ inputEnabled = true }: CharacterProps) => {
         const armRaise = danceArmsUpAngle * armsUp;
         const armWave = danceArmWaveAngle * sway;
 
-        if (leftArmRef.current) {
-            leftArmRef.current.rotation.x = swing;
-            leftArmRef.current.rotation.z = -armRaise + armWave;
-        }
-        if (rightArmRef.current) {
-            rightArmRef.current.rotation.x = -swing;
-            rightArmRef.current.rotation.z = armRaise + armWave;
-        }
+        // Y is zeroed too, since a reach can leave the arm twisted
+        leftArmRef.current?.rotation.set(swing, 0, -armRaise + armWave);
+        rightArmRef.current?.rotation.set(-swing, 0, armRaise + armWave);
         if (leftLegRef.current) leftLegRef.current.rotation.x = -swing;
         if (rightLegRef.current) rightLegRef.current.rotation.x = swing;
         if (swayRef.current) swayRef.current.rotation.z = danceSwayAngle * sway;
@@ -535,6 +575,69 @@ const Character = memo(({ inputEnabled = true }: CharacterProps) => {
             headRef.current.rotation.z =
                 -danceSwayAngle * danceHeadCounterTilt * sway;
         }
+    };
+
+    // Reaches one arm out to a point another object asked for, like the
+    // tonearm when the needle drops: turn to face it, swing the nearer arm
+    // out, hold, then ease back into whatever pose the body is in. Blending
+    // toward the reach from the current pose lets it layer over walking or
+    // dancing without fighting them.
+    const animateReach = (delta: number) => {
+        const { target, requestId } = useReach.getState();
+        if (!target) return;
+        const { x, z } = useMovement.getState().position;
+        // Relative to the character's feet, in model units
+        const dx = (target.x - x) / characterScale;
+        const dy = target.y / characterScale + MODEL_FEET_Y;
+        const dz = (target.z - z) / characterScale;
+
+        if (requestId !== lastReachId.current) {
+            lastReachId.current = requestId;
+            reachClock.current = 0;
+            targetRotation.current = getFacingRotation({ x: dx, z: dz });
+            // Whichever arm is already on the target's side
+            const yaw = currentRotation.current;
+            reachSide.current =
+                dx * Math.cos(yaw) - dz * Math.sin(yaw) >= 0 ? 1 : -1;
+        }
+
+        const t = reachClock.current;
+        if (t >= reachTime + reachHoldTime + reachReturnTime) return;
+        reachClock.current += delta;
+
+        const envelope =
+            t < reachTime
+                ? THREE.MathUtils.smootherstep(t, 0, reachTime)
+                : t < reachTime + reachHoldTime
+                  ? 1
+                  : 1 -
+                    THREE.MathUtils.smootherstep(
+                        t - reachTime - reachHoldTime,
+                        0,
+                        reachReturnTime
+                    );
+        // Walking off drops the reach
+        const blend = envelope * (1 - walkBlend.current);
+        const arm =
+            reachSide.current > 0 ? rightArmRef.current : leftArmRef.current;
+        if (blend <= 0 || !arm) return;
+
+        // Undo the character's turn to get the target in model space, then
+        // aim from the shoulder. Recomputed each frame since the character
+        // is still turning to face it.
+        const yaw = currentRotation.current;
+        reachDirection
+            .set(
+                dx * Math.cos(yaw) -
+                    dz * Math.sin(yaw) -
+                    reachSide.current * SHOULDER_X,
+                dy - SHOULDER_Y,
+                dx * Math.sin(yaw) + dz * Math.cos(yaw)
+            )
+            .normalize();
+        reachQuaternion.setFromUnitVectors(ARM_REST_DIRECTION, reachDirection);
+        poseQuaternion.setFromEuler(arm.rotation).slerp(reachQuaternion, blend);
+        arm.rotation.setFromQuaternion(poseQuaternion);
     };
 
     // Movement runs before each physics step rather than each rendered
@@ -604,34 +707,33 @@ const Character = memo(({ inputEnabled = true }: CharacterProps) => {
 
         if (!character) return;
 
-        if (isMoving) {
-            const rotationDiff =
-                targetRotation.current - currentRotation.current;
+        // Runs while standing too, to finish a turn or face a reach target
+        const rotationDiff = targetRotation.current - currentRotation.current;
 
-            // Handle rotation wrapping (shortest path)
-            let shortestDiff = rotationDiff;
-            if (Math.abs(rotationDiff) > Math.PI) {
-                shortestDiff =
-                    rotationDiff > 0
-                        ? rotationDiff - 2 * Math.PI
-                        : rotationDiff + 2 * Math.PI;
-            }
-
-            currentRotation.current += THREE.MathUtils.damp(
-                0,
-                shortestDiff,
-                TURN_RATE,
-                delta
-            );
-            // Keep within [-PI, PI] so the shortest-path check stays valid
-            currentRotation.current = Math.atan2(
-                Math.sin(currentRotation.current),
-                Math.cos(currentRotation.current)
-            );
-            character.rotation.y = currentRotation.current;
+        // Handle rotation wrapping (shortest path)
+        let shortestDiff = rotationDiff;
+        if (Math.abs(rotationDiff) > Math.PI) {
+            shortestDiff =
+                rotationDiff > 0
+                    ? rotationDiff - 2 * Math.PI
+                    : rotationDiff + 2 * Math.PI;
         }
 
+        currentRotation.current += THREE.MathUtils.damp(
+            0,
+            shortestDiff,
+            TURN_RATE,
+            delta
+        );
+        // Keep within [-PI, PI] so the shortest-path check stays valid
+        currentRotation.current = Math.atan2(
+            Math.sin(currentRotation.current),
+            Math.cos(currentRotation.current)
+        );
+        character.rotation.y = currentRotation.current;
+
         animateBody(isMoving, state.clock.elapsedTime, delta);
+        animateReach(delta);
     });
 
     return (
@@ -727,7 +829,7 @@ const Character = memo(({ inputEnabled = true }: CharacterProps) => {
 
                             <group
                                 ref={leftArmRef}
-                                position={[-0.8, SHOULDER_Y, 0]}
+                                position={[-SHOULDER_X, SHOULDER_Y, 0]}
                             >
                                 <BodyPart
                                     size={[0.3, ARM_LENGTH, 0.3]}
@@ -738,7 +840,7 @@ const Character = memo(({ inputEnabled = true }: CharacterProps) => {
                             </group>
                             <group
                                 ref={rightArmRef}
-                                position={[0.8, SHOULDER_Y, 0]}
+                                position={[SHOULDER_X, SHOULDER_Y, 0]}
                             >
                                 <BodyPart
                                     size={[0.3, ARM_LENGTH, 0.3]}

@@ -1,6 +1,6 @@
 import React from "react";
 import * as THREE from "three";
-import { render } from "@testing-library/react";
+import { act, render } from "@testing-library/react";
 import "@testing-library/jest-dom";
 import "../../../__mocks__/threeTestHarness";
 import {
@@ -18,6 +18,7 @@ import {
 } from "../../../__mocks__/threeTestHarness";
 import { PHYSICS_TIMESTEP, PLAYER_GROUPS } from "@/lib/constants/physics";
 import { useMusic } from "@/lib/stores/useMusic";
+import { useReach } from "@/lib/stores/useReach";
 import Character from "./Character";
 
 // Refs resolve to DOM nodes under the mocked renderer, so give each group the
@@ -239,5 +240,55 @@ describe("Character", () => {
         expect(getLeftArm(container)?.rotation.z).toBeCloseTo(0, 1);
         expect(getRightArm(container)?.rotation.z).toBeCloseTo(0, 1);
         expect(getSway(container)?.rotation.z).toBeCloseTo(0, 2);
+    });
+
+    describe("reaching", () => {
+        // Total reach is 0.2s out + 0.3s hold + 0.35s back
+        const HOLDING_FRAMES = 20;
+        const DONE_FRAMES = 60;
+        const armAngle = (arm: (HTMLElement & THREE.Group) | null) =>
+            new THREE.Quaternion()
+                .setFromEuler(arm?.rotation ?? new THREE.Euler())
+                .angleTo(new THREE.Quaternion());
+
+        it("turns to face the target and reaches an arm out to it", () => {
+            const { container } = renderWithTransforms(<Character />);
+            const character = container.querySelector<
+                HTMLElement & THREE.Group
+            >("group[scale]");
+
+            act(() => useReach.getState().reachFor({ x: 3, y: 1, z: 0 }));
+            runFrames(HOLDING_FRAMES);
+
+            const reachingArm = Math.max(
+                armAngle(getLeftArm(container)),
+                armAngle(getRightArm(container))
+            );
+            expect(reachingArm).toBeGreaterThan(0.8);
+
+            runFrames(60);
+            // Facing +X: forward is -Z in model space
+            expect(character?.rotation.y).toBeCloseTo(-Math.PI / 2, 1);
+        });
+
+        it("eases the arm back once the reach is over", () => {
+            const { container } = renderWithTransforms(<Character />);
+
+            act(() => useReach.getState().reachFor({ x: 3, y: 1, z: 0 }));
+            runFrames(HOLDING_FRAMES + DONE_FRAMES);
+
+            expect(armAngle(getLeftArm(container))).toBeCloseTo(0, 5);
+            expect(armAngle(getRightArm(container))).toBeCloseTo(0, 5);
+        });
+
+        it("doesn't replay a reach requested before it mounted", () => {
+            act(() => useReach.getState().reachFor({ x: 3, y: 1, z: 0 }));
+            const { container } = renderWithTransforms(<Character />);
+
+            runFrames(HOLDING_FRAMES);
+
+            expect(armAngle(getLeftArm(container))).toBeCloseTo(0, 5);
+            expect(armAngle(getRightArm(container))).toBeCloseTo(0, 5);
+        });
     });
 });

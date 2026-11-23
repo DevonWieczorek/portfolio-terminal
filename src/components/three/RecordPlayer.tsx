@@ -2,8 +2,10 @@ import { memo, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useFrame } from "@react-three/fiber";
 import {
     AudioLoader,
+    Box3,
     LoadingManager,
     MathUtils,
+    Vector3,
     type Object3D,
     type PositionalAudio as PositionalAudioImpl,
 } from "three";
@@ -13,13 +15,14 @@ import { useControls } from "leva";
 import { useScene } from "@/lib/contexts/SceneContext";
 import { useMusic } from "@/lib/stores/useMusic";
 import { useAudio } from "@/lib/stores/useAudio";
+import { useReach } from "@/lib/stores/useReach";
 import InteractionZone from "@/components/three/InteractionZone";
 
 type RecordPlayerControls = {
     spinSpeed: number;
     spinEase: number;
     tonearmPlayAngle: number;
-    tonearmEase: number;
+    tonearmSwingTime: number;
     volume: number;
     audioRefDistance: number;
     recordBoxSizeX: number;
@@ -45,8 +48,6 @@ const RECORD_AUDIO_PATH = "/audio/a-cup-of-tea.mp3";
 const RECORD_TEMPO = 70;
 const DROP_MESSAGE = "Press ENTER to drop the needle.";
 const LIFT_MESSAGE = "Press ENTER to lift the needle.";
-// The music waits until the arm has swung this close to the record
-const NEEDLE_DOWN_TOLERANCE = 0.02;
 const AT_REST = 1e-3;
 
 const RecordPlayer = memo(function RecordPlayer({
@@ -60,7 +61,9 @@ const RecordPlayer = memo(function RecordPlayer({
     const unlockAudio = useAudio(state => state.unlock);
     const hasRequestedAudio = useRef(false);
     const audioRef = useRef<PositionalAudioImpl>(null);
-    const motion = useRef({ armAngle: 0, spinSpeed: 0 });
+    // armTravel runs 0 (parked) to 1 (in the grooves)
+    const motion = useRef({ armTravel: 0, spinSpeed: 0 });
+    const reachFor = useReach(state => state.reachFor);
     // Where the track is, counted on the audio clock so it keeps time even
     // while frames stall in a background tab
     const playback = useRef({ trackTime: 0, contextTime: 0 });
@@ -77,7 +80,7 @@ const RecordPlayer = memo(function RecordPlayer({
     let spinSpeed: number,
         spinEase: number,
         tonearmPlayAngle: number,
-        tonearmEase: number,
+        tonearmSwingTime: number,
         volume: number,
         audioRefDistance: number;
     let recordBoxSizeX: number,
@@ -92,7 +95,7 @@ const RecordPlayer = memo(function RecordPlayer({
         spinSpeed,
         spinEase,
         tonearmPlayAngle,
-        tonearmEase,
+        tonearmSwingTime,
         volume,
         audioRefDistance,
         recordBoxSizeX,
@@ -122,11 +125,11 @@ const RecordPlayer = memo(function RecordPlayer({
                 max: 0,
                 step: 0.01,
             },
-            tonearmEase: {
-                value: recordPlayer.tonearmEase,
+            tonearmSwingTime: {
+                value: recordPlayer.tonearmSwingTime,
                 min: 0.1,
-                max: 20,
-                step: 0.1,
+                max: 3,
+                step: 0.05,
             },
             volume: {
                 value: recordPlayer.volume,
@@ -185,7 +188,7 @@ const RecordPlayer = memo(function RecordPlayer({
     spinSpeed = recordPlayer.spinSpeed;
     spinEase = recordPlayer.spinEase;
     tonearmPlayAngle = recordPlayer.tonearmPlayAngle;
-    tonearmEase = recordPlayer.tonearmEase;
+    tonearmSwingTime = recordPlayer.tonearmSwingTime;
     volume = recordPlayer.volume;
     audioRefDistance = recordPlayer.audioRefDistance;
     recordBoxSizeX = recordPlayer.boxSize.x;
@@ -224,13 +227,9 @@ const RecordPlayer = memo(function RecordPlayer({
         audioRef.current?.setRefDistance(audioRefDistance);
     }, [hasAudio, audioRefDistance]);
 
-    const handleEnter = useCallback(() => {
-        unlockAudio();
-        setIsPlaying(playing => !playing);
-
-        // The track only downloads once someone first drops the needle. Loaded
-        // by hand rather than through a suspending loader, so a failed load
-        // leaves a silent turntable instead of taking down the scene.
+    // Loaded by hand rather than through a suspending loader, so a failed
+    // load leaves a silent turntable instead of taking down the scene
+    const loadTrack = useCallback(() => {
         if (hasRequestedAudio.current) {
             return;
         }
@@ -243,10 +242,36 @@ const RecordPlayer = memo(function RecordPlayer({
             .catch(error =>
                 console.warn(`Could not load ${RECORD_AUDIO_PATH}`, error)
             );
-    }, [unlockAudio]);
+    }, []);
+
+    // Audio unlocks on the visitor's first key press or click, long before
+    // they reach the turntable. Fetching and decoding the track then means
+    // it's ready by the time the needle drops. Waiting for the unlock keeps
+    // the download out of the room's initial load.
+    useEffect(() => {
+        if (listener) {
+            loadTrack();
+        }
+    }, [listener, loadTrack]);
+
+    const handleEnter = useCallback(() => {
+        unlockAudio();
+        setIsPlaying(playing => !playing);
+        loadTrack();
+
+        // The character reaches for the middle of the tonearm
+        if (parts.arm) {
+            const { x, y, z } = new Box3()
+                .setFromObject(parts.arm)
+                .getCenter(new Vector3());
+            reachFor({ x, y, z });
+        }
+    }, [loadTrack, parts.arm, reachFor, unlockAudio]);
 
     // The arm swings over and the platter spins up together, and the music
-    // starts once the needle lands. Lifting the arm cuts the music at once
+    // starts once the needle lands. The swing takes a fixed time on an eased
+    // curve, rather than easing exponentially, so the needle lands promptly
+    // instead of creeping the last few degrees. Lifting the arm cuts the music at once
     // while the platter runs down.
     useFrame((_, delta) => {
         const state = motion.current;
@@ -267,19 +292,14 @@ const RecordPlayer = memo(function RecordPlayer({
             setTrackTime(track.trackTime);
         }
 
-        if (
-            !isPlaying &&
-            state.spinSpeed < AT_REST &&
-            Math.abs(state.armAngle) < AT_REST
-        ) {
+        if (!isPlaying && state.spinSpeed < AT_REST && state.armTravel === 0) {
             return;
         }
 
-        state.armAngle = MathUtils.damp(
-            state.armAngle,
-            isPlaying ? tonearmPlayAngle : 0,
-            tonearmEase,
-            delta
+        state.armTravel = MathUtils.clamp(
+            state.armTravel + ((isPlaying ? 1 : -1) * delta) / tonearmSwingTime,
+            0,
+            1
         );
         state.spinSpeed = MathUtils.damp(
             state.spinSpeed,
@@ -289,7 +309,9 @@ const RecordPlayer = memo(function RecordPlayer({
         );
 
         if (parts.arm) {
-            parts.arm.rotation.y = state.armAngle;
+            parts.arm.rotation.y =
+                tonearmPlayAngle *
+                MathUtils.smootherstep(state.armTravel, 0, 1);
         }
         // Clockwise seen from above
         if (parts.spin) {
@@ -298,8 +320,7 @@ const RecordPlayer = memo(function RecordPlayer({
                 (Math.PI * 2);
         }
 
-        const isNeedleDown =
-            Math.abs(state.armAngle - tonearmPlayAngle) < NEEDLE_DOWN_TOLERANCE;
+        const isNeedleDown = state.armTravel === 1;
         if (isPlaying && isNeedleDown && sound?.buffer && !sound.isPlaying) {
             sound.play();
             playback.current.contextTime = sound.context.currentTime;

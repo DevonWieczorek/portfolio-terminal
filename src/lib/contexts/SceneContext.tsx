@@ -22,7 +22,7 @@ interface RecordPlayerTraits {
     spinSpeed: number; // radians per second at full speed
     spinEase: number; // exponential ease rate (per second) of spin-up and run-down
     tonearmPlayAngle: number; // pivot turn from parked to resting in the grooves
-    tonearmEase: number; // exponential ease rate (per second) of the arm swing
+    tonearmSwingTime: number; // seconds for the arm to swing between parked and the grooves
     volume: number;
     audioRefDistance: number; // distance before the music starts to fade out
     boxSize: Coordinates;
@@ -120,6 +120,13 @@ interface DanceSettings {
     swayAngle: number; // body lean with the arms, pivoting at the feet
     headCounterTilt: number; // head tilt against the lean, as a fraction of it
     beatBounce: number; // knee dip on every beat
+}
+
+// Reaching out to work the turntable. Times in seconds.
+interface ReachSettings {
+    reachTime: number; // arm swinging out to the target
+    holdTime: number; // hand held on the target, while the needle moves
+    returnTime: number; // arm easing back to its pose
 }
 
 interface EffectsSettings {
@@ -451,7 +458,7 @@ const defaultRecordPlayerTraits: RecordPlayerTraits = {
     spinSpeed: (33.33 * Math.PI * 2) / 60,
     spinEase: 1.5,
     tonearmPlayAngle: -0.58,
-    tonearmEase: 4,
+    tonearmSwingTime: 0.45,
     volume: 0.6,
     audioRefDistance: scaledFeet(5),
     // Reaches from the wall to a few feet past the shelf front, centered on
@@ -743,6 +750,7 @@ interface SceneConfig {
     characterAppearance: CharacterAppearance;
     footsteps: FootstepSettings;
     characterDance: DanceSettings;
+    characterReach: ReachSettings;
     cameraOffset: {
         x: number;
         y: number;
@@ -802,6 +810,11 @@ const defaultSceneConfig: SceneConfig = {
         refDistance: scaledFeet(10),
         pitchVariation: 250,
         rugVolume: 0.45,
+    },
+    characterReach: {
+        reachTime: 0.2,
+        holdTime: 0.3,
+        returnTime: 0.35,
     },
     characterDance: {
         blendRate: 4,

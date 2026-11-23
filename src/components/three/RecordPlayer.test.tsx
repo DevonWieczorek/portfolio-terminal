@@ -1,7 +1,7 @@
 import React from "react";
 import { act, render } from "@testing-library/react";
 import "@testing-library/jest-dom";
-import { AudioLoader, Group } from "three";
+import { AudioLoader, Group, type AudioListener } from "three";
 import "../../../__mocks__/threeTestHarness";
 import {
     frameCallbacks,
@@ -9,6 +9,8 @@ import {
     resetThreeTestState,
     sensorProps,
 } from "../../../__mocks__/threeTestHarness";
+import { useAudio } from "@/lib/stores/useAudio";
+import { useReach } from "@/lib/stores/useReach";
 import RecordPlayer from "./RecordPlayer";
 
 // Leaves the record player's frame callback as the only one registered
@@ -58,9 +60,10 @@ describe("RecordPlayer", () => {
 
     afterEach(() => {
         loadAsync.mockRestore();
+        useAudio.setState({ listener: null });
     });
 
-    it("invites the visitor to drop the needle without loading audio", () => {
+    it("invites the visitor to drop the needle without loading audio first", () => {
         const { model } = createModel();
         render(<RecordPlayer model={model} scale={3} />);
 
@@ -124,5 +127,50 @@ describe("RecordPlayer", () => {
             expect.any(Error)
         );
         expect(spin.rotation.y).not.toBe(0);
+    });
+
+    it("starts loading the track as soon as audio unlocks", () => {
+        const { model } = createModel();
+        render(<RecordPlayer model={model} scale={3} />);
+        expect(loadAsync).not.toHaveBeenCalled();
+
+        act(() => useAudio.setState({ listener: {} as AudioListener }));
+
+        expect(loadAsync).toHaveBeenCalledTimes(1);
+        expect(loadAsync).toHaveBeenCalledWith(AUDIO_PATH);
+
+        // Dropping the needle later doesn't fetch it again
+        enterZoneAndPressEnter();
+        expect(loadAsync).toHaveBeenCalledTimes(1);
+    });
+
+    it("lands the needle once the swing time has passed", () => {
+        const { model, arm } = createModel();
+        render(<RecordPlayer model={model} scale={3} />);
+
+        enterZoneAndPressEnter();
+        // Swing time is 0.45s at 60fps
+        runFrames(20);
+        expect(arm.rotation.y).toBeGreaterThan(-0.58);
+
+        runFrames(8);
+        expect(arm.rotation.y).toBeCloseTo(-0.58, 5);
+    });
+
+    it("asks the character to reach for the tonearm", () => {
+        const { model } = createModel();
+        render(<RecordPlayer model={model} scale={3} />);
+        const before = useReach.getState().requestId;
+
+        enterZoneAndPressEnter();
+
+        expect(useReach.getState().requestId).toBe(before + 1);
+        expect(useReach.getState().target).toEqual(
+            expect.objectContaining({
+                x: expect.any(Number),
+                y: expect.any(Number),
+                z: expect.any(Number),
+            })
+        );
     });
 });
