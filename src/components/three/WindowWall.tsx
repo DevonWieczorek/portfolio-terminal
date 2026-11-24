@@ -63,6 +63,8 @@ const CONE_MARGIN = 1.5;
 const OCCLUDER_GAP = 1.5;
 // Keeps the occluder from flying off when the sun runs along the wall
 const MIN_SUN_FACING = 0.05;
+// The sun is already off by the time the occluder would shrink this far
+const MIN_OCCLUDER_SCALE = 0.1;
 
 type TrimProps = { size: Vec3; position: Vec3; color: string };
 
@@ -502,12 +504,23 @@ const Sunlight = memo(function Sunlight({
     }, [sunDirection]);
 
     // Where the line from the window to the sun crosses the occluder's plane
-    const along = (occluderZ - cz) / Math.max(sunDirection.z, MIN_SUN_FACING);
+    const facing = Math.max(sunDirection.z, MIN_SUN_FACING);
+    const along = (occluderZ - cz) / facing;
     const occluderPosition: Vec3 = [
         cx + sunDirection.x * along,
         cy + sunDirection.y * along,
         occluderZ,
     ];
+    // The sun is a spotlight a finite distance away, so its rays spread out.
+    // A window-sized hole out at the occluder would cast a beam larger than
+    // the opening, and the extra would shine through the wall, which casts
+    // no shadow. The occluder's plane is parallel to the wall, so shrinking
+    // it by the ratio of their distances from the light lines the hole's
+    // shadow up exactly with the opening.
+    const occluderScale = Math.max(
+        1 - (occluderZ - cz) / (facing * distance),
+        MIN_OCCLUDER_SCALE
+    );
 
     const occluderGeometry = useMemo(
         () =>
@@ -555,6 +568,7 @@ const Sunlight = memo(function Sunlight({
             <mesh
                 geometry={occluderGeometry}
                 position={occluderPosition}
+                scale={[occluderScale, occluderScale, 1]}
                 castShadow
             >
                 <meshBasicMaterial
