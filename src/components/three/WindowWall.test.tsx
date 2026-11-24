@@ -67,4 +67,29 @@ describe("WindowWall", () => {
         expect(noon).toBeGreaterThan(0);
         expect(night).toBe(0);
     });
+
+    it("sizes the occluder so its hole's shadow matches the opening", () => {
+        const { container } = renderAt(13);
+        const vector = (element: Element | null, name: string) =>
+            (element?.getAttribute(name) ?? "").split(",").map(Number);
+
+        const [, , sunZ] = vector(
+            container.querySelector("spotlight"),
+            "position"
+        );
+        const [, , windowZ] = vector(
+            container.querySelector("primitive"),
+            "position"
+        );
+        const occluder = container.querySelector("mesh[scale]");
+        const [, , occluderZ] = vector(occluder, "position");
+        const [scaleX, scaleY] = vector(occluder, "scale");
+
+        // Rays from the sun spread out, so a hole nearer the sun has to be
+        // smaller by the ratio of the two planes' distances from it
+        const expected = (sunZ - occluderZ) / (sunZ - windowZ);
+        expect(expected).toBeLessThan(1);
+        expect(scaleX).toBeCloseTo(expected, 5);
+        expect(scaleY).toBeCloseTo(expected, 5);
+    });
 });
