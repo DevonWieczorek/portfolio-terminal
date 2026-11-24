@@ -134,4 +134,18 @@ describe("Camera", () => {
         fireEvent.keyDown(window, { key: "i" });
         fireEvent.keyDown(window, { key: "o" });
     });
+
+    it("stays under the ceiling when zoomed all the way out", () => {
+        render(<Camera />);
+
+        // Zoom out to the max, then let the camera settle
+        for (let i = 0; i < 20; i += 1) {
+            fireEvent.keyDown(window, { key: "o" });
+        }
+        runFrames(300);
+
+        // wallHeight 12 minus cameraBuffer 2
+        expect(mockCamera.position.y).toBeLessThanOrEqual(10 + 1e-6);
+        expect(mockCamera.position.y).toBeGreaterThan(9.5);
+    });
 });

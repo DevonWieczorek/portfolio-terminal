@@ -738,7 +738,7 @@ interface SceneConfig {
     baseboard: BaseboardTraits;
     rug: RugTraits;
     characterBoundary: number;
-    cameraBuffer: number;
+    cameraBuffer: number; // how close the camera can get to the walls and ceiling
     characterSpeed: number; // world units per second
     characterStepSquash: number; // squash and stretch per step, as a fraction of body height
     characterHeight: number;
