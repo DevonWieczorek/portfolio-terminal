@@ -186,6 +186,7 @@ export const sceneState = {
         pitchVariation: 250,
         rugVolume: 0.45,
     },
+    characterReach: { reachTime: 0.2, holdTime: 0.3, returnTime: 0.35 },
     characterDance: {
         blendRate: 4,
         nodAngle: 0.2,
@@ -258,7 +259,7 @@ export const sceneState = {
         spinSpeed: 3.49,
         spinEase: 1.5,
         tonearmPlayAngle: -0.58,
-        tonearmEase: 4,
+        tonearmSwingTime: 0.45,
         volume: 0.6,
         audioRefDistance: 5,
         boxSize: { x: 4, y: 6, z: 5.29 },
